@@ -23,22 +23,22 @@ class Receiver;
  * state machine
  */
 enum ReceiverState {
-  LISTEN,
-  ACCEPT_FIRST_CONNECTION,
-  ACCEPT_WITH_TIMEOUT,
-  SEND_LOCAL_CHECKPOINT,
-  READ_NEXT_CMD,
-  PROCESS_FILE_CMD,
-  PROCESS_SETTINGS_CMD,
-  PROCESS_DONE_CMD,
-  PROCESS_SIZE_CMD,
-  SEND_FILE_CHUNKS,
-  SEND_GLOBAL_CHECKPOINTS,
-  SEND_DONE_CMD,
-  SEND_ABORT_CMD,
-  WAIT_FOR_FINISH_OR_NEW_CHECKPOINT,
-  FINISH_WITH_ERROR,
-  END
+    LISTEN,
+    ACCEPT_FIRST_CONNECTION,
+    ACCEPT_WITH_TIMEOUT,
+    SEND_LOCAL_CHECKPOINT,
+    READ_NEXT_CMD,
+    PROCESS_FILE_CMD,
+    PROCESS_SETTINGS_CMD,
+    PROCESS_DONE_CMD,
+    PROCESS_SIZE_CMD,
+    SEND_FILE_CHUNKS,
+    SEND_GLOBAL_CHECKPOINTS,
+    SEND_DONE_CMD,
+    SEND_ABORT_CMD,
+    WAIT_FOR_FINISH_OR_NEW_CHECKPOINT,
+    FINISH_WITH_ERROR,
+    END
 };
 
 /**
@@ -67,8 +67,7 @@ class ReceiverThread : public WdtThread {
    *                        receiver threads. All the receiver thread objects
    *                        need to share the same instance of the controller
    */
-  ReceiverThread(Receiver *wdtParent, int threadIndex, int port,
-                 ThreadsController *controller);
+  ReceiverThread(Receiver *wdtParent, int threadIndex, int port, ThreadsController *controller);
 
   /// Initializes the receiver thread before starting
   ErrorCode init() override;
@@ -87,8 +86,7 @@ class ReceiverThread : public WdtThread {
 
  private:
   /// Overloaded operator for printing thread info
-  friend std::ostream &operator<<(std::ostream &os,
-                                  const ReceiverThread &receiverThread);
+  friend std::ostream &operator<<(std::ostream &os, const ReceiverThread &receiverThread);
   typedef ReceiverState (ReceiverThread::*StateFunction)();
 
   /// Parent shared among all the threads for meta information

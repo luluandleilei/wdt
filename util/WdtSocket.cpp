@@ -12,88 +12,84 @@
 namespace facebook {
 namespace wdt {
 
-WdtSocket::WdtSocket(ThreadCtx &threadCtx, const int port,
-                     const EncryptionParams &encryptionParams,
-                     const int64_t ivChangeInterval,
-                     Func &&tagVerificationSuccessCallback)
-    : port_(port),
-      threadCtx_(threadCtx),
-      encryptionParams_(encryptionParams),
-      ivChangeInterval_(ivChangeInterval),
-      tagVerificationSuccessCallback_(
-          std::move(tagVerificationSuccessCallback)) {
-  if (encryptionTypeToTagLen(encryptionParams_.getType())) {
-    // encryption has tag verification support
-    writeTagInterval_ = threadCtx_.getOptions().encryption_tag_interval_bytes;
-  }
-  resetEncryptor();
-  resetDecryptor();
+WdtSocket::WdtSocket(ThreadCtx &threadCtx, const int port, const EncryptionParams &encryptionParams, const int64_t ivChangeInterval, Func &&tagVerificationSuccessCallback)
+    : port_(port), threadCtx_(threadCtx), encryptionParams_(encryptionParams), ivChangeInterval_(ivChangeInterval), tagVerificationSuccessCallback_( std::move(tagVerificationSuccessCallback)) {
+    if (encryptionTypeToTagLen(encryptionParams_.getType())) {
+        // encryption has tag verification support
+        writeTagInterval_ = threadCtx_.getOptions().encryption_tag_interval_bytes;
+    }
+    resetEncryptor();
+    resetDecryptor();
 }
 
 // TODO: consider refactoring this to return error code
 void WdtSocket::readEncryptionSettingsOnce(int timeoutMs) {
-  if (!encryptionParams_.isSet() || encryptionSettingsRead_) {
-    return;
-  }
-  WDT_CHECK(!encryptionParams_.getSecret().empty());
+    if (!encryptionParams_.isSet() || encryptionSettingsRead_) {
+        return;
+    }
 
-  int numRead = readInternal(buf_, 1, timeoutMs, true);
-  if (numRead != 1) {
-    WLOG(ERROR) << "Failed to read encryption settings " << numRead << " "
-                << port_;
-    return;
-  }
-  if (buf_[0] != Protocol::ENCRYPTION_CMD) {
-    WLOG(ERROR) << "Expected to read ENCRYPTION_CMD(e), but got " << buf_[0];
-    readErrorCode_ = UNEXPECTED_CMD_ERROR;
-    return;
-  }
-  int toRead = Protocol::kEncryptionCmdLen - 1;  // already read 1 byte for cmd
-  numRead = readInternal(buf_, toRead,
-                         threadCtx_.getOptions().read_timeout_millis, true);
-  if (numRead != toRead) {
-    WLOG(ERROR) << "Failed to read encryption settings " << numRead << " "
-                << toRead << " " << port_;
-    readErrorCode_ = SOCKET_READ_ERROR;
-    return;
-  }
-  int64_t off = 0;
-  EncryptionType encryptionType;
-  std::string iv;
-  if (!Protocol::decodeEncryptionSettings(
-          buf_, off, Protocol::kEncryptionCmdLen, encryptionType, iv,
-          readTagInterval_)) {
-    WLOG(ERROR) << "Failed to decode encryption settings";
-    readErrorCode_ = PROTOCOL_ERROR;
-    return;
-  }
-  if (encryptionType != encryptionParams_.getType()) {
-    WLOG(ERROR) << "Encryption type mismatch "
-                << encryptionTypeToStr(encryptionType) << " "
-                << encryptionTypeToStr(encryptionParams_.getType());
-    readErrorCode_ = PROTOCOL_ERROR;
-    return;
-  }
-  if (readTagInterval_ < 0) {
-    WLOG(ERROR) << "Encryption tag verification interval can't be negative "
-                << readTagInterval_;
-    readErrorCode_ = PROTOCOL_ERROR;
-    return;
-  }
-  if ((readTagInterval_ > 0) && (encryptionTypeToTagLen(encryptionType) == 0)) {
-    WLOG(ERROR) << "Tag verification should not be enabled for "
-                << encryptionTypeToStr(encryptionType) << " "
-                << readTagInterval_;
-    readErrorCode_ = PROTOCOL_ERROR;
-    return;
-  }
-  if (!decryptor_->start(encryptionParams_, iv)) {
-    readErrorCode_ = ENCRYPTION_ERROR;
-    return;
-  }
-  WLOG(INFO) << "Successfully read encryption settings " << port_ << " "
-             << encryptionTypeToStr(encryptionType);
-  encryptionSettingsRead_ = true;
+    WDT_CHECK(!encryptionParams_.getSecret().empty());
+
+    int numRead = readInternal(buf_, 1, timeoutMs, true);
+    if (numRead != 1) {
+        WLOG(ERROR) << "Failed to read encryption settings " << numRead << " " << port_;
+        return;
+    }
+
+    if (buf_[0] != Protocol::ENCRYPTION_CMD) {
+        WLOG(ERROR) << "Expected to read ENCRYPTION_CMD(e), but got " << buf_[0];
+        readErrorCode_ = UNEXPECTED_CMD_ERROR;
+        return;
+    }
+
+    int toRead = Protocol::kEncryptionCmdLen - 1;  // already read 1 byte for cmd
+    numRead = readInternal(buf_, toRead, threadCtx_.getOptions().read_timeout_millis, true);
+    if (numRead != toRead) {
+        WLOG(ERROR) << "Failed to read encryption settings " << numRead << " " << toRead << " " << port_;
+        readErrorCode_ = SOCKET_READ_ERROR;
+        return;
+    }
+
+    int64_t off = 0;
+    EncryptionType encryptionType;
+    std::string iv;
+
+    if (!Protocol::decodeEncryptionSettings(buf_, off, Protocol::kEncryptionCmdLen, encryptionType, iv, readTagInterval_)) {
+        WLOG(ERROR) << "Failed to decode encryption settings";
+        readErrorCode_ = PROTOCOL_ERROR;
+        return;
+    }
+
+    if (encryptionType != encryptionParams_.getType()) {
+        WLOG(ERROR) << "Encryption type mismatch "
+            << encryptionTypeToStr(encryptionType) << " "
+            << encryptionTypeToStr(encryptionParams_.getType());
+        readErrorCode_ = PROTOCOL_ERROR;
+        return;
+    }
+
+    if (readTagInterval_ < 0) {
+        WLOG(ERROR) << "Encryption tag verification interval can't be negative " << readTagInterval_;
+        readErrorCode_ = PROTOCOL_ERROR;
+        return;
+    }
+
+    if ((readTagInterval_ > 0) && (encryptionTypeToTagLen(encryptionType) == 0)) {
+        WLOG(ERROR) << "Tag verification should not be enabled for "
+            << encryptionTypeToStr(encryptionType) << " "
+            << readTagInterval_;
+        readErrorCode_ = PROTOCOL_ERROR;
+        return;
+    }
+
+    if (!decryptor_->start(encryptionParams_, iv)) {
+        readErrorCode_ = ENCRYPTION_ERROR;
+        return;
+    }
+
+    WLOG(INFO) << "Successfully read encryption settings " << port_ << " " << encryptionTypeToStr(encryptionType);
+
+    encryptionSettingsRead_ = true;
 }
 
 void WdtSocket::writeEncryptionSettingsOnce() {
@@ -123,22 +119,22 @@ void WdtSocket::writeEncryptionSettingsOnce() {
 }
 
 int WdtSocket::readInternal(char *buf, int nbyte, int timeoutMs, bool tryFull) {
-  int numRead = readWithAbortCheck(buf, nbyte, timeoutMs, tryFull);
-  if (numRead == 0) {
-    readErrorCode_ = SOCKET_READ_ERROR;
-    return 0;
-  }
-  if (numRead < 0) {
-    if (errno == EAGAIN || errno == EINTR) {
-      readErrorCode_ = WDT_TIMEOUT;
-    } else {
-      readErrorCode_ = SOCKET_READ_ERROR;
+    int numRead = readWithAbortCheck(buf, nbyte, timeoutMs, tryFull);
+    if (numRead == 0) {
+        readErrorCode_ = SOCKET_READ_ERROR;
+        return 0;
     }
+    if (numRead < 0) {
+        if (errno == EAGAIN || errno == EINTR) {
+            readErrorCode_ = WDT_TIMEOUT;
+        } else {
+            readErrorCode_ = SOCKET_READ_ERROR;
+        }
+        return numRead;
+    }
+    // clear error code if successful
+    readErrorCode_ = OK;
     return numRead;
-  }
-  // clear error code if successful
-  readErrorCode_ = OK;
-  return numRead;
 }
 
 int WdtSocket::writeInternal(const char *buf, int nbyte, int timeoutMs,
@@ -199,180 +195,173 @@ bool WdtSocket::checkAndChangeDecryptionIv(const std::string &tag) {
 }
 
 std::string WdtSocket::readEncryptionTag() {
-  std::string tag;
-  const int toRead = encryptionTypeToTagLen(encryptionParams_.getType());
-  tag.resize(toRead);
-  int read = readInternal(&(tag.front()), tag.size(),
-                          threadCtx_.getOptions().read_timeout_millis, true);
-  if (read != toRead) {
-    WLOG(ERROR) << "Unable to read tag, got " << read << " needed " << toRead
-                << " " << folly::humanify(tag);
-    tag.clear();
-    // It is important to mark this as encryption error. Because, we treat
-    // WDT_TIMEOUT as retryable error. But, a failure to read the tag makes this
-    // socket unusable.
-    // If we want to make this failure retryable, then, we have to cache the
-    // part of the tag read which is complicated.
-    readErrorCode_ = ENCRYPTION_ERROR;
-  }
-  WVLOG(1) << "Encryption tag read " << folly::humanify(tag) << " totalRead_ "
-           << totalRead_ << " tag interval " << readTagInterval_;
-  return tag;
+    std::string tag;
+    const int toRead = encryptionTypeToTagLen(encryptionParams_.getType());
+    tag.resize(toRead);
+    int read = readInternal(&(tag.front()), tag.size(), threadCtx_.getOptions().read_timeout_millis, true);
+    if (read != toRead) {
+        WLOG(ERROR) << "Unable to read tag, got " << read << " needed " << toRead
+            << " " << folly::humanify(tag);
+        tag.clear();
+        // It is important to mark this as encryption error. Because, we treat
+        // WDT_TIMEOUT as retryable error. But, a failure to read the tag makes this
+        // socket unusable.
+        // If we want to make this failure retryable, then, we have to cache the
+        // part of the tag read which is complicated.
+        readErrorCode_ = ENCRYPTION_ERROR;
+    }
+    WVLOG(1) << "Encryption tag read " << folly::humanify(tag) << " totalRead_ " << totalRead_ << " tag interval " << readTagInterval_;
+    return tag;
 }
 
-int WdtSocket::computeNextTagOffset(int64_t totalProcessed,
-                                    int64_t tagInterval) {
-  if (totalProcessed == 0) {
-    return tagInterval;
-  }
-  int nextTagOffset = (tagInterval - (totalProcessed % tagInterval));
-  if (nextTagOffset == tagInterval) {
-    nextTagOffset = 0;
-  }
-  return nextTagOffset;
+int WdtSocket::computeNextTagOffset(int64_t totalProcessed, int64_t tagInterval) {
+    if (totalProcessed == 0) {
+        return tagInterval;
+    }
+    int nextTagOffset = (tagInterval - (totalProcessed % tagInterval));
+    if (nextTagOffset == tagInterval) {
+        nextTagOffset = 0;
+    }
+    return nextTagOffset;
 }
 
-int WdtSocket::readAndDecrypt(char *buf, int nbyte, int timeoutMs,
-                              bool tryFull) {
-  WDT_CHECK_GT(nbyte, 0);
-  const bool encrypt = encryptionParams_.isSet();
-  WDT_CHECK(encrypt);
-  // tag is transferred in plain text
-  int numRead = readInternal(buf, nbyte, timeoutMs, tryFull);
-  if (numRead <= 0) {
+int WdtSocket::readAndDecrypt(char *buf, int nbyte, int timeoutMs, bool tryFull) {
+    WDT_CHECK_GT(nbyte, 0);
+    const bool encrypt = encryptionParams_.isSet();
+    WDT_CHECK(encrypt);
+    // tag is transferred in plain text
+    int numRead = readInternal(buf, nbyte, timeoutMs, tryFull);
+    if (numRead <= 0) {
+        return numRead;
+    }
+    // have to decrypt data
+    if (!decryptor_->decrypt(buf, numRead, buf)) {
+        readErrorCode_ = ENCRYPTION_ERROR;
+        return -1;
+    }
     return numRead;
-  }
-  // have to decrypt data
-  if (!decryptor_->decrypt(buf, numRead, buf)) {
-    readErrorCode_ = ENCRYPTION_ERROR;
-    return -1;
-  }
-  return numRead;
 }
 
-int WdtSocket::readAndDecryptWithTag(char *buf, int nbyte, int timeoutMs,
-                                     bool tryFull) {
-  WDT_CHECK_GT(readTagInterval_, 0);
-  WDT_CHECK_LE(nbyte, readTagInterval_);
-  // first try to figure out whether this read will contain a tag
-  const int nextTagOffset = computeNextTagOffset(totalRead_, readTagInterval_);
+int WdtSocket::readAndDecryptWithTag(char *buf, int nbyte, int timeoutMs, bool tryFull) {
+    WDT_CHECK_GT(readTagInterval_, 0);
+    WDT_CHECK_LE(nbyte, readTagInterval_);
+    // first try to figure out whether this read will contain a tag
+    const int nextTagOffset = computeNextTagOffset(totalRead_, readTagInterval_);
 
-  int numRead = 0;
-  if (nextTagOffset < nbyte) {
-    // tag is contained in this read
-    if (nextTagOffset > 0) {
-      // try to read till the tag
-      const int ret = readAndDecrypt(buf, nextTagOffset, timeoutMs, tryFull);
-      if (ret <= 0) {
-        // read error
-        return ret;
-      }
-      totalRead_ += ret;
-      if (ret < nextTagOffset) {
-        // couldn't read till the tag. Tag will get read during next read
-        return ret;
-      }
-      WDT_CHECK_EQ(nextTagOffset, ret);
-      numRead = ret;
-    }
-    WDT_CHECK_EQ(0, totalRead_ % readTagInterval_);
-    // now read and verify tag
-    const std::string tag = readEncryptionTag();
-    if (tag.empty()) {
-      // readEncryptionTag already logs error
-      return -1;
-    }
-    if (!decryptor_->verifyTag(tag)) {
-      // verifyTag logs
-      readErrorCode_ = ENCRYPTION_ERROR;
-      return -1;
-    }
-    // tag verification successful, inform higher layer
-    if (tagVerificationSuccessCallback_ != nullptr) {
-      tagVerificationSuccessCallback_();
-    }
-    if (!checkAndChangeDecryptionIv(tag)) {
-      readErrorCode_ = ENCRYPTION_ERROR;
-      return -1;
-    }
-  }
-  // now try to read rest of the data
-  const int ret =
-      readAndDecrypt(buf + numRead, nbyte - numRead, timeoutMs, tryFull);
-  if (ret <= 0) {
-    // read error
-    return (numRead > 0 ? numRead : ret);
-  }
-  totalRead_ += ret;
-  return numRead + ret;
-}
+    int numRead = 0;
+    if (nextTagOffset < nbyte) {
+        // tag is contained in this read
+        if (nextTagOffset > 0) {
+            // try to read till the tag
+            const int ret = readAndDecrypt(buf, nextTagOffset, timeoutMs, tryFull);
+            if (ret <= 0) {
+                // read error
+                return ret;
+            }
+            totalRead_ += ret;
+            if (ret < nextTagOffset) {
+                // couldn't read till the tag. Tag will get read during next read
+                return ret;
+            }
+            WDT_CHECK_EQ(nextTagOffset, ret);
+            numRead = ret;
+        }
 
-int WdtSocket::readWithTimeout(char *buf, int nbyte, int timeoutMs,
-                               bool tryFull) {
-  WDT_CHECK_GT(nbyte, 0);
-  if (readErrorCode_ != OK && readErrorCode_ != WDT_TIMEOUT) {
-    WLOG(ERROR) << "Socket read failed before, not trying to read again "
-                << port_;
-    return -1;
-  }
-  readErrorCode_ = OK;
-  int numRead = 0;
+        WDT_CHECK_EQ(0, totalRead_ % readTagInterval_);
+        // now read and verify tag
+        const std::string tag = readEncryptionTag();
+        if (tag.empty()) {
+            // readEncryptionTag already logs error
+            return -1;
+        }
+        if (!decryptor_->verifyTag(tag)) {
+            // verifyTag logs
+            readErrorCode_ = ENCRYPTION_ERROR;
+            return -1;
+        }
+        // tag verification successful, inform higher layer
+        if (tagVerificationSuccessCallback_ != nullptr) {
+            tagVerificationSuccessCallback_();
+        }
 
-  // first try to find encryption settings
-  readEncryptionSettingsOnce(timeoutMs);
-  if (supportUnencryptedPeer_ && readErrorCode_ == UNEXPECTED_CMD_ERROR) {
-    WLOG(WARNING)
-        << "Turning off encryption since the other side does not support "
-           "encryption "
-        << port_;
-    readErrorCode_ = OK;
-    buf[0] = buf_[0];
-    numRead = 1;
-    // also turn off encryption
-    encryptionParams_.erase();
-  } else if (readErrorCode_ != OK) {
-    return -1;
-  }
-
-  const bool encrypt = encryptionParams_.isSet();
-  if (!encrypt) {
-    // handle the non-encryption case
-    int ret = readInternal(buf + numRead, nbyte - numRead, timeoutMs, tryFull);
-    if (ret >= 0) {
-      return numRead + ret;
+        if (!checkAndChangeDecryptionIv(tag)) {
+            readErrorCode_ = ENCRYPTION_ERROR;
+            return -1;
+        }
     }
-    // read failure
-    return (numRead > 0 ? numRead : -1);
-  }
-
-  // handle encryption case
-  WDT_CHECK_EQ(0, numRead);
-  if (readTagInterval_ <= 0) {
-    return readAndDecrypt(buf, nbyte, timeoutMs, tryFull);
-  }
-  // tag verification enabled
-  // have to break the read in chunks of readTagInterval_
-  while (numRead < nbyte) {
-    const int remaining = nbyte - numRead;
-    const int toRead = std::min(remaining, readTagInterval_);
-    const int ret =
-        readAndDecryptWithTag(buf + numRead, toRead, timeoutMs, tryFull);
+    // now try to read rest of the data
+    const int ret = readAndDecrypt(buf + numRead, nbyte - numRead, timeoutMs, tryFull);
     if (ret <= 0) {
-      // read error
-      return (numRead > 0 ? numRead : ret);
+        // read error
+        return (numRead > 0 ? numRead : ret);
     }
-    numRead += ret;
-    if (ret < toRead) {
-      // couldn't read full data
-      return numRead;
+    totalRead_ += ret;
+    return numRead + ret;
+}
+
+int WdtSocket::readWithTimeout(char *buf, int nbyte, int timeoutMs, bool tryFull) {
+    WDT_CHECK_GT(nbyte, 0);
+    if (readErrorCode_ != OK && readErrorCode_ != WDT_TIMEOUT) {
+        WLOG(ERROR) << "Socket read failed before, not trying to read again " << port_;
+        return -1;
     }
-  }
-  return numRead;
+
+    readErrorCode_ = OK;
+    int numRead = 0;
+
+    // first try to find encryption settings
+    readEncryptionSettingsOnce(timeoutMs);
+
+    if (supportUnencryptedPeer_ && readErrorCode_ == UNEXPECTED_CMD_ERROR) {
+        WLOG(WARNING) << "Turning off encryption since the other side does not support " "encryption " << port_;
+        readErrorCode_ = OK;
+        buf[0] = buf_[0];
+        numRead = 1;
+        // also turn off encryption
+        encryptionParams_.erase();
+    } else if (readErrorCode_ != OK) {
+        return -1;
+    }
+
+    const bool encrypt = encryptionParams_.isSet();
+    if (!encrypt) {
+        // handle the non-encryption case
+        int ret = readInternal(buf + numRead, nbyte - numRead, timeoutMs, tryFull);
+        if (ret >= 0) {
+            return numRead + ret;
+        }
+        // read failure
+        return (numRead > 0 ? numRead : -1);
+    }
+
+    // handle encryption case
+    WDT_CHECK_EQ(0, numRead);
+
+    if (readTagInterval_ <= 0) {
+        return readAndDecrypt(buf, nbyte, timeoutMs, tryFull);
+    }
+
+    // tag verification enabled
+    // have to break the read in chunks of readTagInterval_
+    while (numRead < nbyte) {
+        const int remaining = nbyte - numRead;
+        const int toRead = std::min(remaining, readTagInterval_);
+        const int ret = readAndDecryptWithTag(buf + numRead, toRead, timeoutMs, tryFull);
+        if (ret <= 0) {
+            // read error
+            return (numRead > 0 ? numRead : ret);
+        }
+        numRead += ret;
+        if (ret < toRead) {
+            // couldn't read full data
+            return numRead;
+        }
+    }
+    return numRead;
 }
 
 int WdtSocket::read(char *buf, int nbyte, bool tryFull) {
-  return readWithTimeout(buf, nbyte,
-                         threadCtx_.getOptions().read_timeout_millis, tryFull);
+    return readWithTimeout(buf, nbyte, threadCtx_.getOptions().read_timeout_millis, tryFull);
 }
 
 int WdtSocket::encryptAndWrite(char *buf, int nbyte, int timeoutMs,
@@ -482,12 +471,11 @@ int WdtSocket::encryptAndWriteWithTag(char *buf, int nbyte, int timeoutMs,
 }
 
 int WdtSocket::write(char *buf, int nbyte, bool retry) {
-  WDT_CHECK_GT(nbyte, 0);
-  if (writeErrorCode_ != OK) {
-    WLOG(ERROR) << "Socket write failed before, not trying to write again "
-                << port_;
-    return -1;
-  }
+    WDT_CHECK_GT(nbyte, 0);
+    if (writeErrorCode_ != OK) {
+        WLOG(ERROR) << "Socket write failed before, not trying to write again " << port_;
+        return -1;
+    }
 
   // first write encryption settings once
   writeEncryptionSettingsOnce();
@@ -521,10 +509,9 @@ int WdtSocket::write(char *buf, int nbyte, bool retry) {
   return written;
 }
 
-int64_t WdtSocket::readWithAbortCheck(char *buf, int64_t nbyte, int timeoutMs,
-                                      bool tryFull) {
-  PerfStatCollector statCollector(threadCtx_, PerfStatReport::SOCKET_READ);
-  return ioWithAbortCheck(::read, buf, nbyte, timeoutMs, tryFull);
+int64_t WdtSocket::readWithAbortCheck(char *buf, int64_t nbyte, int timeoutMs, bool tryFull) {
+    PerfStatCollector statCollector(threadCtx_, PerfStatReport::SOCKET_READ);
+    return ioWithAbortCheck(::read, buf, nbyte, timeoutMs, tryFull);
 }
 
 int64_t WdtSocket::writeWithAbortCheck(const char *buf, int64_t nbyte,
@@ -534,53 +521,48 @@ int64_t WdtSocket::writeWithAbortCheck(const char *buf, int64_t nbyte,
 }
 
 template <typename F, typename T>
-int64_t WdtSocket::ioWithAbortCheck(F readOrWrite, T tbuf, int64_t numBytes,
-                                    int timeoutMs, bool tryFull) {
-  WDT_CHECK(threadCtx_.getAbortChecker() != nullptr)
-      << "abort checker can not be null";
-  bool checkAbort = (threadCtx_.getOptions().abort_check_interval_millis > 0);
-  auto startTime = Clock::now();
-  int64_t doneBytes = 0;
-  int retries = 0;
-  while (doneBytes < numBytes) {
-    const int64_t ret =
-        readOrWrite(fd_, tbuf + doneBytes, numBytes - doneBytes);
-    if (ret < 0) {
-      // error
-      if (errno != EINTR && errno != EAGAIN) {
-        WPLOG(ERROR) << "non-retryable error encountered during socket io "
-                     << fd_ << " " << doneBytes << " " << retries;
-        return (doneBytes > 0 ? doneBytes : ret);
-      }
-    } else if (ret == 0) {
-      // eof
-      WVLOG(1) << "EOF received during socket io. fd : " << fd_
-               << ", finished bytes : " << doneBytes
-               << ", retries : " << retries;
-      return doneBytes;
-    } else {
-      // success
-      doneBytes += ret;
-      if (!tryFull) {
-        // do not have to read/write entire data
-        return doneBytes;
-      }
-    }
-    if (checkAbort && threadCtx_.getAbortChecker()->shouldAbort()) {
-      WLOG(ERROR) << "transfer aborted during socket io " << fd_ << " "
-                  << doneBytes << " " << retries;
-      return (doneBytes > 0 ? doneBytes : -1);
-    }
-    if (timeoutMs > 0) {
-      int duration = durationMillis(Clock::now() - startTime);
-      if (duration >= timeoutMs) {
-        WLOG(INFO) << "socket io timed out after " << duration
-                   << " ms, retries " << retries << " fd " << fd_
-                   << " doneBytes " << doneBytes;
-        return (doneBytes > 0 ? doneBytes : -1);
-      }
-    }
-    retries++;
+int64_t WdtSocket::ioWithAbortCheck(F readOrWrite, T tbuf, int64_t numBytes, int timeoutMs, bool tryFull) {
+    WDT_CHECK(threadCtx_.getAbortChecker() != nullptr) << "abort checker can not be null";
+    bool checkAbort = (threadCtx_.getOptions().abort_check_interval_millis > 0);
+    auto startTime = Clock::now();
+    int64_t doneBytes = 0;
+    int retries = 0;
+    while (doneBytes < numBytes) {
+        const int64_t ret = readOrWrite(fd_, tbuf + doneBytes, numBytes - doneBytes);
+        if (ret < 0) {
+            // error
+            if (errno != EINTR && errno != EAGAIN) {
+                WPLOG(ERROR) << "non-retryable error encountered during socket io " << fd_ << " " << doneBytes << " " << retries;
+                return (doneBytes > 0 ? doneBytes : ret);
+            }
+        } else if (ret == 0) {
+            // eof
+            WVLOG(1) << "EOF received during socket io. fd : " << fd_
+                << ", finished bytes : " << doneBytes
+                << ", retries : " << retries;
+            return doneBytes;
+        } else {
+            // success
+            doneBytes += ret;
+            if (!tryFull) {
+                // do not have to read/write entire data
+                return doneBytes;
+            }
+        }
+
+        if (checkAbort && threadCtx_.getAbortChecker()->shouldAbort()) {
+            WLOG(ERROR) << "transfer aborted during socket io " << fd_ << " " << doneBytes << " " << retries;
+            return (doneBytes > 0 ? doneBytes : -1);
+        }
+
+        if (timeoutMs > 0) {
+            int duration = durationMillis(Clock::now() - startTime);
+            if (duration >= timeoutMs) {
+                WLOG(INFO) << "socket io timed out after " << duration << " ms, retries " << retries << " fd " << fd_ << " doneBytes " << doneBytes;
+                return (doneBytes > 0 ? doneBytes : -1);
+            }
+        }
+        retries++;
   }
   WVLOG_IF(1, retries > 1) << "socket io for " << doneBytes << " bytes took "
                            << retries << " retries";
@@ -753,15 +735,14 @@ void WdtSocket::setSocketTimeouts() {
 }
 
 /* static */
-bool WdtSocket::getNameInfo(const struct sockaddr *sa, socklen_t salen,
-                            std::string &host, std::string &port) {
+bool WdtSocket::getNameInfo(const struct sockaddr *sa, socklen_t salen, std::string &host, std::string &port) {
   char hostBuf[NI_MAXHOST], portBuf[NI_MAXSERV];
-  int res = getnameinfo(sa, salen, hostBuf, sizeof(hostBuf), portBuf,
-                        sizeof(portBuf), NI_NUMERICHOST | NI_NUMERICSERV);
+  int res = getnameinfo(sa, salen, hostBuf, sizeof(hostBuf), portBuf, sizeof(portBuf), NI_NUMERICHOST | NI_NUMERICSERV);
   if (res) {
     WLOG(ERROR) << "getnameinfo failed " << gai_strerror(res);
     return false;
   }
+
   host = std::string(hostBuf);
   port = std::string(portBuf);
   return true;

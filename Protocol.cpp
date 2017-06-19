@@ -44,13 +44,12 @@ const string Protocol::getFullVersion() {
   return fullVersion;
 }
 
-int Protocol::negotiateProtocol(int requestedProtocolVersion,
-                                int curProtocolVersion) {
-  if (requestedProtocolVersion < 10) {
-    WLOG(WARNING) << "Can not handle protocol " << requestedProtocolVersion;
-    return 0;
-  }
-  return std::min<int>(curProtocolVersion, requestedProtocolVersion);
+int Protocol::negotiateProtocol(int requestedProtocolVersion, int curProtocolVersion) {
+	if (requestedProtocolVersion < 10) {
+		WLOG(WARNING) << "Can not handle protocol " << requestedProtocolVersion;
+		return 0;
+	}
+	return std::min<int>(curProtocolVersion, requestedProtocolVersion);
 }
 
 std::ostream &operator<<(std::ostream &os, const Checkpoint &checkpoint) {
@@ -534,19 +533,16 @@ bool Protocol::encodeEncryptionSettings(char *dest, int64_t &off, int64_t max,
 }
 
 /* static */
-bool Protocol::decodeEncryptionSettings(char *src, int64_t &off, int64_t max,
-                                        EncryptionType &encryptionType,
-                                        string &iv, int32_t &tagInterval) {
-  ByteRange br = makeByteRange(src, max, off);
-  const ByteRange obr = br;
-  int64_t v;
-  bool ok = decodeInt64C(br, v) && decodeString(br, iv) &&
-            decodeInt32FixedLength(br, tagInterval);
-  if (ok) {
-    encryptionType = static_cast<EncryptionType>(v);
-  }
-  off += offset(br, obr);
-  return ok;
+bool Protocol::decodeEncryptionSettings(char *src, int64_t &off, int64_t max, EncryptionType &encryptionType, string &iv, int32_t &tagInterval) {
+    ByteRange br = makeByteRange(src, max, off);
+    const ByteRange obr = br;
+    int64_t v;
+    bool ok = decodeInt64C(br, v) && decodeString(br, iv) && decodeInt32FixedLength(br, tagInterval);
+    if (ok) {
+        encryptionType = static_cast<EncryptionType>(v);
+    }
+    off += offset(br, obr);
+    return ok;
 }
 
 bool Protocol::encodeFooter(char *dest, int64_t &off, int64_t max,

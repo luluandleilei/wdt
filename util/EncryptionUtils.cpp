@@ -26,24 +26,20 @@ using std::string;
 // than 1 hex character, the decoding already support more than 1
 static_assert(NUM_ENC_TYPES <= 16, "need to change encoding for types");
 
-const char* const kEncryptionTypeDescriptions[] = {"none", "aes128ctr",
-                                                   "aes128gcm"};
+const char* const kEncryptionTypeDescriptions[] = {"none", "aes128ctr", "aes128gcm"};
 
-static_assert(NUM_ENC_TYPES ==
-                  sizeof(kEncryptionTypeDescriptions) /
-                      sizeof(kEncryptionTypeDescriptions[0]),
-              "must provide description for all encryption types");
+static_assert(NUM_ENC_TYPES == sizeof(kEncryptionTypeDescriptions) / sizeof(kEncryptionTypeDescriptions[0]), "must provide description for all encryption types");
 
 std::string encryptionTypeToStr(EncryptionType encryptionType) {
-  if (encryptionType < 0 || encryptionType >= NUM_ENC_TYPES) {
-    WLOG(ERROR) << "Unknown encryption type " << encryptionType;
-    return folly::to<std::string>(encryptionType);
-  }
-  return kEncryptionTypeDescriptions[encryptionType];
+    if (encryptionType < 0 || encryptionType >= NUM_ENC_TYPES) {
+        WLOG(ERROR) << "Unknown encryption type " << encryptionType;
+        return folly::to<std::string>(encryptionType);
+    }
+    return kEncryptionTypeDescriptions[encryptionType];
 }
 
 size_t encryptionTypeToTagLen(EncryptionType type) {
-  return (type == ENC_AES128_GCM) ? kAESBlockSize : 0;
+    return (type == ENC_AES128_GCM) ? kAESBlockSize : 0;
 }
 
 static int s_numOpensslLocks = 0;
@@ -101,26 +97,26 @@ WdtCryptoIntializer::~WdtCryptoIntializer() {
 }
 
 EncryptionType parseEncryptionType(const std::string& str) {
-  if (str == kEncryptionTypeDescriptions[ENC_AES128_GCM]) {
-    return ENC_AES128_GCM;
-  }
-  if (str == kEncryptionTypeDescriptions[ENC_AES128_CTR]) {
-    return ENC_AES128_CTR;
-  }
-  if (str == kEncryptionTypeDescriptions[ENC_NONE]) {
+    if (str == kEncryptionTypeDescriptions[ENC_AES128_GCM]) {
+        return ENC_AES128_GCM;
+    }
+    if (str == kEncryptionTypeDescriptions[ENC_AES128_CTR]) {
+        return ENC_AES128_CTR;
+    }
+    if (str == kEncryptionTypeDescriptions[ENC_NONE]) {
+        return ENC_NONE;
+    }
+    WLOG(WARNING) << "Unknown encryption type" << str << ", defaulting to none";
     return ENC_NONE;
-  }
-  WLOG(WARNING) << "Unknown encryption type" << str << ", defaulting to none";
-  return ENC_NONE;
 }
 
 EncryptionParams::EncryptionParams(EncryptionType type, const string& data)
     : type_(type), data_(data) {
-  WLOG(INFO) << "New encryption params " << this << " " << getLogSafeString();
-  if (type_ < 0 || type_ >= NUM_ENC_TYPES) {
-    WLOG(ERROR) << "Unsupported type " << type;
-    erase();
-  }
+	WLOG(INFO) << "New encryption params " << this << " " << getLogSafeString();
+	if (type_ < 0 || type_ >= NUM_ENC_TYPES) {
+			WLOG(ERROR) << "Unsupported type " << type;
+			erase();
+	}
 }
 
 bool EncryptionParams::operator==(const EncryptionParams& that) const {
@@ -128,14 +124,14 @@ bool EncryptionParams::operator==(const EncryptionParams& that) const {
 }
 
 void EncryptionParams::erase() {
-  WVLOG(1) << " Erasing EncryptionParams " << this << " " << type_;
-  // Erase the key (once for now...)
-  if (!data_.empty()) {
-    // Can't use .data() here (copy on write fbstring)
-    memset(&data_.front(), 0, data_.size());
-  }
-  data_.clear();
-  type_ = ENC_NONE;
+	WVLOG(1) << " Erasing EncryptionParams " << this << " " << type_;
+	// Erase the key (once for now...)
+	if (!data_.empty()) {
+		// Can't use .data() here (copy on write fbstring)
+		memset(&data_.front(), 0, data_.size());
+	}
+	data_.clear();
+	type_ = ENC_NONE;
 }
 
 EncryptionParams::~EncryptionParams() {
@@ -166,8 +162,7 @@ string EncryptionParams::getLogSafeString() const {
 }
 
 /* static */
-ErrorCode EncryptionParams::unserialize(const string& input,
-                                        EncryptionParams& out) {
+ErrorCode EncryptionParams::unserialize(const string& input, EncryptionParams& out) {
   out.erase();
   enum {
     IN_TYPE,
@@ -215,8 +210,7 @@ ErrorCode EncryptionParams::unserialize(const string& input,
     return ERROR;
   }
   if (state != LEFT_HEX) {
-    WLOG(ERROR) << "Odd number of hex in encryption data " << input
-                << " decoded up to: " << out.data_;
+    WLOG(ERROR) << "Odd number of hex in encryption data " << input << " decoded up to: " << out.data_;
     return ERROR;
   }
   if (type <= ENC_NONE || type >= NUM_ENC_TYPES) {
@@ -229,18 +223,17 @@ ErrorCode EncryptionParams::unserialize(const string& input,
 }
 
 /* static */
-EncryptionParams EncryptionParams::generateEncryptionParams(
-    EncryptionType type) {
-  if (type == ENC_NONE) {
-    return EncryptionParams();
-  }
-  WDT_CHECK(type > ENC_NONE && type < NUM_ENC_TYPES);
-  uint8_t key[kAESBlockSize];
-  if (RAND_bytes(key, kAESBlockSize) != 1) {
-    WLOG(ERROR) << "RAND_bytes failed, unable to generate symmetric key";
-    return EncryptionParams();
-  }
-  return EncryptionParams(type, std::string(key, key + kAESBlockSize));
+EncryptionParams EncryptionParams::generateEncryptionParams(EncryptionType type) {
+    if (type == ENC_NONE) {
+        return EncryptionParams();
+    }
+    WDT_CHECK(type > ENC_NONE && type < NUM_ENC_TYPES);
+    uint8_t key[kAESBlockSize];
+    if (RAND_bytes(key, kAESBlockSize) != 1) {
+        WLOG(ERROR) << "RAND_bytes failed, unable to generate symmetric key";
+        return EncryptionParams();
+    }
+    return EncryptionParams(type, std::string(key, key + kAESBlockSize));
 }
 
 bool AESBase::cloneCtx(EVP_CIPHER_CTX* ctxOut) const {
@@ -398,55 +391,53 @@ AESEncryptor::~AESEncryptor() {
   finish(tag);
 }
 
-bool AESDecryptor::start(const EncryptionParams& encryptionData,
-                         const std::string& iv) {
-  WDT_CHECK(!started_);
+bool AESDecryptor::start(const EncryptionParams& encryptionData, const std::string& iv) {
+    WDT_CHECK(!started_);
 
-  // reset the enc ctx
-  evpCtx_.reset(createAndInitCtx());
+    // reset the enc ctx
+    evpCtx_.reset(createAndInitCtx());
 
-  type_ = encryptionData.getType();
+    type_ = encryptionData.getType();
 
-  const std::string& key = encryptionData.getSecret();
-  if (key.length() != kAESBlockSize) {
-    WLOG(ERROR) << "Encryption key size must be " << kAESBlockSize
-                << ", but input size length " << key.length();
-    return false;
-  }
-  if (iv.length() != kAESBlockSize) {
-    WLOG(ERROR) << "Initialization size must be " << kAESBlockSize
-                << ", but input size length " << iv.length();
-    return false;
-  }
-
-  uint8_t* ivPtr = (uint8_t*)(&iv.front());
-  uint8_t* keyPtr = (uint8_t*)(&key.front());
-
-  const EVP_CIPHER* cipher = getCipher(type_);
-  if (cipher == nullptr) {
-    return false;
-  }
-  int cipherBlockSize = EVP_CIPHER_block_size(cipher);
-  // block size for ctr mode should be 1
-  WDT_CHECK_EQ(1, cipherBlockSize);
-
-  if (type_ == ENC_AES128_GCM) {
-    if (EVP_EncryptInit_ex(evpCtx_.get(), cipher, nullptr, nullptr, nullptr) !=
-        1) {
-      WLOG(ERROR) << "GCM Decryptor First init error";
+    const std::string& key = encryptionData.getSecret();
+    if (key.length() != kAESBlockSize) {
+        WLOG(ERROR) << "Encryption key size must be " << kAESBlockSize << ", but input size length " << key.length();
+        return false;
     }
-    if (EVP_CIPHER_CTX_ctrl(evpCtx_.get(), EVP_CTRL_GCM_SET_IVLEN, iv.size(),
-                            nullptr) != 1) {
-      WLOG(ERROR) << "Encrypt Init ivlen set failed";
+    if (iv.length() != kAESBlockSize) {
+        WLOG(ERROR) << "Initialization size must be " << kAESBlockSize << ", but input size length " << iv.length();
+        return false;
     }
-  }
 
-  if (EVP_DecryptInit_ex(evpCtx_.get(), cipher, nullptr, keyPtr, ivPtr) != 1) {
-    WLOG(ERROR) << "Decrypt Init failed";
-    return false;
-  }
-  started_ = true;
-  return true;
+    uint8_t* ivPtr = (uint8_t*)(&iv.front());
+    uint8_t* keyPtr = (uint8_t*)(&key.front());
+
+    const EVP_CIPHER* cipher = getCipher(type_);
+    if (cipher == nullptr) {
+        return false;
+    }
+
+    int cipherBlockSize = EVP_CIPHER_block_size(cipher);
+    // block size for ctr mode should be 1
+    WDT_CHECK_EQ(1, cipherBlockSize);
+
+    if (type_ == ENC_AES128_GCM) {
+        if (EVP_EncryptInit_ex(evpCtx_.get(), cipher, nullptr, nullptr, nullptr) != 1) {
+            WLOG(ERROR) << "GCM Decryptor First init error";
+        }
+        if (EVP_CIPHER_CTX_ctrl(evpCtx_.get(), EVP_CTRL_GCM_SET_IVLEN, iv.size(),
+                    nullptr) != 1) {
+            WLOG(ERROR) << "Encrypt Init ivlen set failed";
+        }
+    }
+
+    if (EVP_DecryptInit_ex(evpCtx_.get(), cipher, nullptr, keyPtr, ivPtr) != 1) {
+        WLOG(ERROR) << "Decrypt Init failed";
+        return false;
+    }
+
+    started_ = true;
+    return true;
 }
 
 bool AESDecryptor::decrypt(const char* in, const int inLength, char* out) {

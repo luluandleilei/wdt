@@ -36,46 +36,46 @@ enum ThreadStatus { INIT, RUNNING, WAITING, FINISHED };
  * or the last thread entrance
  */
 class ExecuteOnceFunc {
- public:
-  /// Constructor for the once only executor
-  ExecuteOnceFunc(int numThreads, bool execFirst) {
-    execFirst_ = execFirst;
-    numThreads_ = numThreads;
-  }
-
-  /// Deleted copy constructor
-  ExecuteOnceFunc(const ExecuteOnceFunc &that) = delete;
-
-  /// Deleted assignment operator
-  ExecuteOnceFunc &operator=(const ExecuteOnceFunc &that) = delete;
-
-  /// Implements the main functionality of the executor
-  template <typename Func>
-  void execute(Func &&execFunc) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    ++numHits_;
-    WDT_CHECK(numHits_ <= numThreads_);
-    int64_t numExpected = (execFirst_) ? 1 : numThreads_;
-    if (numHits_ == numExpected) {
-      execFunc();
+public:
+    /// Constructor for the once only executor
+    ExecuteOnceFunc(int numThreads, bool execFirst) {
+        execFirst_ = execFirst;
+        numThreads_ = numThreads;
     }
-  }
 
-  /// Reset the number of hits
-  void reset() {
-    numHits_ = 0;
-  }
+    /// Deleted copy constructor
+    ExecuteOnceFunc(const ExecuteOnceFunc &that) = delete;
 
- private:
-  /// Mutex for thread synchronization
-  std::mutex mutex_;
-  /// Number of times execute has been called
-  int numHits_{0};
-  /// Function can be executed on the first
-  /// thread or the last thread
-  bool execFirst_{true};
-  /// Number of total threads
-  int numThreads_;
+    /// Deleted assignment operator
+    ExecuteOnceFunc &operator=(const ExecuteOnceFunc &that) = delete;
+
+    /// Implements the main functionality of the executor
+    template <typename Func>
+        void execute(Func &&execFunc) {
+            std::unique_lock<std::mutex> lock(mutex_);
+            ++numHits_;
+            WDT_CHECK(numHits_ <= numThreads_);
+            int64_t numExpected = (execFirst_) ? 1 : numThreads_;
+            if (numHits_ == numExpected) {
+                execFunc();
+            }
+        }
+
+    /// Reset the number of hits
+    void reset() {
+        numHits_ = 0;
+    }
+
+private:
+    /// Mutex for thread synchronization
+    std::mutex mutex_;
+    /// Number of times execute has been called
+    int numHits_{0};
+    /// Function can be executed on the first
+    /// thread or the last thread
+    bool execFirst_{true};
+    /// Number of total threads
+    int numThreads_;
 };
 
 /**
@@ -262,23 +262,20 @@ class Funnel {
  * session information
  */
 class ThreadsController {
- public:
-  /// Constructor that takes in the total number of threads
-  /// to be run
-  explicit ThreadsController(int totalThreads);
+public:
+    /// Constructor that takes in the total number of threads
+    /// to be run
+    explicit ThreadsController(int totalThreads);
 
-  /// Make threads of a type Sender/Receiver
-  template <typename WdtBaseType, typename WdtThreadType>
-  std::vector<std::unique_ptr<WdtThread>> makeThreads(
-      WdtBaseType *wdtParent, int numThreads,
-      const std::vector<int32_t> &ports) {
-    std::vector<std::unique_ptr<WdtThread>> threads;
-    for (int threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
-      threads.emplace_back(std::make_unique<WdtThreadType>(
-          wdtParent, threadIndex, ports[threadIndex], this));
-    }
-    return threads;
-  }
+    /// Make threads of a type Sender/Receiver
+    template <typename WdtBaseType, typename WdtThreadType>
+        std::vector<std::unique_ptr<WdtThread>> makeThreads(WdtBaseType *wdtParent, int numThreads, const std::vector<int32_t> &ports) {
+            std::vector<std::unique_ptr<WdtThread>> threads;
+            for (int threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
+                threads.emplace_back(std::make_unique<WdtThreadType>( wdtParent, threadIndex, ports[threadIndex], this));
+            }
+            return threads;
+        }
   ///  Mark the state of a thread
   void markState(int threadIndex, ThreadStatus state);
 

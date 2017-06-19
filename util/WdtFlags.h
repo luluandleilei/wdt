@@ -13,19 +13,17 @@
 #include <wdt/WdtOptions.h>
 
 namespace facebook {
-namespace wdt {
-class WdtFlags {
- public:
-  /**
-   * Set the values of options in WdtOptions from corresponding flags
-   */
-  static void initializeFromFlags(
-      WdtOptions& options = WdtOptions::getMutable());
+    namespace wdt {
+        class WdtFlags {
+         public:
+          /**
+           * Set the values of options in WdtOptions from corresponding flags
+           */
+          static void initializeFromFlags(WdtOptions& options = WdtOptions::getMutable());
 
-  static void printOptions(
-      std::ostream& out, const WdtOptions& options = WdtOptions::getMutable());
+          static void printOptions(std::ostream& out, const WdtOptions& options = WdtOptions::getMutable());
 
-  static std::set<std::string> getUserSpecifiedOptions();
-};
-}
+          static std::set<std::string> getUserSpecifiedOptions();
+        };
+    }
 }

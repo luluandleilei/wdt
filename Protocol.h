@@ -327,8 +327,7 @@ class Protocol {
   static constexpr int64_t kMaxVersion = 10;
   /// max size of encryption cmd(1 byte for cmd, 1 byte for
   /// encryption type, rest for initialization vector and tag interval)
-  static constexpr int64_t kEncryptionCmdLen =
-      1 + 1 + 1 + kAESBlockSize + sizeof(int32_t);
+  static constexpr int64_t kEncryptionCmdLen = 1 + 1 + 1 + kAESBlockSize + sizeof(int32_t);
 
   static_assert(kMinBufLength <= kMaxHeader && kMaxSettings <= kMaxHeader,
                 "Minimum buffer size is kMaxHeader. Header and Settings cmd "
@@ -350,8 +349,7 @@ class Protocol {
    *            version, that version is returned. If it can not support the
    *            requested version, 0 is returned
    */
-  static int negotiateProtocol(int requestedProtocolVersion,
-                               int curProtocolVersion = protocol_version);
+  static int negotiateProtocol(int requestedProtocolVersion, int curProtocolVersion = protocol_version);
 
   /// @return     max local checkpoint length for a specific version
   static int getMaxLocalCheckpointLength(int protocolVersion);

@@ -32,29 +32,26 @@ const char* WdtOptions::FLASH_OPTION_TYPE = "flash";
 const char* WdtOptions::DISK_OPTION_TYPE = "disk";
 
 void WdtOptions::modifyOptions(
-    const std::string& optionType,
-    const std::set<std::string>& userSpecifiedOptions) {
-  if (optionType == DISK_OPTION_TYPE) {
-    std::string msg("(disk option type)");
-    CHANGE_IF_NOT_SPECIFIED(num_ports, userSpecifiedOptions, 3, msg)
-    CHANGE_IF_NOT_SPECIFIED(block_size_mbytes, userSpecifiedOptions, -1, msg)
-    CHANGE_IF_NOT_SPECIFIED(disable_preallocation, userSpecifiedOptions, true,
-                            msg)
-    CHANGE_IF_NOT_SPECIFIED(resume_using_dir_tree, userSpecifiedOptions, true,
-                            msg)
-    return;
-  }
-  if (optionType != FLASH_OPTION_TYPE) {
-    WLOG(WARNING) << "Invalid option type " << optionType
-                  << ". Valid types are " << FLASH_OPTION_TYPE << ", "
-                  << DISK_OPTION_TYPE;
-  }
-  // options are initialized for flash. So, no need to change anything
-  if (userSpecifiedOptions.find("start_port") != userSpecifiedOptions.end() &&
-      !static_ports) {
-    WLOG(INFO) << "start_port is specified, setting static_ports true";
-    static_ports = true;
-  }
+	const std::string& optionType,
+	const std::set<std::string>& userSpecifiedOptions) {
+	if (optionType == DISK_OPTION_TYPE) {
+		std::string msg("(disk option type)");
+		CHANGE_IF_NOT_SPECIFIED(num_ports, userSpecifiedOptions, 3, msg)
+		CHANGE_IF_NOT_SPECIFIED(block_size_mbytes, userSpecifiedOptions, -1, msg)
+		CHANGE_IF_NOT_SPECIFIED(disable_preallocation, userSpecifiedOptions, true, msg)
+		CHANGE_IF_NOT_SPECIFIED(resume_using_dir_tree, userSpecifiedOptions, true, msg)
+		return;
+	}
+	if (optionType != FLASH_OPTION_TYPE) {
+		WLOG(WARNING) << "Invalid option type " << optionType
+		          << ". Valid types are " << FLASH_OPTION_TYPE << ", "
+		          << DISK_OPTION_TYPE;
+	}
+	// options are initialized for flash. So, no need to change anything
+	if (userSpecifiedOptions.find("start_port") != userSpecifiedOptions.end() && !static_ports) {
+		WLOG(INFO) << "start_port is specified, setting static_ports true";
+		static_ports = true;
+	}
 }
 
 bool WdtOptions::shouldPreallocateFiles() const {

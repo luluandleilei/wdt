@@ -175,209 +175,203 @@ void sigUSR1Handler(int) {
 
 int main(int argc, char *argv[]) {
 #ifdef WDTFBINIT
-  WDTFBINIT
+    WDTFBINIT
 #endif
-
-  FLAGS_logtostderr = true;
-  // Ugliness in gflags' api; to be able to use program name
-  GFLAGS_NAMESPACE::SetArgv(argc, const_cast<const char **>(argv));
-  GFLAGS_NAMESPACE::SetVersionString(Protocol::getFullVersion());
-  usage.assign("WDT Warp-speed Data Transfer. v ");
-  usage.append(GFLAGS_NAMESPACE::VersionString());
-  usage.append(". Sample usage:\nTo transfer from srchost to desthost:\n\t");
-  usage.append("ssh dsthost ");
-  usage.append(GFLAGS_NAMESPACE::ProgramInvocationShortName());
-  usage.append(" -directory destdir | ssh srchost ");
-  usage.append(GFLAGS_NAMESPACE::ProgramInvocationShortName());
-  usage.append(" -directory srcdir -");
-  usage.append(
-      "\nPassing - as the argument to wdt means start the sender and"
-      " read the");
-  usage.append(
-      "\nconnection URL produced by the receiver, including encryption"
-      " key, from stdin.");
-  usage.append("\nUse --help to see all the options.");
-  GFLAGS_NAMESPACE::SetUsageMessage(usage);
-  GFLAGS_NAMESPACE::gflags_exitfunc = [](int code) {
-    if (code == 0 || FLAGS_help) {
-      // By default gflags exit 1 with --help and 0 for --version (good)
-      // let's also exit(0) for --help to be like most gnu command line
-      exit(0);
-    }
-    // error cases:
-    if (FLAGS_exit_on_bad_flags) {
-      printUsage();
-      exit(code);
-    }
-    badGflagFound = true;
-  };
-  GFLAGS_NAMESPACE::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
-  if (badGflagFound) {
-    // will only work for receivers
-    WLOG(ERROR) << "Continuing despite bad flags";
-  } else {
-    // Only non -flag argument allowed so far is "-" meaning
-    // Read url from stdin and start a sender
-    if (argc > 2 || (argc == 2 && (argv[1][0] != '-' || argv[1][1] != '\0'))) {
-      printUsage();
-      std::cerr << "Error: argument should be - (to read url from stdin) "
-                << "or no arguments" << std::endl;
-      exit(1);
-    }
-  }
-  signal(SIGPIPE, SIG_IGN);
-  signal(SIGUSR1, sigUSR1Handler);
-
-  std::string connectUrl;
-  if (!badGflagFound && argc == 2) {
-    std::getline(std::cin, connectUrl);
-    if (connectUrl.empty()) {
-      WLOG(ERROR)
-          << "Sender unable to read connection url from stdin - exiting";
-      return URI_PARSE_ERROR;
-    }
-  } else {
-    connectUrl = FLAGS_connection_url;
-  }
-
-  // Might be a sub class (fbonly wdtCmdLine.cpp)
-  Wdt &wdt = WDTCLASS::initializeWdt(FLAGS_app_name);
-  if (FLAGS_print_options) {
-    wdt.printWdtOptions(std::cout);
-    return 0;
-  }
-  WdtOptions &options = wdt.getWdtOptions();
-
-  ErrorCode retCode = OK;
-
-  // Odd ball case of log parsing
-  if (FLAGS_parse_transfer_log) {
-    // Log parsing mode
-    options.enable_download_resumption = true;
-    TransferLogManager transferLogManager(options, FLAGS_directory);
-    transferLogManager.openLog();
-    bool success = transferLogManager.parseAndPrint();
-    WLOG_IF(ERROR, !success) << "Transfer log parsing failed";
-    transferLogManager.closeLog();
-    return success ? OK : ERROR;
-  }
-
-  // General case : Sender or Receiver
-  std::unique_ptr<WdtTransferRequest> reqPtr;
-  if (connectUrl.empty()) {
-    reqPtr = std::make_unique<WdtTransferRequest>(
-        options.start_port, options.num_ports, FLAGS_directory);
-    reqPtr->hostName = FLAGS_destination;
-    reqPtr->transferId = FLAGS_transfer_id;
-    if (!FLAGS_test_only_encryption_secret.empty()) {
-      reqPtr->encryptionData =
-          EncryptionParams(parseEncryptionType(options.encryption_type),
-                           FLAGS_test_only_encryption_secret);
-    }
-    reqPtr->ivChangeInterval = options.iv_change_interval_mb * kMbToB;
-  } else {
-    reqPtr = std::make_unique<WdtTransferRequest>(connectUrl);
-    if (reqPtr->errorCode != OK) {
-      WLOG(ERROR) << "Invalid url \"" << connectUrl
-                  << "\" : " << errorCodeToStr(reqPtr->errorCode);
-      return ERROR;
-    }
-    reqPtr->directory = FLAGS_directory;
-    WLOG(INFO) << "Parsed url as " << reqPtr->getLogSafeString();
-  }
-  WdtTransferRequest &req = *reqPtr;
-  req.wdtNamespace = FLAGS_namespace;
-  if (!FLAGS_dest_id.empty()) {
-    req.destIdentifier = FLAGS_dest_id;
-  }
-  if (FLAGS_protocol_version > 0) {
-    req.protocolVersion = FLAGS_protocol_version;
-  }
-  if (!FLAGS_hostname.empty()) {
-    reqPtr->hostName = FLAGS_hostname;
-  }
-  if (FLAGS_destination.empty() && connectUrl.empty()) {
-    Receiver receiver(req);
-    WdtOptions &recOptions = receiver.getWdtOptions();
-    if (FLAGS_run_as_daemon) {
-      // Backward compatible with static ports, you can still get dynamic
-      // daemon ports using -start_port 0 like before
-      recOptions.static_ports = true;
-    }
-    if (!FLAGS_recovery_id.empty()) {
-      // TODO: add a test for this
-      recOptions.enable_download_resumption = true;
-      receiver.setRecoveryId(FLAGS_recovery_id);
-    }
-    WdtTransferRequest augmentedReq = receiver.init();
-    retCode = augmentedReq.errorCode;
-    if (retCode == FEWER_PORTS) {
-      if (FLAGS_treat_fewer_port_as_error) {
-        WLOG(ERROR) << "Receiver could not bind to all the ports";
-        return FEWER_PORTS;
-      }
-      retCode = OK;
-    } else if (augmentedReq.errorCode != OK) {
-      WLOG(ERROR) << "Error setting up receiver " << errorCodeToStr(retCode);
-      return retCode;
-    }
-    // In the log:
-    WLOG(INFO) << "Starting receiver with connection url "
-               << augmentedReq.getLogSafeString();  // The url without secret
-    // on stdout: the one with secret:
-    std::cout << augmentedReq.genWdtUrlWithSecret() << std::endl;
-    std::cout.flush();
-    if (FLAGS_fork) {
-      pid_t cpid = fork();
-      if (cpid == -1) {
-        perror("Failed to fork()");
-        exit(1);
-      }
-      if (cpid > 0) {
-        WLOG(INFO) << "Detaching receiver";
-        exit(0);
-      }
-      close(0);
-      close(1);
-    }
-    setAbortChecker(receiver);
-    if (!FLAGS_run_as_daemon) {
-      retCode = receiver.transferAsync();
-      if (retCode == OK) {
-        std::unique_ptr<TransferReport> report = receiver.finish();
-        retCode = report->getSummary().getErrorCode();
-      }
+    FLAGS_logtostderr = true;
+    // Ugliness in gflags' api; to be able to use program name
+    GFLAGS_NAMESPACE::SetArgv(argc, const_cast<const char **>(argv));
+    GFLAGS_NAMESPACE::SetVersionString(Protocol::getFullVersion());
+    usage.assign("WDT Warp-speed Data Transfer. v ");
+    usage.append(GFLAGS_NAMESPACE::VersionString());
+    usage.append(". Sample usage:\nTo transfer from srchost to desthost:\n\t");
+    usage.append("ssh dsthost ");
+    usage.append(GFLAGS_NAMESPACE::ProgramInvocationShortName());
+    usage.append(" -directory destdir | ssh srchost ");
+    usage.append(GFLAGS_NAMESPACE::ProgramInvocationShortName());
+    usage.append(" -directory srcdir -");
+    usage.append(
+		    "\nPassing - as the argument to wdt means start the sender and"
+		    " read the");
+    usage.append(
+		    "\nconnection URL produced by the receiver, including encryption"
+		    " key, from stdin.");
+    usage.append("\nUse --help to see all the options.");
+    GFLAGS_NAMESPACE::SetUsageMessage(usage);
+    GFLAGS_NAMESPACE::gflags_exitfunc = [](int code) {
+	    if (code == 0 || FLAGS_help) {
+		    // By default gflags exit 1 with --help and 0 for --version (good)
+		    // let's also exit(0) for --help to be like most gnu command line
+		    exit(0);
+	    }
+	    // error cases:
+	    if (FLAGS_exit_on_bad_flags) {
+		    printUsage();
+		    exit(code);
+	    }
+	    badGflagFound = true;
+    };
+    GFLAGS_NAMESPACE::ParseCommandLineFlags(&argc, &argv, true);
+    google::InitGoogleLogging(argv[0]);
+    if (badGflagFound) {
+	    // will only work for receivers
+	    WLOG(ERROR) << "Continuing despite bad flags";
     } else {
-      retCode = receiver.runForever();
-      // not reached
+	    // Only non -flag argument allowed so far is "-" meaning
+	    // Read url from stdin and start a sender
+	    if (argc > 2 || (argc == 2 && (argv[1][0] != '-' || argv[1][1] != '\0'))) {
+		    printUsage();
+		    std::cerr << "Error: argument should be - (to read url from stdin) "
+			    << "or no arguments" << std::endl;
+		    exit(1);
+	    }
     }
-  } else {
-    // Sender mode
-    if (!FLAGS_manifest.empty()) {
-      // Each line should have the filename and optionally
-      // the filesize separated by a single space
-      if (FLAGS_manifest == "-") {
-        readManifest(std::cin, req, options.odirect_reads);
-      } else {
-        std::ifstream fin(FLAGS_manifest);
-        readManifest(fin, req, options.odirect_reads);
-        fin.close();
-      }
-      WLOG(INFO) << "Using files lists, number of files "
-                 << req.fileInfo.size();
-    }
-    WLOG(INFO) << "Making Sender with encryption set = "
-               << req.encryptionData.isSet();
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGUSR1, sigUSR1Handler);
 
-    retCode = wdt.wdtSend(req, setupAbortChecker());
-  }
-  cancelAbort();
-  if (retCode == OK) {
-    WLOG(INFO) << "Returning with OK exit code";
-  } else {
-    WLOG(ERROR) << "Returning with code " << retCode << " "
-                << errorCodeToStr(retCode);
-  }
-  return retCode;
+    std::string connectUrl;
+    if (!badGflagFound && argc == 2) {
+	    std::getline(std::cin, connectUrl);
+	    if (connectUrl.empty()) {
+		    WLOG(ERROR)
+			    << "Sender unable to read connection url from stdin - exiting";
+		    return URI_PARSE_ERROR;
+	    }
+    } else {
+	    connectUrl = FLAGS_connection_url;
+    }
+
+    // Might be a sub class (fbonly wdtCmdLine.cpp)
+    Wdt &wdt = WDTCLASS::initializeWdt(FLAGS_app_name);
+    if (FLAGS_print_options) {
+	    wdt.printWdtOptions(std::cout);
+	    return 0;
+    }
+    WdtOptions &options = wdt.getWdtOptions();
+
+    ErrorCode retCode = OK;
+
+    // Odd ball case of log parsing
+    if (FLAGS_parse_transfer_log) {
+	    // Log parsing mode
+	    options.enable_download_resumption = true;
+	    TransferLogManager transferLogManager(options, FLAGS_directory);
+	    transferLogManager.openLog();
+	    bool success = transferLogManager.parseAndPrint();
+	    WLOG_IF(ERROR, !success) << "Transfer log parsing failed";
+	    transferLogManager.closeLog();
+	    return success ? OK : ERROR;
+    }
+
+    // General case : Sender or Receiver
+    std::unique_ptr<WdtTransferRequest> reqPtr;
+    if (connectUrl.empty()) {
+	    reqPtr = std::make_unique<WdtTransferRequest>(options.start_port, options.num_ports, FLAGS_directory);
+	    reqPtr->hostName = FLAGS_destination;
+	    reqPtr->transferId = FLAGS_transfer_id;
+	    if (!FLAGS_test_only_encryption_secret.empty()) {
+		    reqPtr->encryptionData = EncryptionParams(parseEncryptionType(options.encryption_type), FLAGS_test_only_encryption_secret);
+	    }
+	    reqPtr->ivChangeInterval = options.iv_change_interval_mb * kMbToB;
+    } else {
+	    reqPtr = std::make_unique<WdtTransferRequest>(connectUrl);
+	    if (reqPtr->errorCode != OK) {
+		    WLOG(ERROR) << "Invalid url \"" << connectUrl << "\" : " << errorCodeToStr(reqPtr->errorCode);
+		    return ERROR;
+	    }
+	    reqPtr->directory = FLAGS_directory;
+	    WLOG(INFO) << "Parsed url as " << reqPtr->getLogSafeString();
+    }
+    WdtTransferRequest &req = *reqPtr;
+    req.wdtNamespace = FLAGS_namespace;
+    if (!FLAGS_dest_id.empty()) {
+	    req.destIdentifier = FLAGS_dest_id;
+    }
+    if (FLAGS_protocol_version > 0) {
+	    req.protocolVersion = FLAGS_protocol_version;
+    }
+    if (!FLAGS_hostname.empty()) {
+	    reqPtr->hostName = FLAGS_hostname;
+    }
+    if (FLAGS_destination.empty() && connectUrl.empty()) {
+	    Receiver receiver(req);
+	    WdtOptions &recOptions = receiver.getWdtOptions();
+	    if (FLAGS_run_as_daemon) {
+		    // Backward compatible with static ports, you can still get dynamic
+		    // daemon ports using -start_port 0 like before
+		    recOptions.static_ports = true;
+	    }
+	    if (!FLAGS_recovery_id.empty()) {
+		    // TODO: add a test for this
+		    recOptions.enable_download_resumption = true;
+		    receiver.setRecoveryId(FLAGS_recovery_id);
+	    }
+	    WdtTransferRequest augmentedReq = receiver.init();
+	    retCode = augmentedReq.errorCode;
+	    if (retCode == FEWER_PORTS) {
+		    if (FLAGS_treat_fewer_port_as_error) {
+			    WLOG(ERROR) << "Receiver could not bind to all the ports";
+			    return FEWER_PORTS;
+		    }
+		    retCode = OK;
+	    } else if (augmentedReq.errorCode != OK) {
+		    WLOG(ERROR) << "Error setting up receiver " << errorCodeToStr(retCode);
+		    return retCode;
+	    }
+	    // In the log:
+	    WLOG(INFO) << "Starting receiver with connection url " << augmentedReq.getLogSafeString();  // The url without secret
+	    // on stdout: the one with secret:
+	    std::cout << augmentedReq.genWdtUrlWithSecret() << std::endl;
+	    std::cout.flush();
+	    if (FLAGS_fork) {
+		    pid_t cpid = fork();
+		    if (cpid == -1) {
+			    perror("Failed to fork()");
+			    exit(1);
+		    }
+		    if (cpid > 0) {
+			    WLOG(INFO) << "Detaching receiver";
+			    exit(0);
+		    }
+		    close(0);
+		    close(1);
+	    }
+	    setAbortChecker(receiver);
+	    if (!FLAGS_run_as_daemon) {
+		    retCode = receiver.transferAsync();
+		    if (retCode == OK) {
+			    std::unique_ptr<TransferReport> report = receiver.finish();
+			    retCode = report->getSummary().getErrorCode();
+		    }
+	    } else {
+		    retCode = receiver.runForever();
+		    // not reached
+	    }
+    } else {
+	    // Sender mode
+	    if (!FLAGS_manifest.empty()) {
+		    // Each line should have the filename and optionally
+		    // the filesize separated by a single space
+		    if (FLAGS_manifest == "-") {
+			    readManifest(std::cin, req, options.odirect_reads);
+		    } else {
+			    std::ifstream fin(FLAGS_manifest);
+			    readManifest(fin, req, options.odirect_reads);
+			    fin.close();
+		    }
+		    WLOG(INFO) << "Using files lists, number of files "
+			    << req.fileInfo.size();
+	    }
+	    WLOG(INFO) << "Making Sender with encryption set = "
+		    << req.encryptionData.isSet();
+
+	    retCode = wdt.wdtSend(req, setupAbortChecker());
+    }
+    cancelAbort();
+    if (retCode == OK) {
+	    WLOG(INFO) << "Returning with OK exit code";
+    } else {
+	    WLOG(ERROR) << "Returning with code " << retCode << " "
+		    << errorCodeToStr(retCode);
+    }
+    return retCode;
 }

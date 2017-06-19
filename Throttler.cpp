@@ -50,9 +50,7 @@ void Throttler::configureOptions(double& avgRateBytesPerSec,
   }
 }
 
-Throttler::Throttler(double avgRateBytesPerSec, double peakRateBytesPerSec,
-                     double bucketLimitBytes, int64_t singleRequestLimit,
-                     int64_t throttlerLogTimeMillis)
+Throttler::Throttler(double avgRateBytesPerSec, double peakRateBytesPerSec, double bucketLimitBytes, int64_t singleRequestLimit, int64_t throttlerLogTimeMillis)
     : avgRateBytesPerSec_(avgRateBytesPerSec) {
   bucketRateBytesPerSec_ = peakRateBytesPerSec;
   bytesTokenBucketLimit_ =

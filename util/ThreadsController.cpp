@@ -137,19 +137,19 @@ void Barrier::deRegister() {
 }
 
 ThreadsController::ThreadsController(int totalThreads) {
-  totalThreads_ = totalThreads;
-  for (int threadNum = 0; threadNum < totalThreads; ++threadNum) {
-    threadStateMap_[threadNum] = INIT;
-  }
-  execAtStart_.reset(new ExecuteOnceFunc(totalThreads_, true));
-  execAtEnd_.reset(new ExecuteOnceFunc(totalThreads_, false));
+    totalThreads_ = totalThreads;
+    for (int threadNum = 0; threadNum < totalThreads; ++threadNum) {
+        threadStateMap_[threadNum] = INIT;
+    }
+    execAtStart_.reset(new ExecuteOnceFunc(totalThreads_, true));
+    execAtEnd_.reset(new ExecuteOnceFunc(totalThreads_, false));
 }
 
 void ThreadsController::registerThread(int threadIndex) {
-  GuardLock lock(controllerMutex_);
-  auto it = threadStateMap_.find(threadIndex);
-  WDT_CHECK(it != threadStateMap_.end());
-  threadStateMap_[threadIndex] = RUNNING;
+    GuardLock lock(controllerMutex_);
+    auto it = threadStateMap_.find(threadIndex);
+    WDT_CHECK(it != threadStateMap_.end());
+    threadStateMap_[threadIndex] = RUNNING;
 }
 
 void ThreadsController::deRegisterThread(int threadIndex) {

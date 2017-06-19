@@ -96,43 +96,40 @@ const ReceiverThread::StateFunction ReceiverThread::stateMap_[] = {
     &ReceiverThread::waitForFinishOrNewCheckpoint,
     &ReceiverThread::finishWithError};
 
-ReceiverThread::ReceiverThread(Receiver *wdtParent, int threadIndex,
-                               int32_t port, ThreadsController *controller)
-    : WdtThread(wdtParent->options_, threadIndex, port,
-                wdtParent->getProtocolVersion(), controller),
-      wdtParent_(wdtParent) {
-  controller_->registerThread(threadIndex_);
-  threadCtx_->setAbortChecker(&wdtParent_->abortCheckerCallback_);
+ReceiverThread::ReceiverThread(Receiver *wdtParent, int threadIndex, int32_t port, ThreadsController *controller)
+    : WdtThread(wdtParent->options_, threadIndex, port, wdtParent->getProtocolVersion(), controller), wdtParent_(wdtParent) {
+        controller_->registerThread(threadIndex_);
+        threadCtx_->setAbortChecker(&wdtParent_->abortCheckerCallback_);
 }
 
 /**LISTEN STATE***/
 ReceiverState ReceiverThread::listen() {
-  WTVLOG(1) << "entered LISTEN state";
-  const bool doActualWrites = !options_.skip_writes;
-  int32_t port = socket_->getPort();
-  WVLOG(1) << "Server Thread for port " << port << " with backlog "
-           << socket_->getBackLog() << " on " << wdtParent_->getDirectory()
-           << " writes = " << doActualWrites;
+    WTVLOG(1) << "entered LISTEN state";
 
-  for (int retry = 1; retry < options_.max_retries; ++retry) {
-    ErrorCode code = socket_->listen();
-    if (code == OK) {
-      break;
-    } else if (code == CONN_ERROR) {
-      threadStats_.setLocalErrorCode(code);
-      return FINISH_WITH_ERROR;
+    const bool doActualWrites = !options_.skip_writes;
+    int32_t port = socket_->getPort();
+
+    WVLOG(1) << "Server Thread for port " << port << " with backlog " << socket_->getBackLog() << " on " << wdtParent_->getDirectory() << " writes = " << doActualWrites;
+
+    for (int retry = 1; retry < options_.max_retries; ++retry) {
+        ErrorCode code = socket_->listen();
+        if (code == OK) {
+            break;
+        } else if (code == CONN_ERROR) {
+            threadStats_.setLocalErrorCode(code);
+            return FINISH_WITH_ERROR;
+        }
+        WTLOG(INFO) << "Sleeping after failed attempt " << retry;
+        /* sleep override */
+        usleep(options_.sleep_millis * 1000);
     }
-    WTLOG(INFO) << "Sleeping after failed attempt " << retry;
-    /* sleep override */
-    usleep(options_.sleep_millis * 1000);
-  }
-  // one more/last try (stays true if it worked above)
-  if (socket_->listen() != OK) {
-    WTLOG(ERROR) << "Unable to listen/bind despite retries";
-    threadStats_.setLocalErrorCode(CONN_ERROR);
-    return FINISH_WITH_ERROR;
-  }
-  return ACCEPT_FIRST_CONNECTION;
+    // one more/last try (stays true if it worked above)
+    if (socket_->listen() != OK) {
+        WTLOG(ERROR) << "Unable to listen/bind despite retries";
+        threadStats_.setLocalErrorCode(CONN_ERROR);
+        return FINISH_WITH_ERROR;
+    }
+    return ACCEPT_FIRST_CONNECTION;
 }
 
 /***ACCEPT_FIRST_CONNECTION***/
@@ -164,8 +161,7 @@ ReceiverState ReceiverThread::acceptFirstConnection() {
         break;
       }
       case Receiver::AcceptMode::STOP_ACCEPTING: {
-        WTLOG(ERROR) << "Receiver is asked to stop accepting, attempts : "
-                     << acceptAttempts;
+        WTLOG(ERROR) << "Receiver is asked to stop accepting, attempts : " << acceptAttempts;
         threadStats_.setLocalErrorCode(CONN_ERROR);
         return FINISH_WITH_ERROR;
       }
@@ -667,10 +663,10 @@ void ReceiverThread::markBlockVerified(const BlockDetails &blockDetails) {
 }
 
 void ReceiverThread::markReceivedBlocksVerified() {
-  for (const BlockDetails &blockDetails : blocksWaitingVerification_) {
-    markBlockVerified(blockDetails);
-  }
-  blocksWaitingVerification_.clear();
+    for (const BlockDetails &blockDetails : blocksWaitingVerification_) {
+        markBlockVerified(blockDetails);
+    }
+    blocksWaitingVerification_.clear();
 }
 
 ReceiverState ReceiverThread::processDoneCmd() {
@@ -966,30 +962,32 @@ ReceiverState ReceiverThread::waitForFinishOrNewCheckpoint() {
 }
 
 void ReceiverThread::start() {
-  if (buf_ == nullptr) {
-    WTLOG(ERROR) << "Unable to allocate buffer";
-    threadStats_.setLocalErrorCode(MEMORY_ALLOCATION_ERROR);
-    return;
-  }
-  ReceiverState state = LISTEN;
-  while (true) {
-    ErrorCode abortCode = wdtParent_->getCurAbortCode();
-    if (abortCode != OK) {
-      WTLOG(ERROR) << "Transfer aborted " << socket_->getPort() << " "
-                   << errorCodeToStr(abortCode);
-      threadStats_.setLocalErrorCode(ABORT);
-      break;
+    if (buf_ == nullptr) {
+        WTLOG(ERROR) << "Unable to allocate buffer";
+        threadStats_.setLocalErrorCode(MEMORY_ALLOCATION_ERROR);
+        return;
     }
-    if (state == END) {
-      break;
+
+    ReceiverState state = LISTEN;
+
+    while (true) {
+        ErrorCode abortCode = wdtParent_->getCurAbortCode();
+        if (abortCode != OK) {
+            WTLOG(ERROR) << "Transfer aborted " << socket_->getPort() << " " << errorCodeToStr(abortCode);
+            threadStats_.setLocalErrorCode(ABORT);
+            break;
+        }
+        if (state == END) {
+            break;
+        }
+        state = (this->*stateMap_[state])();
     }
-    state = (this->*stateMap_[state])();
-  }
-  controller_->deRegisterThread(threadIndex_);
-  controller_->executeAtEnd([&]() { wdtParent_->endCurGlobalSession(); });
-  WDT_CHECK(socket_.get());
-  threadStats_.setEncryptionType(socket_->getEncryptionType());
-  WTLOG(INFO) << threadStats_;
+
+    controller_->deRegisterThread(threadIndex_);
+    controller_->executeAtEnd([&]() { wdtParent_->endCurGlobalSession(); });
+    WDT_CHECK(socket_.get());
+    threadStats_.setEncryptionType(socket_->getEncryptionType());
+    WTLOG(INFO) << threadStats_;
 }
 
 int32_t ReceiverThread::getPort() const {
@@ -997,28 +995,26 @@ int32_t ReceiverThread::getPort() const {
 }
 
 ErrorCode ReceiverThread::init() {
-  const EncryptionParams &encryptionData =
-      wdtParent_->transferRequest_.encryptionData;
-  Func tagVerificationSuccessCallback = [this] {
-    this->markReceivedBlocksVerified();
-  };
-  socket_ = std::make_unique<ServerSocket>(
-      *threadCtx_, port_, wdtParent_->backlog_, encryptionData,
-      wdtParent_->transferRequest_.ivChangeInterval,
-      std::move(tagVerificationSuccessCallback));
-  int max_retries = options_.max_retries;
-  for (int retries = 0; retries < max_retries; retries++) {
-    if (socket_->listen() == OK) {
-      break;
+    const EncryptionParams &encryptionData = wdtParent_->transferRequest_.encryptionData;
+
+    Func tagVerificationSuccessCallback = [this] {
+        this->markReceivedBlocksVerified();
+    };
+    socket_ = std::make_unique<ServerSocket>(*threadCtx_, port_, wdtParent_->backlog_, encryptionData, wdtParent_->transferRequest_.ivChangeInterval, std::move(tagVerificationSuccessCallback));
+
+    int max_retries = options_.max_retries;
+    for (int retries = 0; retries < max_retries; retries++) {
+        if (socket_->listen() == OK) {
+            break;
+        }
     }
-  }
-  if (socket_->listen() != OK) {
-    WTLOG(ERROR) << "Couldn't listen on port " << socket_->getPort();
-    return ERROR;
-  }
-  checkpoint_.port = socket_->getPort();
-  WTLOG(INFO) << "Listening on port " << socket_->getPort();
-  return OK;
+    if (socket_->listen() != OK) {
+        WTLOG(ERROR) << "Couldn't listen on port " << socket_->getPort();
+        return ERROR;
+    }
+    checkpoint_.port = socket_->getPort();
+    WTLOG(INFO) << "Listening on port " << socket_->getPort();
+    return OK;
 }
 
 void ReceiverThread::reset() {

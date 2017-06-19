@@ -647,8 +647,7 @@ ErrorCode WdtResourceController::deRegisterWdtNamespace(
   return OK;
 }
 
-void WdtResourceController::updateMaxReceiversLimit(
-    const std::string &wdtNamespace, int64_t maxNumReceivers) {
+void WdtResourceController::updateMaxReceiversLimit(const std::string &wdtNamespace, int64_t maxNumReceivers) {
   auto controller = getNamespaceController(wdtNamespace);
   if (controller) {
     controller->updateMaxReceiversLimit(maxNumReceivers);
@@ -673,8 +672,7 @@ const WdtOptions &WdtResourceController::getOptions() const {
 
 // TODO: consider putting strict/not strict handling logic here...
 shared_ptr<WdtNamespaceController>
-WdtResourceController::getNamespaceController(
-    const string &wdtNamespace) const {
+WdtResourceController::getNamespaceController(const string &wdtNamespace) const {
   GuardLock lock(controllerMutex_);
   auto it = namespaceMap_.find(wdtNamespace);
   if (it != namespaceMap_.end()) {

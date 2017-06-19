@@ -64,8 +64,7 @@ ThreadCtx::ThreadCtx(const WdtOptions& options, bool allocateBuffer)
   buffer_ = std::make_unique<Buffer>(options_.buffer_size);
 }
 
-ThreadCtx::ThreadCtx(const WdtOptions& options, bool allocateBuffer,
-                     int threadIndex)
+ThreadCtx::ThreadCtx(const WdtOptions& options, bool allocateBuffer, int threadIndex)
     : ThreadCtx(options, allocateBuffer) {
   threadIndex_ = threadIndex;
 }

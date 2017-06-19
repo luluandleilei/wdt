@@ -23,37 +23,34 @@ class ThreadsController;
 
 /// Common functionality and settings between SenderThread and ReceiverThread
 class WdtThread {
- public:
-  /// Constructor for wdt thread
-  WdtThread(const WdtOptions &options, int threadIndex, int port,
-            int protocolVersion, ThreadsController *controller)
-      : options_(options),
-        port_(port),
-        threadProtocolVersion_(protocolVersion) {
-    controller_ = controller;
-    threadCtx_ = std::make_unique<ThreadCtx>(
-        options, /* allocate buffer */ true, threadIndex);
-    const Buffer *buffer = threadCtx_->getBuffer();
-    WDT_CHECK(buffer);
-    buf_ = buffer->getData();
-    bufSize_ = buffer->getSize();
-    threadIndex_ = threadCtx_->getThreadIndex();
-    lastHeartBeatTime_ = Clock::now();
-  }
-  /// Starts a thread which runs the wdt functionality
-  void startThread();
+public:
+    /// Constructor for wdt thread
+    WdtThread(const WdtOptions &options, int threadIndex, int port, int protocolVersion, ThreadsController *controller)
+        : options_(options), port_(port), threadProtocolVersion_(protocolVersion) {
+            controller_ = controller;
+            threadCtx_ = std::make_unique<ThreadCtx>( options, /* allocate buffer */ true, threadIndex);
+            const Buffer *buffer = threadCtx_->getBuffer();
+            WDT_CHECK(buffer);
+            buf_ = buffer->getData();
+            bufSize_ = buffer->getSize();
+            threadIndex_ = threadCtx_->getThreadIndex();
+            lastHeartBeatTime_ = Clock::now();
+        }
 
-  /// Get the perf stats of the transfer for this thread
-  const PerfStatReport &getPerfReport() const;
+    /// Starts a thread which runs the wdt functionality
+    void startThread();
 
-  /// Initializes the wdt thread before starting
-  virtual ErrorCode init() = 0;
+    /// Get the perf stats of the transfer for this thread
+    const PerfStatReport &getPerfReport() const;
 
-  /// Conclude the thread transfer
-  virtual ErrorCode finish();
+    /// Initializes the wdt thread before starting
+    virtual ErrorCode init() = 0;
 
-  /// Moves the local stats into a new instance
-  TransferStats moveStats();
+    /// Conclude the thread transfer
+    virtual ErrorCode finish();
+
+    /// Moves the local stats into a new instance
+    TransferStats moveStats();
 
   /// Get the transfer stats recorded by this thread
   const TransferStats &getTransferStats() const;

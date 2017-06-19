@@ -137,8 +137,7 @@ class Wdt {
       std::shared_ptr<IAbortChecker> abortChecker);
 
   // Internal wdt object creator/holder
-  static Wdt &getWdtInternal(const std::string &appName,
-                             std::function<Wdt *()> factory);
+  static Wdt &getWdtInternal(const std::string &appName, std::function<Wdt *()> factory);
 
   /// Private constructor
   explicit Wdt();

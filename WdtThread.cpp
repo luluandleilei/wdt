@@ -26,14 +26,14 @@ const TransferStats &WdtThread::getTransferStats() const {
 }
 
 void WdtThread::startThread() {
-  if (threadPtr_) {
-    WDT_CHECK(false) << "There is a already a thread running " << threadIndex_
-                     << " " << getPort();
-  }
-  auto state = controller_->getState(threadIndex_);
-  // Check the state should be running here
-  WDT_CHECK_EQ(state, RUNNING);
-  threadPtr_.reset(new std::thread(&WdtThread::start, this));
+    if (threadPtr_) {
+        WDT_CHECK(false) << "There is a already a thread running " << threadIndex_ << " " << getPort();
+    }
+    auto state = controller_->getState(threadIndex_);
+    // Check the state should be running here
+    WDT_CHECK_EQ(state, RUNNING);
+
+    threadPtr_.reset(new std::thread(&WdtThread::start, this));
 }
 
 ErrorCode WdtThread::finish() {

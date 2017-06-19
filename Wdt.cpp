@@ -197,8 +197,7 @@ static std::unordered_map<std::string, std::unique_ptr<Wdt>> s_wdtMap;
 static std::mutex s_mutex;
 
 // private version
-Wdt &Wdt::getWdtInternal(const std::string &appName,
-                         std::function<Wdt *()> factory) {
+Wdt &Wdt::getWdtInternal(const std::string &appName, std::function<Wdt *()> factory) {
   std::lock_guard<std::mutex> lock(s_mutex);
   auto it = s_wdtMap.find(appName);
   if (it != s_wdtMap.end()) {

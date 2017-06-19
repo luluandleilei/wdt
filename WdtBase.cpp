@@ -87,12 +87,10 @@ void WdtBase::negotiateProtocol() {
   WDT_CHECK(protocol > 0) << "Protocol version can't be <= 0 " << protocol;
   int negotiatedPv = Protocol::negotiateProtocol(protocol);
   if (negotiatedPv != protocol) {
-    WLOG(WARNING) << "Negotiated protocol version " << protocol << " -> "
-                  << negotiatedPv;
+    WLOG(WARNING) << "Negotiated protocol version " << protocol << " -> " << negotiatedPv;
   }
   transferRequest_.protocolVersion = negotiatedPv;
-  WLOG(INFO) << "using wdt protocol version "
-             << transferRequest_.protocolVersion;
+  WLOG(INFO) << "using wdt protocol version " << transferRequest_.protocolVersion;
 }
 
 int WdtBase::getProtocolVersion() const {
@@ -158,11 +156,11 @@ ErrorCode WdtBase::validateTransferRequest() {
 }
 
 void WdtBase::setTransferStatus(TransferStatus transferStatus) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  transferStatus_ = transferStatus;
-  if (transferStatus_ == THREADS_JOINED) {
-    conditionFinished_.notify_one();
-  }
+    std::lock_guard<std::mutex> lock(mutex_);
+    transferStatus_ = transferStatus;
+    if (transferStatus_ == THREADS_JOINED) {
+	    conditionFinished_.notify_one();
+    }
 }
 
 bool WdtBase::isStale() {

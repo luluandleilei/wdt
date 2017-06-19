@@ -263,8 +263,7 @@ WdtUri& WdtUri::operator=(const string& url) {
 }
 
 /* static */
-std::vector<int32_t> WdtTransferRequest::genPortsVector(int32_t startPort,
-                                                        int32_t numPorts) {
+std::vector<int32_t> WdtTransferRequest::genPortsVector(int32_t startPort, int32_t numPorts) {
   std::vector<int32_t> ports;
   for (int32_t i = 0; i < numPorts; i++) {
     ports.push_back(startPort + i);
@@ -285,16 +284,15 @@ const string WdtTransferRequest::DEST_IDENTIFIER_PARAM{"dstid"};
 const string WdtTransferRequest::DOWNLOAD_RESUMPTION_PARAM{"dr"};
 const string WdtTransferRequest::IV_CHANGE_INTERVAL_PARAM{"iv_change_int"};
 
-WdtTransferRequest::WdtTransferRequest(int startPort, int numPorts,
-                                       const string& directory) {
-  this->directory = directory;
-  int portNum = startPort;
-  for (int i = 0; i < numPorts; i++) {
-    ports.push_back(portNum);
-    if (startPort) {
-      ++portNum;
-    }
-  }
+WdtTransferRequest::WdtTransferRequest(int startPort, int numPorts, const string& directory) {
+	this->directory = directory;
+	int portNum = startPort;
+	for (int i = 0; i < numPorts; i++) {
+		ports.push_back(portNum);
+		if (startPort) {
+		  ++portNum;
+		}
+	}
 }
 
 WdtTransferRequest::WdtTransferRequest(const string& uriString) {
@@ -309,8 +307,7 @@ WdtTransferRequest::WdtTransferRequest(const string& uriString) {
   if (!encStr.empty()) {
     ErrorCode code = EncryptionParams::unserialize(encStr, encryptionData);
     if (code != OK) {
-      WLOG(ERROR) << "Unable to parse encryption data from \"" << encStr
-                  << "\" " << errorCodeToStr(code);
+      WLOG(ERROR) << "Unable to parse encryption data from \"" << encStr << "\" " << errorCodeToStr(code);
       errorCode = getMoreInterestingError(code, errorCode);
     }
   }
@@ -320,8 +317,7 @@ WdtTransferRequest::WdtTransferRequest(const string& uriString) {
       downloadResumptionEnabled = folly::to<bool>(downloadResume);
     }
   } catch (std::exception& e) {
-    WLOG(ERROR) << "Error parsing download resume " << downloadResume << " "
-                << e.what();
+    WLOG(ERROR) << "Error parsing download resume " << downloadResume << " " << e.what();
     errorCode = URI_PARSE_ERROR;
   }
 
