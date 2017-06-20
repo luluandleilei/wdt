@@ -58,59 +58,59 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &v) {
 // TODO rename to ThreadResult
 /// class representing statistics related to file transfer
 class TransferStats {
- private:
-  /// number of header bytes transferred
-  int64_t headerBytes_ = 0;
-  /// number of data bytes transferred
-  int64_t dataBytes_ = 0;
+private:
+    /// number of header bytes transferred
+    int64_t headerBytes_ = 0;
+    /// number of data bytes transferred
+    int64_t dataBytes_ = 0;
 
-  /// number of header bytes transferred as part of successful file transfer
-  int64_t effectiveHeaderBytes_ = 0;
-  /// number of data bytes transferred as part of successful file transfer
-  int64_t effectiveDataBytes_ = 0;
+    /// number of header bytes transferred as part of successful file transfer
+    int64_t effectiveHeaderBytes_ = 0;
+    /// number of data bytes transferred as part of successful file transfer
+    int64_t effectiveDataBytes_ = 0;
 
-  /// number of files successfully transferred
-  int64_t numFiles_ = 0;
+    /// number of files successfully transferred
+    int64_t numFiles_ = 0;
 
-  /// number of blocks successfully transferred
-  int64_t numBlocks_ = 0;
+    /// number of blocks successfully transferred
+    int64_t numBlocks_ = 0;
 
-  /// number of failed transfers
-  int64_t failedAttempts_ = 0;
+    /// number of failed transfers
+    int64_t failedAttempts_ = 0;
 
-  /// Total number of blocks sent by sender
-  int64_t numBlocksSend_{-1};
+    /// Total number of blocks sent by sender
+    int64_t numBlocksSend_{-1};
 
-  /// Total number of bytes sent by sender
-  int64_t totalSenderBytes_{-1};
+    /// Total number of bytes sent by sender
+    int64_t totalSenderBytes_{-1};
 
-  /// status of the transfer
-  ErrorCode localErrCode_ = OK;
+    /// status of the transfer
+    ErrorCode localErrCode_ = OK;
 
-  /// status of the remote
-  ErrorCode remoteErrCode_ = OK;
+    /// status of the remote
+    ErrorCode remoteErrCode_ = OK;
 
-  /// id of the owner object
-  std::string id_;
+    /// id of the owner object
+    std::string id_;
 
-  /// encryption type used
-  EncryptionType encryptionType_{ENC_NONE};
+    /// encryption type used
+    EncryptionType encryptionType_{ENC_NONE};
 
-  /// mutex to support synchronized access
-  std::unique_ptr<folly::RWSpinLock> mutex_{nullptr};
+    /// mutex to support synchronized access
+    std::unique_ptr<folly::RWSpinLock> mutex_{nullptr};
 
  public:
-  // making the object noncopyable
-  TransferStats(const TransferStats &stats) = delete;
-  TransferStats &operator=(const TransferStats &stats) = delete;
-  TransferStats(TransferStats &&stats) = default;
-  TransferStats &operator=(TransferStats &&stats) = default;
+    // making the object noncopyable
+    TransferStats(const TransferStats &stats) = delete;
+    TransferStats &operator=(const TransferStats &stats) = delete;
+    TransferStats(TransferStats &&stats) = default;
+    TransferStats &operator=(TransferStats &&stats) = default;
 
-  explicit TransferStats(bool isLocked = false) {
-    if (isLocked) {
-      mutex_ = std::make_unique<folly::RWSpinLock>();
+    explicit TransferStats(bool isLocked = false) {
+        if (isLocked) {
+            mutex_ = std::make_unique<folly::RWSpinLock>();
+        }
     }
-  }
 
   explicit TransferStats(const std::string &id, bool isLocked = false)
       : TransferStats(isLocked) {
@@ -338,7 +338,7 @@ class TransferStats {
  * for familiarity
  */
 class TransferReport {
- public:
+public:
   // TODO: too many constructor parameters, needs to clean-up
   /**
    * This constructor moves all the stat objects to member variables. This is

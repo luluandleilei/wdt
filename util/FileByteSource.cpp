@@ -16,68 +16,63 @@
 namespace facebook {
 namespace wdt {
 
-int FileUtil::openForRead(ThreadCtx &threadCtx, const std::string &filename,
-                          const bool isDirectReads) {
-  int openFlags = O_RDONLY;
-  if (isDirectReads) {
-#ifdef O_DIRECT
-    // no need to change any flags if we are using F_NOCACHE
-    openFlags |= O_DIRECT;
-#endif
-  }
-  int fd;
-  {
-    PerfStatCollector statCollector(threadCtx, PerfStatReport::FILE_OPEN);
-    fd = ::open(filename.c_str(), openFlags);
-  }
-  if (fd >= 0) {
+int FileUtil::openForRead(ThreadCtx &threadCtx, const std::string &filename, const bool isDirectReads) {
+    int openFlags = O_RDONLY;
     if (isDirectReads) {
-#ifndef O_DIRECT
-#ifdef F_NOCACHE
-      WVLOG(1) << "O_DIRECT not found, using F_NOCACHE instead "
-               << "for " << filename;
-      int ret = fcntl(fd, F_NOCACHE, 1);
-      if (ret) {
-        WPLOG(ERROR) << "Not able to set F_NOCACHE";
-      }
-#else
-      WDT_CHECK(false)
-          << "Direct read enabled, but both O_DIRECT and F_NOCACHE not defined "
-          << filename;
-#endif
+#ifdef O_DIRECT
+        // no need to change any flags if we are using F_NOCACHE
+        openFlags |= O_DIRECT;
 #endif
     }
-  } else {
-    WPLOG(ERROR) << "Error opening file " << filename;
-  }
-  return fd;
+
+    int fd;
+
+    {
+        PerfStatCollector statCollector(threadCtx, PerfStatReport::FILE_OPEN);
+        fd = ::open(filename.c_str(), openFlags);
+    }
+
+    if (fd >= 0) {
+        if (isDirectReads) {
+#ifndef O_DIRECT
+#ifdef F_NOCACHE
+            WVLOG(1) << "O_DIRECT not found, using F_NOCACHE instead " << "for " << filename;
+            int ret = fcntl(fd, F_NOCACHE, 1);
+            if (ret) {
+                WPLOG(ERROR) << "Not able to set F_NOCACHE";
+            }
+#else
+            WDT_CHECK(false) << "Direct read enabled, but both O_DIRECT and F_NOCACHE not defined " << filename;
+#endif
+#endif
+        }
+    } else {
+        WPLOG(ERROR) << "Error opening file " << filename;
+    }
+
+    return fd;
 }
 
-FileByteSource::FileByteSource(SourceMetaData *metadata, int64_t size,
-                               int64_t offset)
-    : metadata_(metadata),
-      size_(size),
-      offset_(offset),
-      bytesRead_(0),
-      alignedReadNeeded_(false) {
-  transferStats_.setId(getIdentifier());
+FileByteSource::FileByteSource(SourceMetaData *metadata, int64_t size, int64_t offset)
+    : metadata_(metadata), size_(size), offset_(offset), bytesRead_(0), alignedReadNeeded_(false) {
+    transferStats_.setId(getIdentifier());
 }
 
 ErrorCode FileByteSource::open(ThreadCtx *threadCtx) {
-  if (metadata_->allocationStatus == TO_BE_DELETED) {
-    return OK;
-  }
-  bytesRead_ = 0;
-  this->close();
-  threadCtx_ = threadCtx;
-  ErrorCode errCode = OK;
-  const bool isDirectReads = metadata_->directReads;
-  WVLOG(1) << "Reading in direct mode " << isDirectReads;
-  if (isDirectReads) {
+    if (metadata_->allocationStatus == TO_BE_DELETED) {
+        return OK;
+    }
+    bytesRead_ = 0;
+    this->close();
+    threadCtx_ = threadCtx;
+    ErrorCode errCode = OK;
+    const bool isDirectReads = metadata_->directReads;
+    WVLOG(1) << "Reading in direct mode " << isDirectReads;
+    if (isDirectReads) {
 #ifdef O_DIRECT
-    alignedReadNeeded_ = true;
+        alignedReadNeeded_ = true;
 #endif
-  }
+    }
 
   if (metadata_->fd >= 0) {
     WVLOG(1) << "metadata already has fd, no need to open " << getIdentifier();

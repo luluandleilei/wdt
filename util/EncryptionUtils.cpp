@@ -326,17 +326,18 @@ bool AESEncryptor::start(const EncryptionParams& encryptionData,
 }
 
 bool AESEncryptor::encrypt(const char* in, const int inLength, char* out) {
-  WDT_CHECK(started_);
+    WDT_CHECK(started_);
 
-  int outLength;
-  if (EVP_EncryptUpdate(evpCtx_.get(), (uint8_t*)out, &outLength, (uint8_t*)in,
-                        inLength) != 1) {
-    WLOG(ERROR) << "EncryptUpdate failed";
-    return false;
-  }
-  WDT_CHECK_EQ(inLength, outLength);
-  numProcessed_ += inLength;
-  return true;
+    int outLength;
+    if (EVP_EncryptUpdate(evpCtx_.get(), (uint8_t*)out, &outLength, (uint8_t*)in,
+                inLength) != 1) {
+        WLOG(ERROR) << "EncryptUpdate failed";
+        return false;
+    }
+
+    WDT_CHECK_EQ(inLength, outLength);
+    numProcessed_ += inLength;
+    return true;
 }
 
 /* static */

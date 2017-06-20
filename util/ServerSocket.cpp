@@ -19,26 +19,24 @@ using std::string;
 
 ServerSocket::ServerSocket(ThreadCtx &threadCtx, int port, int backlog, const EncryptionParams &encryptionParams, int64_t ivChangeInterval, Func &&tagVerificationSuccessCallback)
     : WdtSocket(threadCtx, port, encryptionParams, ivChangeInterval, std::move(tagVerificationSuccessCallback)), backlog_(backlog) {
-        // for backward compatibility
-        supportUnencryptedPeer_ = true;
+    // for backward compatibility
+    supportUnencryptedPeer_ = true;
 }
 
 void ServerSocket::closeAllNoCheck() {
-  WVLOG(1) << "Destroying server socket (port, listen fd, fd) " << port_ << ", "
-           << listeningFds_ << ", " << fd_;
-  closeNoCheck();
+    WVLOG(1) << "Destroying server socket (port, listen fd, fd) " << port_ << ", " << listeningFds_ << ", " << fd_;
+    closeNoCheck();
+
   // We don't care about listen error, the error that matters is encryption err
-  for (auto listeningFd : listeningFds_) {
-    if (listeningFd >= 0) {
-      int ret = ::close(listeningFd);
-      if (ret != 0) {
-        WPLOG(ERROR)
-            << "Error closing listening fd for server socket. listeningFd: "
-            << listeningFd << " port: " << port_;
-      }
+    for (auto listeningFd : listeningFds_) {
+        if (listeningFd >= 0) {
+            int ret = ::close(listeningFd);
+            if (ret != 0) {
+                WPLOG(ERROR) << "Error closing listening fd for server socket. listeningFd: " << listeningFd << " port: " << port_;
+            }
+        }
     }
-  }
-  listeningFds_.clear();
+    listeningFds_.clear();
 }
 
 ServerSocket::~ServerSocket() {
@@ -123,13 +121,13 @@ ErrorCode ServerSocket::listen() {
     if (options.ipv6) {
         sa.ai_family = AF_INET6;
     }
-
     if (options.ipv4) {
         sa.ai_family = AF_INET;
     }
 
     sa.ai_socktype = SOCK_STREAM;
     sa.ai_flags = AI_PASSIVE;
+
     // Dynamic port is the default on receiver (and setting the start_port flag
     // explictly automatically also sets static_ports to false)
     if (!options.static_ports) {
@@ -140,6 +138,7 @@ ErrorCode ServerSocket::listen() {
     // Lookup
     addrInfoList infoList = nullptr;
     std::string portStr = folly::to<std::string>(port_);
+
     int res = getaddrinfo(nullptr, portStr.c_str(), &sa, &infoList);
     if (res) {
         // not errno, can't use WPLOG (perror)
@@ -154,8 +153,7 @@ ErrorCode ServerSocket::listen() {
     for (struct addrinfo *info = infoList; info != nullptr;) {
         if (info->ai_family == addressTypeAlreadyBound) {
             // we are already listening for this address type
-            WVLOG(2) << "Ignoring address family " << info->ai_family
-                << " since we are already listing on it " << port_;
+            WVLOG(2) << "Ignoring address family " << info->ai_family << " since we are already listing on it " << port_;
             info = info->ai_next;
             continue;
         }
@@ -166,6 +164,7 @@ ErrorCode ServerSocket::listen() {
             // SocketUtils
             WDT_CHECK(port_ == folly::to<int32_t>(port));
         }
+
         int listeningFd = listenInternal(info, host);
         if (listeningFd < 0) {
             info = info->ai_next;
@@ -204,89 +203,92 @@ ErrorCode ServerSocket::listen() {
     return OK;
 }
 
-ErrorCode ServerSocket::acceptNextConnection(int timeoutMillis,
-                                             bool tryCurAddressFirst) {
-  ErrorCode code = listen();
-  if (code != OK) {
-    return code;
-  }
-  WDT_CHECK(!listeningFds_.empty());
-  WDT_CHECK(timeoutMillis > 0);
-
-  const WdtOptions &options = threadCtx_.getOptions();
-  const bool checkAbort = (options.abort_check_interval_millis > 0);
-
-  const int numFds = listeningFds_.size();
-  struct pollfd pollFds[numFds];
-  auto startTime = Clock::now();
-  while (true) {
-    // we need this loop because poll() can return before any file handles
-    // have changes or before timing out. In that case, we check whether it
-    // is because of EINTR or not. If true, we have to try poll with
-    // reduced timeout
-    int timeElapsed = durationMillis(Clock::now() - startTime);
-    if (timeElapsed >= timeoutMillis) {
-      WVLOG(3) << "accept() timed out";
-      return CONN_ERROR;
-    }
-    int pollTimeout = timeoutMillis - timeElapsed;
-    if (checkAbort) {
-      if (threadCtx_.getAbortChecker()->shouldAbort()) {
-        WLOG(ERROR) << "Transfer aborted during accept " << port_ << " " << fd_;
-        return ABORT;
-      }
-      pollTimeout = std::min(pollTimeout, options.abort_check_interval_millis);
-    }
-    for (int i = 0; i < numFds; i++) {
-      pollFds[i] = {listeningFds_[i], POLLIN, 0};
+ErrorCode ServerSocket::acceptNextConnection(int timeoutMillis, bool tryCurAddressFirst) {
+    ErrorCode code = listen();
+    if (code != OK) {
+        return code;
     }
 
-    int retValue = poll(pollFds, numFds, pollTimeout);
-    if (retValue > 0) {
-      break;
-    }
-    if (errno == EINTR) {
-      WVLOG(1) << "poll() call interrupted. retrying...";
-      continue;
-    }
-    if (retValue == 0) {
-      WVLOG(3) << "poll() timed out on port : " << port_
-               << ", listening fds : " << listeningFds_;
-      continue;
-    }
-    WPLOG(ERROR) << "poll() failed on port : " << port_
-                 << ", listening fds : " << listeningFds_;
-    return CONN_ERROR;
-  }
+    WDT_CHECK(!listeningFds_.empty());
+    WDT_CHECK(timeoutMillis > 0);
 
-  if (lastCheckedPollIndex_ >= numFds) {
-    // can happen if getaddrinfo returns different set of addresses
-    lastCheckedPollIndex_ = 0;
-  } else if (!tryCurAddressFirst) {
-    // else try the next address
-    lastCheckedPollIndex_ = (lastCheckedPollIndex_ + 1) % numFds;
-  }
+    const WdtOptions &options = threadCtx_.getOptions();
+    const bool checkAbort = (options.abort_check_interval_millis > 0);
 
-  for (int count = 0; count < numFds; count++) {
-    auto &pollFd = pollFds[lastCheckedPollIndex_];
-    if (pollFd.revents & POLLIN) {
-      struct sockaddr_storage addr;
-      socklen_t addrLen = sizeof(addr);
-      fd_ = accept(pollFd.fd, (struct sockaddr *)&addr, &addrLen);
-      if (fd_ < 0) {
-        WPLOG(ERROR) << "accept error";
+    const int numFds = listeningFds_.size();
+    struct pollfd pollFds[numFds];
+    auto startTime = Clock::now();
+
+    while (true) {
+        // we need this loop because poll() can return before any file handles
+        // have changes or before timing out. In that case, we check whether it
+        // is because of EINTR or not. If true, we have to try poll with
+        // reduced timeout
+        int timeElapsed = durationMillis(Clock::now() - startTime);
+        if (timeElapsed >= timeoutMillis) {
+            WVLOG(3) << "accept() timed out";
+            return CONN_ERROR;
+        }
+
+        int pollTimeout = timeoutMillis - timeElapsed;
+        if (checkAbort) {
+            if (threadCtx_.getAbortChecker()->shouldAbort()) {
+                WLOG(ERROR) << "Transfer aborted during accept " << port_ << " " << fd_;
+                return ABORT;
+            }
+            pollTimeout = std::min(pollTimeout, options.abort_check_interval_millis);
+        }
+
+        for (int i = 0; i < numFds; i++) {
+            pollFds[i] = {listeningFds_[i], POLLIN, 0};
+        }
+
+        int retValue = poll(pollFds, numFds, pollTimeout);
+        if (retValue > 0) {
+            break;
+        }
+
+        if (errno == EINTR) {
+            WVLOG(1) << "poll() call interrupted. retrying...";
+            continue;
+        }
+
+        if (retValue == 0) {
+            WVLOG(3) << "poll() timed out on port : " << port_ << ", listening fds : " << listeningFds_;
+            continue;
+        }
+        WPLOG(ERROR) << "poll() failed on port : " << port_ << ", listening fds : " << listeningFds_;
         return CONN_ERROR;
-      }
-      getNameInfo((struct sockaddr *)&addr, addrLen, peerIp_, peerPort_);
-      WVLOG(1) << "New connection, fd : " << fd_ << " from " << peerIp_ << " "
-               << peerPort_;
-      setSocketTimeouts();
-      return OK;
     }
-    lastCheckedPollIndex_ = (lastCheckedPollIndex_ + 1) % numFds;
-  }
-  WLOG(ERROR) << "None of the listening fds got a POLLIN event " << port_;
-  return CONN_ERROR;
+
+    if (lastCheckedPollIndex_ >= numFds) {
+        // can happen if getaddrinfo returns different set of addresses
+        lastCheckedPollIndex_ = 0;
+    } else if (!tryCurAddressFirst) {
+        // else try the next address
+        lastCheckedPollIndex_ = (lastCheckedPollIndex_ + 1) % numFds;
+    }
+
+    for (int count = 0; count < numFds; count++) {
+        auto &pollFd = pollFds[lastCheckedPollIndex_];
+        if (pollFd.revents & POLLIN) {
+            struct sockaddr_storage addr;
+            socklen_t addrLen = sizeof(addr);
+            fd_ = accept(pollFd.fd, (struct sockaddr *)&addr, &addrLen);
+            if (fd_ < 0) {
+                WPLOG(ERROR) << "accept error";
+                return CONN_ERROR;
+            }
+            getNameInfo((struct sockaddr *)&addr, addrLen, peerIp_, peerPort_);
+            WVLOG(1) << "New connection, fd : " << fd_ << " from " << peerIp_ << " " << peerPort_;
+            setSocketTimeouts();
+            return OK;
+        }
+        lastCheckedPollIndex_ = (lastCheckedPollIndex_ + 1) % numFds;
+    }
+
+    WLOG(ERROR) << "None of the listening fds got a POLLIN event " << port_;
+    return CONN_ERROR;
 }
 
 void ServerSocket::setReceiveBufferSize(int fd) {

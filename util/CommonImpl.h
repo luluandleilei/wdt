@@ -19,75 +19,75 @@ const int64_t kDiskBlockSize = 4 * 1024;
 
 /// class representing a buffer
 class Buffer {
- public:
-  /// @param size     size to allocate
-  explicit Buffer(const int64_t size);
+public:
+    /// @param size     size to allocate
+    explicit Buffer(const int64_t size);
 
-  /// @return   buffer ptr
-  char *getData() const;
+    /// @return   buffer ptr
+    char *getData() const;
 
-  /// @return   whether the allocated buffer is aligned
-  bool isAligned() const;
+    /// @return   whether the allocated buffer is aligned
+    bool isAligned() const;
 
-  /// @return   buffer size
-  int64_t getSize() const;
+    /// @return   buffer size
+    int64_t getSize() const;
 
-  ~Buffer();
+    ~Buffer();
 
-  // making the object non-copyable and non-moveable
-  Buffer(const Buffer &stats) = delete;
-  Buffer &operator=(const Buffer &stats) = delete;
-  Buffer(Buffer &&stats) = delete;
-  Buffer &operator=(Buffer &&stats) = delete;
+    // making the object non-copyable and non-moveable
+    Buffer(const Buffer &stats) = delete;
+    Buffer &operator=(const Buffer &stats) = delete;
+    Buffer(Buffer &&stats) = delete;
+    Buffer &operator=(Buffer &&stats) = delete;
 
- private:
-  char *data_{nullptr};
-  int64_t size_{0};
-  bool isAligned_{false};
+private:
+    char *data_{nullptr};
+    int64_t size_{0};
+    bool isAligned_{false};
 };
 
 /// class representing thread context
 class ThreadCtx {
- public:
-  /// @param  options        options to use
-  /// @param  allocateBuffer whether to allocate buffer
-  ThreadCtx(const WdtOptions &options, bool allocateBuffer);
+public:
+    /// @param  options        options to use
+    /// @param  allocateBuffer whether to allocate buffer
+    ThreadCtx(const WdtOptions &options, bool allocateBuffer);
 
-  /// @param  options        options to use
-  /// @param  allocateBuffer whether to allocate buffer
-  /// @param  threadIndex    index of the thread
-  ThreadCtx(const WdtOptions &options, bool allocateBuffer, int threadIndex);
+    /// @param  options        options to use
+    /// @param  allocateBuffer whether to allocate buffer
+    /// @param  threadIndex    index of the thread
+    ThreadCtx(const WdtOptions &options, bool allocateBuffer, int threadIndex);
 
-  /// @return   options to use
-  const WdtOptions &getOptions() const;
+    /// @return   options to use
+    const WdtOptions &getOptions() const;
 
-  /// @param    thread index
-  int getThreadIndex() const;
+    /// @param    thread index
+    int getThreadIndex() const;
 
-  /// @return   buffer to use
-  const Buffer *getBuffer() const;
+    /// @return   buffer to use
+    const Buffer *getBuffer() const;
 
-  /// @return   perf stat reporter
-  PerfStatReport &getPerfReport();
+    /// @return   perf stat reporter
+    PerfStatReport &getPerfReport();
 
-  /// @param    abort checker to use
-  void setAbortChecker(IAbortChecker const *abortChecker);
+    /// @param    abort checker to use
+    void setAbortChecker(IAbortChecker const *abortChecker);
 
-  /// @return   abort checker to use
-  const IAbortChecker *getAbortChecker() const;
+    /// @return   abort checker to use
+    const IAbortChecker *getAbortChecker() const;
 
-  // making the object non-copyable and non-moveable
-  ThreadCtx(const ThreadCtx &stats) = delete;
-  ThreadCtx &operator=(const ThreadCtx &stats) = delete;
-  ThreadCtx(ThreadCtx &&stats) = delete;
-  ThreadCtx &operator=(ThreadCtx &&stats) = delete;
+    // making the object non-copyable and non-moveable
+    ThreadCtx(const ThreadCtx &stats) = delete;
+    ThreadCtx &operator=(const ThreadCtx &stats) = delete;
+    ThreadCtx(ThreadCtx &&stats) = delete;
+    ThreadCtx &operator=(ThreadCtx &&stats) = delete;
 
- private:
-  const WdtOptions &options_;
-  int threadIndex_{-1};
-  std::unique_ptr<Buffer> buffer_{nullptr};
-  PerfStatReport perfReport_;
-  IAbortChecker const *abortChecker_{nullptr};
+private:
+    const WdtOptions &options_;
+    int threadIndex_{-1};
+    std::unique_ptr<Buffer> buffer_{nullptr};
+    PerfStatReport perfReport_;
+    IAbortChecker const *abortChecker_{nullptr};
 };
 
 /// util class to collect perf stat

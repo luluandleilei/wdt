@@ -16,23 +16,21 @@
 namespace facebook {
 namespace wdt {
 class ClientSocket : public WdtSocket {
- public:
-  ClientSocket(ThreadCtx &threadCtx, const std::string &dest, int port,
-               const EncryptionParams &encryptionParams,
-               int64_t ivChangeInterval);
-  virtual ErrorCode connect();
-  /// @return   peer-ip of the connected socket
-  const std::string &getPeerIp() const;
-  /// shutdown() is now on WdtSocket as shutdownWrites()
-  ~ClientSocket() override;
+public:
+    ClientSocket(ThreadCtx &threadCtx, const std::string &dest, int port, const EncryptionParams &encryptionParams, int64_t ivChangeInterval);
+    virtual ErrorCode connect();
+    /// @return   peer-ip of the connected socket
+    const std::string &getPeerIp() const;
+    /// shutdown() is now on WdtSocket as shutdownWrites()
+    ~ClientSocket() override;
 
- protected:
-  /// sets the send buffer size for this socket
-  void setSendBufferSize();
+protected:
+    /// sets the send buffer size for this socket
+    void setSendBufferSize();
 
-  const std::string dest_;
-  std::string peerIp_;
-  struct addrinfo sa_;
+    const std::string dest_;
+    std::string peerIp_;
+    struct addrinfo sa_;
 };
 }
 }  // namespace facebook::wdt

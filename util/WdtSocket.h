@@ -216,11 +216,9 @@ private:
     int getEffectiveTimeout(int networkTimeout);
 
     /// @see ioWithAbortCheck
-    int64_t readWithAbortCheck(char *buf, int64_t nbyte, int timeoutMs,
-            bool tryFull);
+    int64_t readWithAbortCheck(char *buf, int64_t nbyte, int timeoutMs, bool tryFull);
     /// @see ioWithAbortCheck
-    int64_t writeWithAbortCheck(const char *buf, int64_t nbyte, int timeoutMs,
-            bool tryFull);
+    int64_t writeWithAbortCheck(const char *buf, int64_t nbyte, int timeoutMs, bool tryFull);
 
     /**
      * Tries to read/write numBytes amount of data from fd. Also, checks for abort
@@ -242,8 +240,7 @@ private:
      *                      returns -1
      */
     template <typename F, typename T>
-        int64_t ioWithAbortCheck(F readOrWrite, T tbuf, int64_t numBytes,
-                int timeoutMs, bool tryFull);
+    int64_t ioWithAbortCheck(F readOrWrite, T tbuf, int64_t numBytes, int timeoutMs, bool tryFull);
 };
 }
 }

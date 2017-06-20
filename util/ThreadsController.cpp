@@ -165,10 +165,10 @@ void ThreadsController::deRegisterThread(int threadIndex) {
 }
 
 ThreadStatus ThreadsController::getState(int threadIndex) {
-  GuardLock lock(controllerMutex_);
-  auto it = threadStateMap_.find(threadIndex);
-  WDT_CHECK(it != threadStateMap_.end());
-  return it->second;
+    GuardLock lock(controllerMutex_);
+    auto it = threadStateMap_.find(threadIndex);
+    WDT_CHECK(it != threadStateMap_.end());
+    return it->second;
 }
 
 void ThreadsController::markState(int threadIndex, ThreadStatus threadState) {

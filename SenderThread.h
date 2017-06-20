@@ -21,21 +21,21 @@ class DirectorySourceQueue;
 
 /// state machine states
 enum SenderState {
-  CONNECT,
-  READ_LOCAL_CHECKPOINT,
-  SEND_SETTINGS,
-  SEND_BLOCKS,
-  SEND_DONE_CMD,
-  SEND_SIZE_CMD,
-  CHECK_FOR_ABORT,
-  READ_FILE_CHUNKS,
-  READ_RECEIVER_CMD,
-  PROCESS_DONE_CMD,
-  PROCESS_WAIT_CMD,
-  PROCESS_ERR_CMD,
-  PROCESS_ABORT_CMD,
-  PROCESS_VERSION_MISMATCH,
-  END
+    CONNECT,
+    READ_LOCAL_CHECKPOINT,
+    SEND_SETTINGS,
+    SEND_BLOCKS,
+    SEND_DONE_CMD,
+    SEND_SIZE_CMD,
+    CHECK_FOR_ABORT,
+    READ_FILE_CHUNKS,
+    READ_RECEIVER_CMD,
+    PROCESS_DONE_CMD,
+    PROCESS_WAIT_CMD,
+    PROCESS_ERR_CMD,
+    PROCESS_ABORT_CMD,
+    PROCESS_VERSION_MISMATCH,
+    END
 };
 
 /**
@@ -46,47 +46,43 @@ enum SenderState {
  * throttler, threads controller etc
  */
 class SenderThread : public WdtThread {
- public:
-  /// Identifers for the barriers used in the thread
-  enum SENDER_BARRIERS { VERSION_MISMATCH_BARRIER, NUM_BARRIERS };
+public:
+    /// Identifers for the barriers used in the thread
+    enum SENDER_BARRIERS { VERSION_MISMATCH_BARRIER, NUM_BARRIERS };
 
-  /// Identifiers for the funnels used in the thread
-  enum SENDER_FUNNELS { VERSION_MISMATCH_FUNNEL, NUM_FUNNELS };
+    /// Identifiers for the funnels used in the thread
+    enum SENDER_FUNNELS { VERSION_MISMATCH_FUNNEL, NUM_FUNNELS };
 
-  /// Identifier for the condition wrappers used in the thread
-  enum SENDER_CONDITIONS { NUM_CONDITIONS };
+    /// Identifier for the condition wrappers used in the thread
+    enum SENDER_CONDITIONS { NUM_CONDITIONS };
 
-  /// abort checker passed to client sockets. This checks both global sender
-  /// abort and whether global checkpoint has been received or not
-  class SocketAbortChecker : public IAbortChecker {
-   public:
-    explicit SocketAbortChecker(SenderThread *threadPtr)
-        : threadPtr_(threadPtr) {
-    }
+    /// abort checker passed to client sockets. This checks both global sender
+    /// abort and whether global checkpoint has been received or not
+    class SocketAbortChecker : public IAbortChecker {
+    public:
+        explicit SocketAbortChecker(SenderThread *threadPtr)
+            : threadPtr_(threadPtr) {
+            }
 
-    bool shouldAbort() const override {
-      return (threadPtr_->getThreadAbortCode() != OK);
-    }
+        bool shouldAbort() const override {
+            return (threadPtr_->getThreadAbortCode() != OK);
+        }
 
-   private:
-    SenderThread *threadPtr_{nullptr};
-  };
+    private:
+        SenderThread *threadPtr_{nullptr};
+    };
 
   /// Constructor for the sender thread
-  SenderThread(Sender *sender, int threadIndex, int32_t port,
-               ThreadsController *threadsController)
-      : WdtThread(sender->options_, threadIndex, port,
-                  sender->getProtocolVersion(), threadsController),
-        wdtParent_(sender),
-        dirQueue_(sender->dirQueue_.get()),
-        transferHistoryController_(sender->transferHistoryController_.get()) {
-    controller_->registerThread(threadIndex_);
-    transferHistoryController_->addThreadHistory(port_, threadStats_);
-    threadAbortChecker_ = std::make_unique<SocketAbortChecker>(this);
-    threadCtx_->setAbortChecker(threadAbortChecker_.get());
-    threadStats_.setId(folly::to<std::string>(threadIndex_));
-    isTty_ = isatty(STDERR_FILENO);
-  }
+    SenderThread(Sender *sender, int threadIndex, int32_t port, ThreadsController *threadsController)
+        : WdtThread(sender->options, threadIndex, port, sender->getProtocolVersion(), threadsController), wdtParent_(sender), 
+            dirQueue_(sender->dirQueue_.get()), transferHistoryController_(sender->transferHistoryController_.get()) {
+        controller_->registerThread(threadIndex_);
+        transferHistoryController_->addThreadHistory(port_, threadStats_);
+        threadAbortChecker_ = std::make_unique<SocketAbortChecker>(this);
+        threadCtx_->setAbortChecker(threadAbortChecker_.get());
+        threadStats_.setId(folly::to<std::string>(threadIndex_));
+        isTty_ = isatty(STDERR_FILENO);
+    }
 
   typedef SenderState (SenderThread::*StateFunction)();
 

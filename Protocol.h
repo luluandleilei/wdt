@@ -79,30 +79,30 @@ std::ostream &operator<<(std::ostream &os, const Checkpoint &checkpoint);
 
 /// structure representing a single chunk of a file
 struct Interval {
-  /// start offset
-  int64_t start_{0};
-  /// end offset
-  int64_t end_{0};
+    /// start offset
+    int64_t start_{0};
+    /// end offset
+    int64_t end_{0};
 
-  Interval() {
-  }
+    Interval() {
+    }
 
-  Interval(int64_t start, int64_t end) : start_(start), end_(end) {
-    WDT_CHECK(end_ >= start_);
-  }
+    Interval(int64_t start, int64_t end) : start_(start), end_(end) {
+        WDT_CHECK(end_ >= start_);
+    }
 
-  /// @return   size of the chunk
-  int64_t size() const {
-    return end_ - start_;
-  }
+    /// @return   size of the chunk
+    int64_t size() const {
+        return end_ - start_;
+    }
 
-  bool operator<(const Interval &chunk) const {
-    return this->start_ < chunk.start_;
-  }
+    bool operator<(const Interval &chunk) const {
+        return this->start_ < chunk.start_;
+    }
 
-  bool operator==(const Interval &chunk) const {
-    return this->start_ == chunk.start_ && this->end_ == chunk.end_;
-  }
+    bool operator==(const Interval &chunk) const {
+        return this->start_ == chunk.start_ && this->end_ == chunk.end_;
+    }
 };
 
 /// class representing chunks in a file

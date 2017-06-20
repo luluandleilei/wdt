@@ -24,30 +24,30 @@ namespace wdt {
  * to read the file with
  */
 struct WdtFileInfo {
-  /**
-   * Name of the file to be read, generally as relative path
-   */
-  std::string fileName;
-  /// Size of the file to be read, default is -1
-  int64_t fileSize;
-  /// File descriptor. If this is not -1, then wdt uses this to read
-  int fd{-1};
-  /// Whether read should be done using o_direct. If fd is set, this flag will
-  /// be set automatically to match the fd open mode
-  bool directReads{false};
-  /// Constructor for file info with name, size and odirect request
-  WdtFileInfo(const std::string& name, int64_t size, bool directReads);
-  /**
-   * Constructor with name, size and fd
-   * If this constructor is used, then whether to do direct reads is decided
-   * by fd flags.
-   * Attempt to disambiguate the 2 constructors by having the fd first
-   * and string last in this one.
-   */
-  WdtFileInfo(int fd, int64_t size, const std::string& name);
-  /// Verify that we can align for reading in O_DIRECT and
-  /// the flags make sense
-  void verifyAndFixFlags();
+    /**
+     * Name of the file to be read, generally as relative path
+     */
+    std::string fileName;
+    /// Size of the file to be read, default is -1
+    int64_t fileSize;
+    /// File descriptor. If this is not -1, then wdt uses this to read
+    int fd{-1};
+    /// Whether read should be done using o_direct. If fd is set, this flag will
+    /// be set automatically to match the fd open mode
+    bool directReads{false};
+    /// Constructor for file info with name, size and odirect request
+    WdtFileInfo(const std::string& name, int64_t size, bool directReads);
+    /**
+     * Constructor with name, size and fd
+     * If this constructor is used, then whether to do direct reads is decided
+     * by fd flags.
+     * Attempt to disambiguate the 2 constructors by having the fd first
+     * and string last in this one.
+     */
+    WdtFileInfo(int fd, int64_t size, const std::string& name);
+    /// Verify that we can align for reading in O_DIRECT and
+    /// the flags make sense
+    void verifyAndFixFlags();
 };
 
 /**

@@ -125,15 +125,14 @@ bool Sender::isFileChunksReceived() {
   return fileChunksReceived_;
 }
 
-void Sender::setFileChunksInfo(
-    std::vector<FileChunksInfo> &fileChunksInfoList) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (fileChunksReceived_) {
-    WLOG(WARNING) << "File chunks list received multiple times";
-    return;
-  }
-  dirQueue_->setPreviouslyReceivedChunks(fileChunksInfoList);
-  fileChunksReceived_ = true;
+void Sender::setFileChunksInfo( std::vector<FileChunksInfo> &fileChunksInfoList) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (fileChunksReceived) {
+        WLOG(WARNING) << "File chunks list received multiple times";
+        return;
+    }
+    dirQueue_->setPreviouslyReceivedChunks(fileChunksInfoList);
+    fileChunksReceived_ = true;
 }
 
 const std::string &Sender::getDestination() const {

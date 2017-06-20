@@ -269,32 +269,33 @@ public:
 
     /// Make threads of a type Sender/Receiver
     template <typename WdtBaseType, typename WdtThreadType>
-        std::vector<std::unique_ptr<WdtThread>> makeThreads(WdtBaseType *wdtParent, int numThreads, const std::vector<int32_t> &ports) {
-            std::vector<std::unique_ptr<WdtThread>> threads;
-            for (int threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
-                threads.emplace_back(std::make_unique<WdtThreadType>( wdtParent, threadIndex, ports[threadIndex], this));
-            }
-            return threads;
+    std::vector<std::unique_ptr<WdtThread>> makeThreads(WdtBaseType *wdtParent, int numThreads, const std::vector<int32_t> &ports) {
+        std::vector<std::unique_ptr<WdtThread>> threads;
+        for (int threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
+            threads.emplace_back(std::make_unique<WdtThreadType>(wdtParent, threadIndex, ports[threadIndex], this));
         }
-  ///  Mark the state of a thread
-  void markState(int threadIndex, ThreadStatus state);
+        return threads;
+    }
 
-  /// Get the status of the thread by index
-  ThreadStatus getState(int threadIndex);
+    ///  Mark the state of a thread
+    void markState(int threadIndex, ThreadStatus state);
 
-  /// Execute a function func once, by the first thread
-  template <typename FunctionType>
-  void executeAtStart(FunctionType &&fn) const {
-    execAtStart_->execute(fn);
-  }
+    /// Get the status of the thread by index
+    ThreadStatus getState(int threadIndex);
 
-  /// Execute a function once by the last thread
-  template <typename FunctionType>
-  void executeAtEnd(FunctionType &&fn) const {
-    execAtEnd_->execute(fn);
-  }
+    /// Execute a function func once, by the first thread
+    template <typename FunctionType>
+    void executeAtStart(FunctionType &&fn) const {
+        execAtStart_->execute(fn);
+    }
 
-  /// Returns a funnel executor shared between the threads
+    /// Execute a function once by the last thread
+    template <typename FunctionType>
+    void executeAtEnd(FunctionType &&fn) const {
+        execAtEnd_->execute(fn);
+    }
+
+    /// Returns a funnel executor shared between the threads
   /// If the executor does not exist then it creates one
   std::shared_ptr<Funnel> getFunnel(uint64_t funnelIndex);
 
