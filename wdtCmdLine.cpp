@@ -358,11 +358,9 @@ int main(int argc, char *argv[]) {
 			    readManifest(fin, req, options.odirect_reads);
 			    fin.close();
 		    }
-		    WLOG(INFO) << "Using files lists, number of files "
-			    << req.fileInfo.size();
+		    WLOG(INFO) << "Using files lists, number of files " << req.fileInfo.size();
 	    }
-	    WLOG(INFO) << "Making Sender with encryption set = "
-		    << req.encryptionData.isSet();
+	    WLOG(INFO) << "Making Sender with encryption set = " << req.encryptionData.isSet();
 
 	    retCode = wdt.wdtSend(req, setupAbortChecker());
     }

@@ -126,25 +126,25 @@ class ConditionGuardImpl {
  *  guard.wait();
  */
 class ConditionGuard {
- public:
-  /// Caller has to call acquire before doing anything
-  ConditionGuardImpl acquire();
+public:
+    /// Caller has to call acquire before doing anything
+    ConditionGuardImpl acquire();
 
-  /// Default constructor
-  ConditionGuard() {
-  }
+    /// Default constructor
+    ConditionGuard() {
+    }
 
-  /// Deleted copy constructor
-  ConditionGuard(const ConditionGuard &that) = delete;
+    /// Deleted copy constructor
+    ConditionGuard(const ConditionGuard &that) = delete;
 
-  /// Deleted assignment operator
-  ConditionGuard &operator=(const ConditionGuard &that) = delete;
+    /// Deleted assignment operator
+    ConditionGuard &operator=(const ConditionGuard &that) = delete;
 
- private:
-  /// Mutex for the condition variable
-  std::mutex mutex_;
-  /// std condition variable to support the functionality
-  std::condition_variable cv_;
+private:
+    /// Mutex for the condition variable
+    std::mutex mutex_;
+    /// std condition variable to support the functionality
+    std::condition_variable cv_;
 };
 
 /**
@@ -296,78 +296,78 @@ public:
     }
 
     /// Returns a funnel executor shared between the threads
-  /// If the executor does not exist then it creates one
-  std::shared_ptr<Funnel> getFunnel(uint64_t funnelIndex);
+    /// If the executor does not exist then it creates one
+    std::shared_ptr<Funnel> getFunnel(uint64_t funnelIndex);
 
-  /// Returns a barrier shared between the threads
-  /// If the executor does not exist then it creates one
-  std::shared_ptr<Barrier> getBarrier(uint64_t barrierIndex);
+    /// Returns a barrier shared between the threads
+    /// If the executor does not exist then it creates one
+    std::shared_ptr<Barrier> getBarrier(uint64_t barrierIndex);
 
-  /// Get the condition variable wrapper
-  std::shared_ptr<ConditionGuard> getCondition(uint64_t conditionIndex);
+    /// Get the condition variable wrapper
+    std::shared_ptr<ConditionGuard> getCondition(uint64_t conditionIndex);
 
-  /*
-   * Returns back states of all the threads
-   */
-  std::unordered_map<int, ThreadStatus> getThreadStates() const;
+    /*
+     * Returns back states of all the threads
+     */
+    std::unordered_map<int, ThreadStatus> getThreadStates() const;
 
-  /// Register a thread, a thread registers with the state RUNNING
-  void registerThread(int threadIndex);
+    /// Register a thread, a thread registers with the state RUNNING
+    void registerThread(int threadIndex);
 
-  /// De-register a thread, marks it ended
-  void deRegisterThread(int threadIndex);
+    /// De-register a thread, marks it ended
+    void deRegisterThread(int threadIndex);
 
-  /// Returns true if any thread apart from the calling is in the state
-  bool hasThreads(int threadIndex, ThreadStatus threadState);
+    /// Returns true if any thread apart from the calling is in the state
+    bool hasThreads(int threadIndex, ThreadStatus threadState);
 
-  /// @return     true if any registered thread is in the state
-  bool hasThreads(ThreadStatus threadState);
+    /// @return     true if any registered thread is in the state
+    bool hasThreads(ThreadStatus threadState);
 
-  /// Get the nunber of registered threads
-  int getTotalThreads();
+    /// Get the nunber of registered threads
+    int getTotalThreads();
 
-  /// Reset the thread controller so that same instance can be used again
-  void reset();
+    /// Reset the thread controller so that same instance can be used again
+    void reset();
 
-  /// Set the total number of barriers
-  void setNumBarriers(int numBarriers);
+    /// Set the total number of barriers
+    void setNumBarriers(int numBarriers);
 
-  /// Set the number of condition wrappers
-  void setNumConditions(int numConditions);
+    /// Set the number of condition wrappers
+    void setNumConditions(int numConditions);
 
-  /// Set total number of funnel executors
-  void setNumFunnels(int numFunnels);
+    /// Set total number of funnel executors
+    void setNumFunnels(int numFunnels);
 
-  /// Destructor for the threads controller
-  ~ThreadsController() {
-  }
+    /// Destructor for the threads controller
+    ~ThreadsController() {
+    }
 
- private:
-  /// Total number of threads managed by the thread controller
-  int totalThreads_;
+private:
+    /// Total number of threads managed by the thread controller
+    int totalThreads_;
 
-  typedef std::unique_lock<std::mutex> GuardLock;
+    typedef std::unique_lock<std::mutex> GuardLock;
 
-  /// Mutex used in all of the thread controller methods
-  mutable std::mutex controllerMutex_;
+    /// Mutex used in all of the thread controller methods
+    mutable std::mutex controllerMutex_;
 
-  /// States of the threads
-  std::unordered_map<int, ThreadStatus> threadStateMap_;
+    /// States of the threads
+    std::unordered_map<int, ThreadStatus> threadStateMap_;
 
-  /// Executor to execute things at the start of transfer
-  std::unique_ptr<ExecuteOnceFunc> execAtStart_;
+    /// Executor to execute things at the start of transfer
+    std::unique_ptr<ExecuteOnceFunc> execAtStart_;
 
-  /// Executor to execute things at the end of transfer
-  std::unique_ptr<ExecuteOnceFunc> execAtEnd_;
+    /// Executor to execute things at the end of transfer
+    std::unique_ptr<ExecuteOnceFunc> execAtEnd_;
 
-  /// Vector of funnel executors, read/modified by get/set funnel methods
-  std::vector<std::shared_ptr<Funnel>> funnelExecutors_;
+    /// Vector of funnel executors, read/modified by get/set funnel methods
+    std::vector<std::shared_ptr<Funnel>> funnelExecutors_;
 
-  /// Vector of condition wrappers, read/modified by get/set condition methods
-  std::vector<std::shared_ptr<ConditionGuard>> conditionGuards_;
+    /// Vector of condition wrappers, read/modified by get/set condition methods
+    std::vector<std::shared_ptr<ConditionGuard>> conditionGuards_;
 
-  /// Vector of barriers, can be read/modified by get/set barrier methods
-  std::vector<std::shared_ptr<Barrier>> barriers_;
+    /// Vector of barriers, can be read/modified by get/set barrier methods
+    std::vector<std::shared_ptr<Barrier>> barriers_;
 };
 }
 }

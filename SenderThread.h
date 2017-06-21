@@ -60,9 +60,9 @@ public:
     /// abort and whether global checkpoint has been received or not
     class SocketAbortChecker : public IAbortChecker {
     public:
-        explicit SocketAbortChecker(SenderThread *threadPtr)
+        explicit SocketAbortChecker(SenderThread *threadPtr) 
             : threadPtr_(threadPtr) {
-            }
+        }
 
         bool shouldAbort() const override {
             return (threadPtr_->getThreadAbortCode() != OK);
@@ -72,39 +72,39 @@ public:
         SenderThread *threadPtr_{nullptr};
     };
 
-  /// Constructor for the sender thread
+    /// Constructor for the sender thread
     SenderThread(Sender *sender, int threadIndex, int32_t port, ThreadsController *threadsController)
         : WdtThread(sender->options, threadIndex, port, sender->getProtocolVersion(), threadsController), wdtParent_(sender), 
-            dirQueue_(sender->dirQueue_.get()), transferHistoryController_(sender->transferHistoryController_.get()) {
-        controller_->registerThread(threadIndex_);
-        transferHistoryController_->addThreadHistory(port_, threadStats_);
-        threadAbortChecker_ = std::make_unique<SocketAbortChecker>(this);
-        threadCtx_->setAbortChecker(threadAbortChecker_.get());
-        threadStats_.setId(folly::to<std::string>(threadIndex_));
-        isTty_ = isatty(STDERR_FILENO);
+        dirQueue_(sender->dirQueue_.get()), transferHistoryController_(sender->transferHistoryController_.get()) {
+            controller_->registerThread(threadIndex_);
+            transferHistoryController_->addThreadHistory(port_, threadStats_);
+            threadAbortChecker_ = std::make_unique<SocketAbortChecker>(this);
+            threadCtx_->setAbortChecker(threadAbortChecker_.get());
+            threadStats_.setId(folly::to<std::string>(threadIndex_));
+            isTty_ = isatty(STDERR_FILENO);
     }
 
-  typedef SenderState (SenderThread::*StateFunction)();
+    typedef SenderState (SenderThread::*StateFunction)();
 
-  /// Returns the neogtiated protocol
-  int getNegotiatedProtocol() const override;
+    /// Returns the neogtiated protocol
+    int getNegotiatedProtocol() const override;
 
-  /// Steps to do ebfore calling start
-  ErrorCode init() override;
+    /// Steps to do ebfore calling start
+    ErrorCode init() override;
 
-  /// Reset the sender thread
-  void reset() override;
+    /// Reset the sender thread
+    void reset() override;
 
-  /// Get the port sender thread is connecting to
-  int getPort() const override;
+    /// Get the port sender thread is connecting to
+    int getPort() const override;
 
-  /// returns current abort code. checks for both global abort and abort due to
-  /// receive of global checkpoint
-  ErrorCode getThreadAbortCode();
+    /// returns current abort code. checks for both global abort and abort due to
+    /// receive of global checkpoint
+    ErrorCode getThreadAbortCode();
 
-  /// Destructor of the sender thread
-  ~SenderThread() override {
-  }
+    /// Destructor of the sender thread
+    ~SenderThread() override {
+    }
 
  private:
   /// Overloaded operator for printing thread info

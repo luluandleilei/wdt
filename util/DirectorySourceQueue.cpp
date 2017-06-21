@@ -554,6 +554,7 @@ bool DirectorySourceQueue::enqueueFiles() {
             WLOG(ERROR) << "Directory transfer thread aborted";
             return false;
         }
+
         string fullPath = rootDir_ + info.fileName;
         if (info.fileSize < 0) {
             struct stat fileStat;

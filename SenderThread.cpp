@@ -97,46 +97,44 @@ std::unique_ptr<ClientSocket> SenderThread::connectToReceiver(
 }
 
 SenderState SenderThread::connect() {
-  WTVLOG(1) << "entered CONNECT state";
-  if (socket_) {
-    ErrorCode socketErrCode = socket_->getNonRetryableErrCode();
-    if (socketErrCode != OK) {
-      WTLOG(ERROR) << "Socket has non-retryable error "
-                   << errorCodeToStr(socketErrCode);
-      threadStats_.setLocalErrorCode(socketErrCode);
-      return END;
+    WTVLOG(1) << "entered CONNECT state";
+
+    if (socket_) {
+        ErrorCode socketErrCode = socket_->getNonRetryableErrCode();
+        if (socketErrCode != OK) {
+            WTLOG(ERROR) << "Socket has non-retryable error " << errorCodeToStr(socketErrCode);
+            threadStats_.setLocalErrorCode(socketErrCode);
+            return END;
+        }
+        socket_->closeNoCheck();
     }
-    socket_->closeNoCheck();
-  }
-  if (numReconnectWithoutProgress_ >= options_.max_transfer_retries) {
-    WTLOG(ERROR) << "Sender thread reconnected " << numReconnectWithoutProgress_
-                 << " times without making any progress, giving up. port: "
-                 << socket_->getPort();
-    threadStats_.setLocalErrorCode(NO_PROGRESS);
-    return END;
-  }
-  ErrorCode code;
-  // TODO cleanup more but for now avoid having 2 socket object live per port
-  socket_ = nullptr;
-  socket_ = connectToReceiver(port_, threadCtx_->getAbortChecker(), code);
-  if (code == ABORT) {
-    threadStats_.setLocalErrorCode(ABORT);
-    if (getThreadAbortCode() == VERSION_MISMATCH) {
-      return PROCESS_VERSION_MISMATCH;
+    if (numReconnectWithoutProgress_ >= options_.max_transfer_retries) {
+        WTLOG(ERROR) << "Sender thread reconnected " << numReconnectWithoutProgress_ << " times without making any progress, giving up. port: " << socket_->getPort();
+        threadStats_.setLocalErrorCode(NO_PROGRESS);
+        return END;
     }
-    return END;
-  }
-  if (code != OK) {
-    threadStats_.setLocalErrorCode(code);
-    return END;
-  }
-  auto nextState = SEND_SETTINGS;
-  if (threadStats_.getLocalErrorCode() != OK) {
-    nextState = READ_LOCAL_CHECKPOINT;
-  }
-  // resetting the status of thread
-  reset();
-  return nextState;
+    ErrorCode code;
+    // TODO cleanup more but for now avoid having 2 socket object live per port
+    socket_ = nullptr;
+    socket_ = connectToReceiver(port_, threadCtx_->getAbortChecker(), code);
+    if (code == ABORT) {
+        threadStats_.setLocalErrorCode(ABORT);
+        if (getThreadAbortCode() == VERSION_MISMATCH) {
+            return PROCESS_VERSION_MISMATCH;
+        }
+        return END;
+    }
+    if (code != OK) {
+        threadStats_.setLocalErrorCode(code);
+        return END;
+    }
+    auto nextState = SEND_SETTINGS;
+    if (threadStats_.getLocalErrorCode() != OK) {
+        nextState = READ_LOCAL_CHECKPOINT;
+    }
+    // resetting the status of thread
+    reset();
+    return nextState;
 }
 
 SenderState SenderThread::readLocalCheckPoint() {
@@ -941,65 +939,60 @@ SenderState SenderThread::processVersionMismatch() {
 }
 
 void SenderThread::setFooterType() {
-  const int protocolVersion = wdtParent_->getProtocolVersion();
-  if (protocolVersion >= Protocol::CHECKSUM_VERSION &&
-      options_.enable_checksum) {
-    footerType_ = CHECKSUM_FOOTER;
-  } else {
-    footerType_ = NO_FOOTER;
-  }
+    const int protocolVersion = wdtParent_->getProtocolVersion();
+    if (protocolVersion >= Protocol::CHECKSUM_VERSION && options_.enable_checksum) {
+        footerType_ = CHECKSUM_FOOTER;
+    } else {
+        footerType_ = NO_FOOTER;
+    }
 }
 
 void SenderThread::start() {
-  Clock::time_point startTime = Clock::now();
+    Clock::time_point startTime = Clock::now();
 
-  if (buf_ == nullptr) {
-    WTLOG(ERROR) << "Unable to allocate buffer";
-    threadStats_.setLocalErrorCode(MEMORY_ALLOCATION_ERROR);
-    return;
-  }
-
-  setFooterType();
-
-  controller_->executeAtStart([&]() { wdtParent_->startNewTransfer(); });
-  SenderState state = CONNECT;
-
-  while (state != END) {
-    ErrorCode abortCode = getThreadAbortCode();
-    if (abortCode != OK) {
-      WTLOG(ERROR) << "Transfer aborted " << errorCodeToStr(abortCode);
-      threadStats_.setLocalErrorCode(ABORT);
-      if (abortCode == VERSION_MISMATCH) {
-        state = PROCESS_VERSION_MISMATCH;
-      } else {
-        break;
-      }
+    if (buf_ == nullptr) {
+        WTLOG(ERROR) << "Unable to allocate buffer";
+        threadStats_.setLocalErrorCode(MEMORY_ALLOCATION_ERROR);
+        return;
     }
-    state = (this->*stateMap_[state])();
-  }
 
-  EncryptionType encryptionType =
-      (socket_ ? socket_->getEncryptionType() : ENC_NONE);
-  threadStats_.setEncryptionType(encryptionType);
-  double totalTime = durationSeconds(Clock::now() - startTime);
-  WTLOG(INFO) << "Port " << port_ << " done. " << threadStats_
-              << " Total throughput = "
-              << threadStats_.getEffectiveTotalBytes() / totalTime / kMbToB
-              << " Mbytes/sec";
+    setFooterType();
 
-  ThreadTransferHistory &transferHistory = getTransferHistory();
-  transferHistory.markNotInUse();
-  controller_->deRegisterThread(threadIndex_);
-  controller_->executeAtEnd([&]() { wdtParent_->endCurTransfer(); });
-  // Important to delete the socket before the thread dies for sub class
-  // of clientsocket which have thread local data
-  socket_ = nullptr;
+    controller_->executeAtStart([&]() { wdtParent_->startNewTransfer(); });
+	
+    SenderState state = CONNECT;
+    while (state != END) {
+        ErrorCode abortCode = getThreadAbortCode();
+        if (abortCode != OK) {
+            WTLOG(ERROR) << "Transfer aborted " << errorCodeToStr(abortCode);
+            threadStats_.setLocalErrorCode(ABORT);
+            if (abortCode == VERSION_MISMATCH) {
+                state = PROCESS_VERSION_MISMATCH;
+            } else {
+                break;
+            }
+        }
+        state = (this->*stateMap_[state])();
+    }
+
+    EncryptionType encryptionType = (socket_ ? socket_->getEncryptionType() : ENC_NONE);
+    threadStats_.setEncryptionType(encryptionType);
+    double totalTime = durationSeconds(Clock::now() - startTime);
+    WTLOG(INFO) << "Port " << port_ << " done. " << threadStats_ << " Total throughput = " << threadStats_.getEffectiveTotalBytes() / totalTime / kMbToB << " Mbytes/sec";
+
+	ThreadTransferHistory &transferHistory = getTransferHistory();
+	transferHistory.markNotInUse();
+	controller_->deRegisterThread(threadIndex_);
+	controller_->executeAtEnd([&]() { wdtParent_->endCurTransfer(); });
+	// Important to delete the socket before the thread dies for sub class
+	// of clientsocket which have thread local data
+	socket_ = nullptr;
 
   return;
 }
 
 int SenderThread::getPort() const {
-  return port_;
+    return port_;
 }
 
 int SenderThread::getNegotiatedProtocol() const {
@@ -1007,7 +1000,7 @@ int SenderThread::getNegotiatedProtocol() const {
 }
 
 ErrorCode SenderThread::init() {
-  return OK;
+    return OK;
 }
 
 void SenderThread::reset() {
@@ -1016,14 +1009,14 @@ void SenderThread::reset() {
 }
 
 ErrorCode SenderThread::getThreadAbortCode() {
-  ErrorCode globalAbortCode = wdtParent_->getCurAbortCode();
-  if (globalAbortCode != OK) {
-    return globalAbortCode;
-  }
-  if (getTransferHistory().isGlobalCheckpointReceived()) {
-    return GLOBAL_CHECKPOINT_ABORT;
-  }
-  return OK;
+    ErrorCode globalAbortCode = wdtParent_->getCurAbortCode();
+    if (globalAbortCode != OK) {
+        return globalAbortCode;
+    }
+    if (getTransferHistory().isGlobalCheckpointReceived()) {
+        return GLOBAL_CHECKPOINT_ABORT;
+    }
+    return OK;
 }
 }
 }

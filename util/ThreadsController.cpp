@@ -141,6 +141,7 @@ ThreadsController::ThreadsController(int totalThreads) {
     for (int threadNum = 0; threadNum < totalThreads; ++threadNum) {
         threadStateMap_[threadNum] = INIT;
     }
+
     execAtStart_.reset(new ExecuteOnceFunc(totalThreads_, true));
     execAtEnd_.reset(new ExecuteOnceFunc(totalThreads_, false));
 }

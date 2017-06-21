@@ -86,8 +86,7 @@ public:
 private:
     friend class TransferHistoryController;
     /// Validates a checkpoint and returns the status
-    ErrorCode validateCheckpoint(const Checkpoint &checkpoint,
-            bool globalCheckpoint);
+    ErrorCode validateCheckpoint(const Checkpoint &checkpoint, bool globalCheckpoint);
     /**
      * Sets global checkpoint. If the history is still in use, waits for the
      * error thread to add current block to the history.
@@ -98,8 +97,7 @@ private:
      */
     ErrorCode setGlobalCheckpoint(const Checkpoint &checkpoint);
 
-    void markSourceAsFailed(std::unique_ptr<ByteSource> &source,
-            const Checkpoint *checkpoint);
+    void markSourceAsFailed(std::unique_ptr<ByteSource> &source, const Checkpoint *checkpoint);
     /**
      * Sets checkpoint. Also, returns unacked sources to queue
      *
@@ -107,8 +105,7 @@ private:
      * @param globalCheckpoint       global or local checkpoint
      * @return                       status of sources returned to queue
      */
-    ErrorCode setCheckpointAndReturnToQueue(const Checkpoint &checkpoint,
-            bool globalCheckpoint);
+    ErrorCode setCheckpointAndReturnToQueue(const Checkpoint &checkpoint, bool globalCheckpoint);
 
     /// reference to global queue
     DirectorySourceQueue &queue_;
@@ -134,36 +131,35 @@ private:
 
 /// Controller for history across the sender threads
 class TransferHistoryController {
- public:
-  /**
-   * Constructor for the history controller
-   * @param dirQueue      Directory queue used by the sender
-   */
-  explicit TransferHistoryController(DirectorySourceQueue &dirQueue);
+public:
+    /**
+     * Constructor for the history controller
+     * @param dirQueue      Directory queue used by the sender
+     */
+    explicit TransferHistoryController(DirectorySourceQueue &dirQueue);
 
-  /**
-   * Add transfer history for a thread
-   * @param port           Port being used by the sender thread
-   * @param threadStats    Thread stats for the sender thread
-   */
-  void addThreadHistory(int32_t port, TransferStats &threadStats);
+    /**
+     * Add transfer history for a thread
+     * @param port           Port being used by the sender thread
+     * @param threadStats    Thread stats for the sender thread
+     */
+    void addThreadHistory(int32_t port, TransferStats &threadStats);
 
-  /// Get transfer history for a thread using its port number
-  ThreadTransferHistory &getTransferHistory(int32_t port);
+    /// Get transfer history for a thread using its port number
+    ThreadTransferHistory &getTransferHistory(int32_t port);
 
-  /// Handle version mismatch across the histories of all thread
-  ErrorCode handleVersionMismatch();
+    /// Handle version mismatch across the histories of all thread
+    ErrorCode handleVersionMismatch();
 
-  /// Handle checkpoint that was sent by the receiver
-  void handleGlobalCheckpoint(const Checkpoint &checkpoint);
+    /// Handle checkpoint that was sent by the receiver
+    void handleGlobalCheckpoint(const Checkpoint &checkpoint);
 
- private:
-  /// Reference to the directory queue being used by the sender
-  DirectorySourceQueue &dirQueue_;
+private:
+    /// Reference to the directory queue being used by the sender
+    DirectorySourceQueue &dirQueue_;
 
-  /// Map of port (used by sender threads) and transfer history
-  std::unordered_map<int32_t, std::unique_ptr<ThreadTransferHistory>>
-      threadHistoriesMap_;
+    /// Map of port (used by sender threads) and transfer history
+    std::unordered_map<int32_t, std::unique_ptr<ThreadTransferHistory>> threadHistoriesMap_;
 };
 }
 }

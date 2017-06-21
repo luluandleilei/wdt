@@ -89,31 +89,29 @@ bool WdtNamespaceController::hasSenderQuota() const {
   return true;
 }
 
-ErrorCode WdtNamespaceController::createSender(
-    const WdtTransferRequest &request, const string &identifier,
-    SenderPtr &sender) {
-  sender = nullptr;
-  {
-    GuardLock lock(controllerMutex_);
-    // Check for already existing
-    auto it = sendersMap_.find(identifier);
-    if (it != sendersMap_.end()) {
-      WLOG(ERROR) << "Sender already created for transfer " << identifier;
-      // Return it so the old one can potentially be aborted
-      sender = it->second;
-      return ALREADY_EXISTS;
+ErrorCode WdtNamespaceController::createSender( const WdtTransferRequest &request, const string &identifier, SenderPtr &sender) {
+    sender = nullptr;
+    {
+        GuardLock lock(controllerMutex_);
+        // Check for already existing
+        auto it = sendersMap_.find(identifier);
+        if (it != sendersMap_.end()) {
+            WLOG(ERROR) << "Sender already created for transfer " << identifier;
+            // Return it so the old one can potentially be aborted
+            sender = it->second;
+            return ALREADY_EXISTS;
+        }
+        /// Check for quotas
+        if (!hasSenderQuota()) {
+            return QUOTA_EXCEEDED;
+        }
+        sender = make_shared<Sender>(request);
+        sender->setThrottler(parent_->getWdtThrottler());
+        sender->setWdtOptions(parent_->getOptions());
+        sendersMap_[identifier] = sender;
+        ++numSenders_;
     }
-    /// Check for quotas
-    if (!hasSenderQuota()) {
-      return QUOTA_EXCEEDED;
-    }
-    sender = make_shared<Sender>(request);
-    sender->setThrottler(parent_->getWdtThrottler());
-    sender->setWdtOptions(parent_->getOptions());
-    sendersMap_[identifier] = sender;
-    ++numSenders_;
-  }
-  return OK;
+    return OK;
 }
 
 ErrorCode WdtNamespaceController::releaseReceiver(

@@ -21,9 +21,9 @@ class SenderThread;
 class TransferHistoryController;
 
 enum ProtoNegotiationStatus {
-  V_MISMATCH_WAIT,      // waiting for version mismatch to be processed
-  V_MISMATCH_RESOLVED,  // version mismatch processed and was successful
-  V_MISMATCH_FAILED,    // version mismatch processed and it failed
+    V_MISMATCH_WAIT,      // waiting for version mismatch to be processed
+    V_MISMATCH_RESOLVED,  // version mismatch processed and was successful
+    V_MISMATCH_FAILED,    // version mismatch processed and it failed
 };
 
 /**
@@ -34,123 +34,123 @@ enum ProtoNegotiationStatus {
  * class is not thread safe.
  */
 class Sender : public WdtBase {
- public:
-  /// Creates a counter part sender for the receiver according to the details
-  explicit Sender(const WdtTransferRequest &transferRequest);
+public:
+    /// Creates a counter part sender for the receiver according to the details
+    explicit Sender(const WdtTransferRequest &transferRequest);
 
-  /// Setup before start (@see WdtBase.h)
-  const WdtTransferRequest &init() override;
+    /// Setup before start (@see WdtBase.h)
+    const WdtTransferRequest &init() override;
 
-  /**
-   * If the transfer has not finished, then it is aborted. finish() is called to
-   * wait for threads to end.
-   */
-  ~Sender() override;
+    /**
+     * If the transfer has not finished, then it is aborted. finish() is called to
+     * wait for threads to end.
+     */
+    ~Sender() override;
 
-  /**
-   * Joins on the threads spawned by start. This has to
-   * be explicitly called when the caller expects to conclude
-   * a transfer. This method can be called multiple times and is thread-safe.
-   *
-   * @return    transfer report
-   */
-  std::unique_ptr<TransferReport> finish() override;
+    /**
+     * Joins on the threads spawned by start. This has to
+     * be explicitly called when the caller expects to conclude
+     * a transfer. This method can be called multiple times and is thread-safe.
+     *
+     * @return    transfer report
+     */
+    std::unique_ptr<TransferReport> finish() override;
 
-  /**
-   * API to initiate a transfer and return back to the context
-   * from where it was called. Caller would have to call finish
-   * to get the stats for the transfer
-   */
-  ErrorCode transferAsync() override;
+    /**
+     * API to initiate a transfer and return back to the context
+     * from where it was called. Caller would have to call finish
+     * to get the stats for the transfer
+     */
+    ErrorCode transferAsync() override;
 
-  /**
-   * A blocking call which will initiate a transfer based on
-   * the configuration and return back the stats for the transfer
-   *
-   * @return    transfer report
-   */
-  std::unique_ptr<TransferReport> transfer();
+    /**
+     * A blocking call which will initiate a transfer based on
+     * the configuration and return back the stats for the transfer
+     *
+     * @return    transfer report
+     */
+    std::unique_ptr<TransferReport> transfer();
 
-  /// End time of the transfer
-  Clock::time_point getEndTime();
+    /// End time of the transfer
+    Clock::time_point getEndTime();
 
-  /// Get the destination sender is sending to
-  /// @return     destination host-name
-  const std::string &getDestination() const;
+    /// Get the destination sender is sending to
+    /// @return     destination host-name
+    const std::string &getDestination() const;
 
-  /**
-   * @param progressReportIntervalMillis_   interval(ms) between progress
-   *                                        reports. A value of 0 indicates no
-   *                                        progress reporting
-   * TODO: move to base
-   */
-  void setProgressReportIntervalMillis(const int progressReportIntervalMillis);
+    /**
+     * @param progressReportIntervalMillis_   interval(ms) between progress
+     *                                        reports. A value of 0 indicates no
+     *                                        progress reporting
+     * TODO: move to base
+     */
+    void setProgressReportIntervalMillis(const int progressReportIntervalMillis);
 
-  /// @return    minimal transfer report using transfer stats of the thread
-  std::unique_ptr<TransferReport> getTransferReport();
+    /// @return    minimal transfer report using transfer stats of the thread
+    std::unique_ptr<TransferReport> getTransferReport();
 
-  /// Interface to make socket
-  class ISocketCreator {
-   public:
-    virtual std::unique_ptr<ClientSocket> makeSocket(
-        ThreadCtx &threadCtx, const std::string &dest, const int port,
-        const EncryptionParams &encryptionParams, int64_t ivChangeInterval) = 0;
+    /// Interface to make socket
+    class ISocketCreator {
+    public:
+        virtual std::unique_ptr<ClientSocket> makeSocket(
+                ThreadCtx &threadCtx, const std::string &dest, const int port,
+                const EncryptionParams &encryptionParams, int64_t ivChangeInterval) = 0;
 
-    virtual ~ISocketCreator() {
-    }
-  };
+        virtual ~ISocketCreator() {
+        }
+    };
 
-  /**
-   * Sets socket creator
-   *
-   * @param socketCreator   socket-creator to be used
-   */
-  void setSocketCreator(ISocketCreator *socketCreator);
+    /**
+     * Sets socket creator
+     *
+     * @param socketCreator   socket-creator to be used
+     */
+    void setSocketCreator(ISocketCreator *socketCreator);
 
- private:
-  friend class SenderThread;
-  friend class QueueAbortChecker;
+private:
+    friend class SenderThread;
+    friend class QueueAbortChecker;
 
-  /// Validate the transfer request
-  ErrorCode validateTransferRequest() override;
+    /// Validate the transfer request
+    ErrorCode validateTransferRequest() override;
 
-  /// Get the sum of all the thread transfer stats
-  TransferStats getGlobalTransferStats() const;
+    /// Get the sum of all the thread transfer stats
+    TransferStats getGlobalTransferStats() const;
 
-  /// Returns true if file chunks need to be read
-  bool isSendFileChunks() const;
+    /// Returns true if file chunks need to be read
+    bool isSendFileChunks() const;
 
-  /// Returns true if file chunks been received by a thread
-  bool isFileChunksReceived();
+    /// Returns true if file chunks been received by a thread
+    bool isFileChunksReceived();
 
-  /// Sender thread calls this method to set the file chunks info received
-  /// from the receiver
-  void setFileChunksInfo(std::vector<FileChunksInfo> &fileChunksInfoList);
+    /// Sender thread calls this method to set the file chunks info received
+    /// from the receiver
+    void setFileChunksInfo(std::vector<FileChunksInfo> &fileChunksInfoList);
 
-  /// Abort checker passed to DirectoryQueue. If all the network threads finish,
-  /// directory discovery thread is also aborted
-  class QueueAbortChecker : public IAbortChecker {
-   public:
-    explicit QueueAbortChecker(Sender *sender) : sender_(sender) {
-    }
+    /// Abort checker passed to DirectoryQueue. If all the network threads finish,
+    /// directory discovery thread is also aborted
+    class QueueAbortChecker : public IAbortChecker {
+    public:
+        explicit QueueAbortChecker(Sender *sender) : sender_(sender) {
+        }
 
-    bool shouldAbort() const override {
-      return (sender_->getTransferStatus() == FINISHED);
-    }
+        bool shouldAbort() const override {
+            return (sender_->getTransferStatus() == FINISHED);
+        }
 
-   private:
-    Sender *sender_;
-  };
+    private:
+        Sender *sender_;
+    };
 
-  /// Abort checker shared with the directory queue
-  QueueAbortChecker queueAbortChecker_;
+    /// Abort checker shared with the directory queue
+    QueueAbortChecker queueAbortChecker_;
 
-  /**
-   * Internal API that triggers the directory thread, sets up the sender
-   * threads and starts the transfer. Returns after the sender threads
-   * have been spawned
-   */
-  ErrorCode start();
+    /**
+     * Internal API that triggers the directory thread, sets up the sender
+     * threads and starts the transfer. Returns after the sender threads
+     * have been spawned
+     */
+    ErrorCode start();
 
   /**
    * @param transferredSourceStats      Stats for the successfully transmitted

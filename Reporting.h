@@ -264,10 +264,10 @@ private:
     failedAttempts_++;
   }
 
-  /// @param status of the transfer
+    /// @param status of the transfer
   void setLocalErrorCode(ErrorCode errCode) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    localErrCode_ = errCode;
+      folly::RWSpinLock::WriteHolder lock(mutex_.get());
+      localErrCode_ = errCode;
   }
 
   /// @param status of the transfer on the remote end

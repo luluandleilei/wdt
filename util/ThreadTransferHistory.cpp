@@ -12,11 +12,9 @@
 namespace facebook {
 namespace wdt {
 
-ThreadTransferHistory::ThreadTransferHistory(DirectorySourceQueue &queue,
-                                             TransferStats &threadStats,
-                                             int32_t port)
+ThreadTransferHistory::ThreadTransferHistory(DirectorySourceQueue &queue, TransferStats &threadStats, int32_t port)
     : queue_(queue), threadStats_(threadStats), port_(port) {
-  WVLOG(1) << "Making thread history for port " << port_;
+    WVLOG(1) << "Making thread history for port " << port_;
 }
 
 std::string ThreadTransferHistory::getSourceId(int64_t index) {
@@ -237,8 +235,7 @@ void ThreadTransferHistory::markNotInUse() {
   conditionInUse_.notify_all();
 }
 
-TransferHistoryController::TransferHistoryController(
-    DirectorySourceQueue &dirQueue)
+TransferHistoryController::TransferHistoryController( DirectorySourceQueue &dirQueue)
     : dirQueue_(dirQueue) {
 }
 

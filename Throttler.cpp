@@ -157,8 +157,7 @@ void Throttler::sleep(double sleepTimeSecs) const {
   std::this_thread::sleep_for(std::chrono::duration<double>(sleepTimeSecs));
 }
 
-double Throttler::calculateSleep(double deltaProgress,
-                                 const Clock::time_point& now) {
+double Throttler::calculateSleep(double deltaProgress, const Clock::time_point& now) {
   folly::SpinLockGuard lock(throttlerMutex_);
   if (refCount_ <= 0) {
     WLOG(ERROR) << "Using the throttler without registering the transfer";
@@ -244,11 +243,11 @@ double Throttler::averageThrottler(const Clock::time_point& now) {
 }
 
 void Throttler::startTransfer() {
-  folly::SpinLockGuard lock(throttlerMutex_);
-  if (refCount_ == 0) {
-    resetState();
-  }
-  refCount_++;
+    folly::SpinLockGuard lock(throttlerMutex_);
+    if (refCount_ == 0) {
+        resetState();
+    }
+    refCount_++;
 }
 
 void Throttler::resetState() {

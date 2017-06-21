@@ -53,42 +53,36 @@ Wdt::Wdt() {
 }
 
 std::string Wdt::getSenderIdentifier(const WdtTransferRequest &req) {
-  if (req.destIdentifier.empty()) {
-    return req.hostName;
-  }
-  return req.destIdentifier;
+    if (req.destIdentifier.empty()) {
+        return req.hostName;
+    }
+    return req.destIdentifier;
 }
 
-ErrorCode Wdt::createWdtSender(const WdtTransferRequest &req,
-                               std::shared_ptr<IAbortChecker> abortChecker,
-                               bool terminateExistingOne,
-                               SenderPtr &senderPtr) {
-  if (req.errorCode != OK) {
-    WLOG(ERROR) << "Transfer request error " << errorCodeToStr(req.errorCode);
-    return req.errorCode;
-  }
-  // Protocol issues will/should be flagged as error when we call createSender
-
-  // try to create sender
-  const std::string &wdtNamespace = req.wdtNamespace;
-  const std::string secondKey = getSenderIdentifier(req);
-  ErrorCode errCode = resourceController_->createSender(wdtNamespace, secondKey,
-                                                        req, senderPtr);
-  if (errCode == ALREADY_EXISTS && terminateExistingOne) {
-    WLOG(WARNING) << "Found pre-existing sender for " << wdtNamespace << " "
-                  << secondKey << " aborting it and making a new one";
-    if (senderPtr->getTransferRequest().transferId == req.transferId) {
-      WLOG(WARNING) << "No need to recreate same sender with key: " << secondKey
-                    << " TransferRequest: " << req;
-      return ALREADY_EXISTS;
+ErrorCode Wdt::createWdtSender(const WdtTransferRequest &req, std::shared_ptr<IAbortChecker> abortChecker, bool terminateExistingOne, SenderPtr &senderPtr) {
+    if (req.errorCode != OK) {
+        WLOG(ERROR) << "Transfer request error " << errorCodeToStr(req.errorCode);
+        return req.errorCode;
     }
-    senderPtr->abort(ABORTED_BY_APPLICATION);
-    // This may log an error too
-    resourceController_->releaseSender(wdtNamespace, secondKey);
-    // Try#2
-    errCode = resourceController_->createSender(wdtNamespace, secondKey, req,
-                                                senderPtr);
-  }
+    // Protocol issues will/should be flagged as error when we call createSender
+
+    // try to create sender
+    const std::string &wdtNamespace = req.wdtNamespace;
+    const std::string secondKey = getSenderIdentifier(req);
+
+    ErrorCode errCode = resourceController_->createSender(wdtNamespace, secondKey, req, senderPtr);
+    if (errCode == ALREADY_EXISTS && terminateExistingOne) {
+        WLOG(WARNING) << "Found pre-existing sender for " << wdtNamespace << " " << secondKey << " aborting it and making a new one";
+        if (senderPtr->getTransferRequest().transferId == req.transferId) {
+            WLOG(WARNING) << "No need to recreate same sender with key: " << secondKey << " TransferRequest: " << req;
+            return ALREADY_EXISTS;
+        }
+        senderPtr->abort(ABORTED_BY_APPLICATION);
+        // This may log an error too
+        resourceController_->releaseSender(wdtNamespace, secondKey);
+        // Try#2
+        errCode = resourceController_->createSender(wdtNamespace, secondKey, req, senderPtr);
+    }
   if (errCode != OK) {
     WLOG(ERROR) << "Failed to create sender " << errorCodeToStr(errCode) << " "
                 << wdtNamespace << " " << secondKey;
@@ -104,27 +98,24 @@ ErrorCode Wdt::releaseWdtSender(const WdtTransferRequest &wdtRequest) {
                                             getSenderIdentifier(wdtRequest));
 }
 
-ErrorCode Wdt::wdtSend(const WdtTransferRequest &req,
-                       std::shared_ptr<IAbortChecker> abortChecker,
-                       bool terminateExistingOne) {
-  SenderPtr sender;
-  ErrorCode errCode =
-      createWdtSender(req, abortChecker, terminateExistingOne, sender);
-  if (errCode != OK) {
+ErrorCode Wdt::wdtSend(const WdtTransferRequest &req, std::shared_ptr<IAbortChecker> abortChecker, bool terminateExistingOne) {
+    SenderPtr sender;
+
+    ErrorCode errCode = createWdtSender(req, abortChecker, terminateExistingOne, sender);
+    if (errCode != OK) {
+        return errCode;
+    }
+    const std::string &wdtNamespace = req.wdtNamespace;
+    auto validatedReq = sender->init();
+    if (validatedReq.errorCode != OK) {
+        WLOG(ERROR) << "Couldn't init sender with request for " << wdtNamespace;
+        return validatedReq.errorCode;
+    }
+    auto transferReport = sender->transfer();
+    errCode = transferReport->getSummary().getErrorCode();
+    releaseWdtSender(req);
+    WLOG(INFO) << "wdtSend for " << wdtNamespace << " " << req.hostName << " ended with " << errorCodeToStr(errCode);
     return errCode;
-  }
-  const std::string &wdtNamespace = req.wdtNamespace;
-  auto validatedReq = sender->init();
-  if (validatedReq.errorCode != OK) {
-    WLOG(ERROR) << "Couldn't init sender with request for " << wdtNamespace;
-    return validatedReq.errorCode;
-  }
-  auto transferReport = sender->transfer();
-  errCode = transferReport->getSummary().getErrorCode();
-  releaseWdtSender(req);
-  WLOG(INFO) << "wdtSend for " << wdtNamespace << " " << req.hostName
-             << " ended with " << errorCodeToStr(errCode);
-  return errCode;
 }
 
 ErrorCode Wdt::wdtReceiveStart(const std::string &wdtNamespace,

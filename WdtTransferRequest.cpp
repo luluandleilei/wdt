@@ -18,7 +18,7 @@ namespace facebook {
 namespace wdt {
 
 WdtUri::WdtUri(const string& url) {
-  errorCode_ = process(url);
+    errorCode_ = process(url);
 }
 
 void WdtUri::setHostName(const string& hostName) {
@@ -78,30 +78,30 @@ string WdtUri::escape(const string& binaryStr) {
 
 /* static */
 bool WdtUri::unescape(string& res, StringPiece escapedValue) {
-  res.reserve(res.length() + escapedValue.size());
-  for (size_t i = 0; i < escapedValue.size(); ++i) {
-    char c = escapedValue[i];
-    if (c != '%') {
-      res.push_back(c);
-      continue;
+    res.reserve(res.length() + escapedValue.size());
+    for (size_t i = 0; i < escapedValue.size(); ++i) {
+        char c = escapedValue[i];
+        if (c != '%') {
+            res.push_back(c);
+            continue;
+        }
+        i += 2;
+        // Make sure there room for both hex
+        if (i >= escapedValue.size()) {
+            WLOG(ERROR) << "Can't decode \"" << escapedValue
+                << "\" end with unfinished % sequence";
+            return false;
+        }
+        const int msb = fromHex(escapedValue[i - 1]);
+        const int lsb = fromHex(escapedValue[i]);
+        if (msb < 0 || lsb < 0) {
+            WLOG(ERROR) << "Can't decode \"" << escapedValue
+                << "\" % sequence with non 0-9a-f characters";
+            return false;
+        }
+        res.push_back(msb << 4 | lsb);
     }
-    i += 2;
-    // Make sure there room for both hex
-    if (i >= escapedValue.size()) {
-      WLOG(ERROR) << "Can't decode \"" << escapedValue
-                  << "\" end with unfinished % sequence";
-      return false;
-    }
-    const int msb = fromHex(escapedValue[i - 1]);
-    const int lsb = fromHex(escapedValue[i]);
-    if (msb < 0 || lsb < 0) {
-      WLOG(ERROR) << "Can't decode \"" << escapedValue
-                  << "\" % sequence with non 0-9a-f characters";
-      return false;
-    }
-    res.push_back(msb << 4 | lsb);
-  }
-  return true;
+    return true;
 }
 
 string WdtUri::generateUrl() const {
@@ -128,105 +128,113 @@ string WdtUri::generateUrl() const {
 }
 
 ErrorCode WdtUri::process(const string& url) {
-  if (url.size() < WDT_URL_PREFIX.size()) {
-    WLOG(ERROR) << "Url doesn't specify wdt protocol";
-    return URI_PARSE_ERROR;
-  }
-  StringPiece urlPiece(url, 0, WDT_URL_PREFIX.size());
-  StringPiece wdtPrefix(WDT_URL_PREFIX);
-  if (urlPiece != wdtPrefix) {
-    WLOG(ERROR) << "Url does not specify wdt protocol " << url;
-    return URI_PARSE_ERROR;
-  }
-  urlPiece = StringPiece(url, WDT_URL_PREFIX.size());
-  if (urlPiece.empty()) {
-    WLOG(ERROR) << "Empty host name " << url;
-    return URI_PARSE_ERROR;
-  }
-  ErrorCode status = OK;
-  // Parse hostname
-  if (urlPiece[0] == '[') {
+    if (url.size() < WDT_URL_PREFIX.size()) {
+        WLOG(ERROR) << "Url doesn't specify wdt protocol";
+        return URI_PARSE_ERROR;
+    }
+
+    StringPiece urlPiece(url, 0, WDT_URL_PREFIX.size());
+    StringPiece wdtPrefix(WDT_URL_PREFIX);
+    if (urlPiece != wdtPrefix) {
+        WLOG(ERROR) << "Url does not specify wdt protocol " << url;
+        return URI_PARSE_ERROR;
+    }
+
+    urlPiece = StringPiece(url, WDT_URL_PREFIX.size());
+
+    if (urlPiece.empty()) {
+        WLOG(ERROR) << "Empty host name " << url;
+        return URI_PARSE_ERROR;
+    }
+
+    ErrorCode status = OK;
+    // Parse hostname
+    if (urlPiece[0] == '[') {
+        urlPiece.advance(1);
+        size_t hostNameEnd = urlPiece.find(']');
+        if (hostNameEnd == string::npos) {
+            WLOG(ERROR) << "Didn't find ] for ipv6 address " << url;
+            return URI_PARSE_ERROR;
+        }
+        hostName_.assign(urlPiece.data(), 0, hostNameEnd);
+        urlPiece.advance(hostNameEnd + 1);
+    } else {
+        size_t urlIndex = 0;
+        for (; urlIndex < urlPiece.size(); ++urlIndex) {
+            if (urlPiece[urlIndex] == ':') {
+                break;
+            }
+            if (urlPiece[urlIndex] == '?') {
+                break;
+            }
+        }
+        hostName_.assign(urlPiece.data(), 0, urlIndex);
+        urlPiece.advance(urlIndex);
+    }
+
+    if (hostName_.empty()) {
+        status = URI_PARSE_ERROR;
+        WLOG(ERROR) << "Empty hostname " << url;
+    }
+
+    if (urlPiece.empty()) {
+        return status;
+    }
+
+    // TODO: allow for '/' like wdt://[::1]:1234/?num_ports=3
+    // parse port number
+    if (urlPiece[0] == ':') {
+        urlPiece.advance(1);
+        size_t paramsIndex = urlPiece.find('?');
+        if (paramsIndex == string::npos) {
+            paramsIndex = urlPiece.size();
+        }
+        try {
+            string portStr;
+            portStr.assign(urlPiece.data(), 0, paramsIndex);
+            port_ = folly::to<int32_t>(portStr);
+        } catch (std::exception& e) {
+            WLOG(ERROR) << "Invalid port, can't be parsed " << url;
+            status = URI_PARSE_ERROR;
+        }
+        urlPiece.advance(paramsIndex);
+    }
+
+    if (urlPiece.empty()) {
+        return status;
+    }
+
+    if (urlPiece[0] != '?') {
+        WLOG(ERROR) << "Unexpected delimiter for params " << urlPiece[0];
+        return URI_PARSE_ERROR;
+    }
     urlPiece.advance(1);
-    size_t hostNameEnd = urlPiece.find(']');
-    if (hostNameEnd == string::npos) {
-      WLOG(ERROR) << "Didn't find ] for ipv6 address " << url;
-      return URI_PARSE_ERROR;
-    }
-    hostName_.assign(urlPiece.data(), 0, hostNameEnd);
-    urlPiece.advance(hostNameEnd + 1);
-  } else {
-    size_t urlIndex = 0;
-    for (; urlIndex < urlPiece.size(); ++urlIndex) {
-      if (urlPiece[urlIndex] == ':') {
-        break;
-      }
-      if (urlPiece[urlIndex] == '?') {
-        break;
-      }
-    }
-    hostName_.assign(urlPiece.data(), 0, urlIndex);
-    urlPiece.advance(urlIndex);
-  }
 
-  if (hostName_.empty()) {
-    status = URI_PARSE_ERROR;
-    WLOG(ERROR) << "Empty hostname " << url;
-  }
+    // parse params
+    while (!urlPiece.empty()) {
+        StringPiece keyValuePair = urlPiece.split_step('&');
+        if (keyValuePair.empty()) {
+            // Last key value pair
+            keyValuePair = urlPiece;
+            urlPiece.advance(urlPiece.size());
+        }
 
-  if (urlPiece.empty()) {
+        StringPiece key = keyValuePair.split_step('=');
+        StringPiece value = keyValuePair;
+        if (key.empty()) {
+            // Value can be empty but key can't be empty
+            WLOG(ERROR) << "Errors parsing params, url = " << url;
+            status = URI_PARSE_ERROR;
+            break;
+        }
+
+        string unescapedValue;
+        if (!unescape(unescapedValue, value)) {
+            status = URI_PARSE_ERROR;
+        }
+        queryParams_[key.toString()] = unescapedValue;
+    }
     return status;
-  }
-  // TODO: allow for '/' like wdt://[::1]:1234/?num_ports=3
-  // parse port number
-  if (urlPiece[0] == ':') {
-    urlPiece.advance(1);
-    size_t paramsIndex = urlPiece.find('?');
-    if (paramsIndex == string::npos) {
-      paramsIndex = urlPiece.size();
-    }
-    try {
-      string portStr;
-      portStr.assign(urlPiece.data(), 0, paramsIndex);
-      port_ = folly::to<int32_t>(portStr);
-    } catch (std::exception& e) {
-      WLOG(ERROR) << "Invalid port, can't be parsed " << url;
-      status = URI_PARSE_ERROR;
-    }
-    urlPiece.advance(paramsIndex);
-  }
-
-  if (urlPiece.empty()) {
-    return status;
-  }
-
-  if (urlPiece[0] != '?') {
-    WLOG(ERROR) << "Unexpected delimiter for params " << urlPiece[0];
-    return URI_PARSE_ERROR;
-  }
-  urlPiece.advance(1);
-  // parse params
-  while (!urlPiece.empty()) {
-    StringPiece keyValuePair = urlPiece.split_step('&');
-    if (keyValuePair.empty()) {
-      // Last key value pair
-      keyValuePair = urlPiece;
-      urlPiece.advance(urlPiece.size());
-    }
-    StringPiece key = keyValuePair.split_step('=');
-    StringPiece value = keyValuePair;
-    if (key.empty()) {
-      // Value can be empty but key can't be empty
-      WLOG(ERROR) << "Errors parsing params, url = " << url;
-      status = URI_PARSE_ERROR;
-      break;
-    }
-    string unescapedValue;
-    if (!unescape(unescapedValue, value)) {
-      status = URI_PARSE_ERROR;
-    }
-    queryParams_[key.toString()] = unescapedValue;
-  }
-  return status;
 }
 
 string WdtUri::getHostName() const {
@@ -264,11 +272,11 @@ WdtUri& WdtUri::operator=(const string& url) {
 
 /* static */
 std::vector<int32_t> WdtTransferRequest::genPortsVector(int32_t startPort, int32_t numPorts) {
-  std::vector<int32_t> ports;
-  for (int32_t i = 0; i < numPorts; i++) {
-    ports.push_back(startPort + i);
-  }
-  return ports;
+    std::vector<int32_t> ports;
+    for (int32_t i = 0; i < numPorts; i++) {
+        ports.push_back(startPort + i);
+    }
+    return ports;
 }
 
 const string WdtTransferRequest::TRANSFER_ID_PARAM{"id"};
@@ -296,44 +304,42 @@ WdtTransferRequest::WdtTransferRequest(int startPort, int numPorts, const string
 }
 
 WdtTransferRequest::WdtTransferRequest(const string& uriString) {
-  WdtUri wdtUri(uriString);
-  errorCode = wdtUri.getErrorCode();
-  hostName = wdtUri.getHostName();
-  transferId = wdtUri.getQueryParam(TRANSFER_ID_PARAM);
-  wdtNamespace = wdtUri.getQueryParam(NAMESPACE_PARAM);
-  destIdentifier = wdtUri.getQueryParam(DEST_IDENTIFIER_PARAM);
-  directory = wdtUri.getQueryParam(DIRECTORY_PARAM);
-  string encStr = wdtUri.getQueryParam(ENCRYPTION_PARAM);
-  if (!encStr.empty()) {
-    ErrorCode code = EncryptionParams::unserialize(encStr, encryptionData);
-    if (code != OK) {
-      WLOG(ERROR) << "Unable to parse encryption data from \"" << encStr << "\" " << errorCodeToStr(code);
-      errorCode = getMoreInterestingError(code, errorCode);
+    WdtUri wdtUri(uriString);
+    errorCode = wdtUri.getErrorCode();
+    hostName = wdtUri.getHostName();
+    transferId = wdtUri.getQueryParam(TRANSFER_ID_PARAM);
+    wdtNamespace = wdtUri.getQueryParam(NAMESPACE_PARAM);
+    destIdentifier = wdtUri.getQueryParam(DEST_IDENTIFIER_PARAM);
+    directory = wdtUri.getQueryParam(DIRECTORY_PARAM);
+    string encStr = wdtUri.getQueryParam(ENCRYPTION_PARAM);
+    if (!encStr.empty()) {
+        ErrorCode code = EncryptionParams::unserialize(encStr, encryptionData);
+        if (code != OK) {
+            WLOG(ERROR) << "Unable to parse encryption data from \"" << encStr << "\" " << errorCodeToStr(code);
+            errorCode = getMoreInterestingError(code, errorCode);
+        }
     }
-  }
-  string downloadResume = wdtUri.getQueryParam(DOWNLOAD_RESUMPTION_PARAM);
-  try {
-    if (!downloadResume.empty()) {
-      downloadResumptionEnabled = folly::to<bool>(downloadResume);
-    }
-  } catch (std::exception& e) {
-    WLOG(ERROR) << "Error parsing download resume " << downloadResume << " " << e.what();
-    errorCode = URI_PARSE_ERROR;
-  }
-
-  const string recpv = wdtUri.getQueryParam(RECEIVER_PROTOCOL_VERSION_PARAM);
-  if (recpv.empty()) {
-    WLOG(WARNING) << RECEIVER_PROTOCOL_VERSION_PARAM << " not specified in URI";
-  } else {
+    string downloadResume = wdtUri.getQueryParam(DOWNLOAD_RESUMPTION_PARAM);
     try {
-      protocolVersion = folly::to<int64_t>(recpv);
+        if (!downloadResume.empty()) {
+            downloadResumptionEnabled = folly::to<bool>(downloadResume);
+        }
     } catch (std::exception& e) {
-      WLOG(ERROR) << "Error parsing protocol version "
-                  << wdtUri.getQueryParam(RECEIVER_PROTOCOL_VERSION_PARAM)
-                  << " " << e.what();
-      errorCode = URI_PARSE_ERROR;
+        WLOG(ERROR) << "Error parsing download resume " << downloadResume << " " << e.what();
+        errorCode = URI_PARSE_ERROR;
     }
-  }
+
+    const string recpv = wdtUri.getQueryParam(RECEIVER_PROTOCOL_VERSION_PARAM);
+    if (recpv.empty()) {
+        WLOG(WARNING) << RECEIVER_PROTOCOL_VERSION_PARAM << " not specified in URI";
+    } else {
+        try {
+            protocolVersion = folly::to<int64_t>(recpv);
+        } catch (std::exception& e) {
+            WLOG(ERROR) << "Error parsing protocol version " << wdtUri.getQueryParam(RECEIVER_PROTOCOL_VERSION_PARAM) << " " << e.what();
+            errorCode = URI_PARSE_ERROR;
+        }
+    }
 
   const string ivChangeIntervalStr =
       wdtUri.getQueryParam(IV_CHANGE_INTERVAL_PARAM);
@@ -469,15 +475,15 @@ void WdtTransferRequest::serializePorts(WdtUri& wdtUri) const {
 }
 
 string WdtTransferRequest::getSerializedPortsList() const {
-  string portsList = "";
-  for (size_t i = 0; i < ports.size(); i++) {
-    if (i != 0) {
-      folly::toAppend(",", &portsList);
+    string portsList = "";
+    for (size_t i = 0; i < ports.size(); i++) {
+        if (i != 0) {
+            folly::toAppend(",", &portsList);
+        }
+        auto port = ports[i];
+        folly::toAppend(port, &portsList);
     }
-    auto port = ports[i];
-    folly::toAppend(port, &portsList);
-  }
-  return portsList;
+    return portsList;
 }
 
 bool WdtTransferRequest::operator==(const WdtTransferRequest& that) const {
