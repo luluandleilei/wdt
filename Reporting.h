@@ -112,224 +112,224 @@ private:
         }
     }
 
-  explicit TransferStats(const std::string &id, bool isLocked = false)
-      : TransferStats(isLocked) {
-    id_ = id;
-  }
-
-  void reset() {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    headerBytes_ = dataBytes_ = 0;
-    effectiveHeaderBytes_ = effectiveDataBytes_ = 0;
-    numFiles_ = numBlocks_ = 0;
-    failedAttempts_ = 0;
-    localErrCode_ = remoteErrCode_ = OK;
-  }
-
-  /// @return the number of blocks sent by sender
-  int64_t getNumBlocksSend() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return numBlocksSend_;
-  }
-
-  /// @return the total sender bytes
-  int64_t getTotalSenderBytes() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return totalSenderBytes_;
-  }
-
-  /// @return number of header bytes transferred
-  int64_t getHeaderBytes() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return headerBytes_;
-  }
-
-  /// @return number of data bytes transferred
-  int64_t getDataBytes() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return dataBytes_;
-  }
-
-  /**
-   * @param needLocking     specifies whether we need to lock or not. this is
-   *                        for performance improvement. in sender, we do not
-   *                        need locking for this call, even though the other
-   *                        calls have to be locked
-   *
-   * @return                number of total bytes transferred
-   */
-  int64_t getTotalBytes(bool needLocking = true) const {
-    if (needLocking) {
-      folly::RWSpinLock::ReadHolder lock(mutex_.get());
-      return headerBytes_ + dataBytes_;
+    explicit TransferStats(const std::string &id, bool isLocked = false)
+        : TransferStats(isLocked) {
+        id_ = id;
     }
-    return headerBytes_ + dataBytes_;
-  }
 
-  /**
-   * @return    number of header bytes transferred as part of successful file
-   *            transfer
-   */
-  int64_t getEffectiveHeaderBytes() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return effectiveHeaderBytes_;
-  }
+    void reset() {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        headerBytes_ = dataBytes_ = 0;
+        effectiveHeaderBytes_ = effectiveDataBytes_ = 0;
+        numFiles_ = numBlocks_ = 0;
+        failedAttempts_ = 0;
+        localErrCode_ = remoteErrCode_ = OK;
+    }
 
-  /**
-   * @return    number of data bytes transferred as part of successful file
-   *            transfer
-   */
-  int64_t getEffectiveDataBytes() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return effectiveDataBytes_;
-  }
+    /// @return the number of blocks sent by sender
+    int64_t getNumBlocksSend() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return numBlocksSend_;
+    }
 
-  /**
-   * @return    number of total bytes transferred as part of successful file
-   *            transfer
-   */
-  int64_t getEffectiveTotalBytes() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return effectiveHeaderBytes_ + effectiveDataBytes_;
-  }
+    /// @return the total sender bytes
+    int64_t getTotalSenderBytes() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return totalSenderBytes_;
+    }
 
-  /// @return number of files successfully transferred
-  int64_t getNumFiles() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return numFiles_;
-  }
+    /// @return number of header bytes transferred
+    int64_t getHeaderBytes() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return headerBytes_;
+    }
 
-  /// @return number of blocks successfully transferred
-  int64_t getNumBlocks() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return numBlocks_;
-  }
+    /// @return number of data bytes transferred
+    int64_t getDataBytes() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return dataBytes_;
+    }
 
-  /// @return number of failed transfers
-  int64_t getFailedAttempts() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return failedAttempts_;
-  }
+    /**
+     * @param needLocking     specifies whether we need to lock or not. this is
+     *                        for performance improvement. in sender, we do not
+     *                        need locking for this call, even though the other
+     *                        calls have to be locked
+     *
+     * @return                number of total bytes transferred
+     */
+    int64_t getTotalBytes(bool needLocking = true) const {
+        if (needLocking) {
+            folly::RWSpinLock::ReadHolder lock(mutex_.get());
+            return headerBytes_ + dataBytes_;
+        }
+        return headerBytes_ + dataBytes_;
+    }
 
-  /// @return error code based on combinator of local and remote error
-  ErrorCode getErrorCode() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return getMoreInterestingError(localErrCode_, remoteErrCode_);
-  }
+    /**
+     * @return    number of header bytes transferred as part of successful file
+     *            transfer
+     */
+    int64_t getEffectiveHeaderBytes() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return effectiveHeaderBytes_;
+    }
 
-  /// @return status of the transfer on this side
-  ErrorCode getLocalErrorCode() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return localErrCode_;
-  }
+    /**
+     * @return    number of data bytes transferred as part of successful file
+     *            transfer
+     */
+    int64_t getEffectiveDataBytes() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return effectiveDataBytes_;
+    }
 
-  /// @return status of the transfer on the remote end
-  ErrorCode getRemoteErrorCode() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return remoteErrCode_;
-  }
+    /**
+     * @return    number of total bytes transferred as part of successful file
+     *            transfer
+     */
+    int64_t getEffectiveTotalBytes() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return effectiveHeaderBytes_ + effectiveDataBytes_;
+    }
 
-  const std::string &getId() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return id_;
-  }
+    /// @return number of files successfully transferred
+    int64_t getNumFiles() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return numFiles_;
+    }
 
-  /// @param number of additional data bytes transferred
-  void addDataBytes(int64_t count) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    dataBytes_ += count;
-  }
+    /// @return number of blocks successfully transferred
+    int64_t getNumBlocks() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return numBlocks_;
+    }
 
-  /// @param number of additional header bytes transferred
-  void addHeaderBytes(int64_t count) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    headerBytes_ += count;
-  }
+    /// @return number of failed transfers
+    int64_t getFailedAttempts() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return failedAttempts_;
+    }
 
-  /// @param set num blocks send
-  void setNumBlocksSend(int64_t numBlocksSend) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    numBlocksSend_ = numBlocksSend;
-  }
+    /// @return error code based on combinator of local and remote error
+    ErrorCode getErrorCode() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return getMoreInterestingError(localErrCode_, remoteErrCode_);
+    }
 
-  /// @param set total sender bytes
-  void setTotalSenderBytes(int64_t totalSenderBytes) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    totalSenderBytes_ = totalSenderBytes;
-  }
+    /// @return status of the transfer on this side
+    ErrorCode getLocalErrorCode() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return localErrCode_;
+    }
 
-  /// one more file transfer failed
-  void incrFailedAttempts() {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    failedAttempts_++;
-  }
+    /// @return status of the transfer on the remote end
+    ErrorCode getRemoteErrorCode() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return remoteErrCode_;
+    }
+
+    const std::string &getId() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return id_;
+    }
+
+    /// @param number of additional data bytes transferred
+    void addDataBytes(int64_t count) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        dataBytes_ += count;
+    }
+
+    /// @param number of additional header bytes transferred
+    void addHeaderBytes(int64_t count) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        headerBytes_ += count;
+    }
+
+    /// @param set num blocks send
+    void setNumBlocksSend(int64_t numBlocksSend) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        numBlocksSend_ = numBlocksSend;
+    }
+
+    /// @param set total sender bytes
+    void setTotalSenderBytes(int64_t totalSenderBytes) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        totalSenderBytes_ = totalSenderBytes;
+    }
+
+    /// one more file transfer failed
+    void incrFailedAttempts() {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        failedAttempts_++;
+    }
 
     /// @param status of the transfer
-  void setLocalErrorCode(ErrorCode errCode) {
-      folly::RWSpinLock::WriteHolder lock(mutex_.get());
-      localErrCode_ = errCode;
-  }
+    void setLocalErrorCode(ErrorCode errCode) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        localErrCode_ = errCode;
+    }
 
-  /// @param status of the transfer on the remote end
-  void setRemoteErrorCode(ErrorCode remoteErrCode) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    remoteErrCode_ = remoteErrCode;
-  }
+    /// @param status of the transfer on the remote end
+    void setRemoteErrorCode(ErrorCode remoteErrCode) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        remoteErrCode_ = remoteErrCode;
+    }
 
-  /// @param id of the corresponding entity
-  void setId(const std::string &id) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    id_ = id;
-  }
+    /// @param id of the corresponding entity
+    void setId(const std::string &id) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        id_ = id;
+    }
 
-  /// @param numFiles number of files successfully send
-  void setNumFiles(int64_t numFiles) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    numFiles_ = numFiles;
-  }
+    /// @param numFiles number of files successfully send
+    void setNumFiles(int64_t numFiles) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        numFiles_ = numFiles;
+    }
 
-  /// one more block successfully transferred
-  void incrNumBlocks() {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    numBlocks_++;
-  }
+    /// one more block successfully transferred
+    void incrNumBlocks() {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        numBlocks_++;
+    }
 
-  void decrNumBlocks() {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    numBlocks_--;
-  }
+    void decrNumBlocks() {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        numBlocks_--;
+    }
 
-  /**
-   * @param headerBytes header bytes transfered part of a successful file
-   *                    transfer
-   * @param dataBytes   data bytes transferred part of a successful file
-   *                    transfer
-   */
-  void addEffectiveBytes(int64_t headerBytes, int64_t dataBytes) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    effectiveHeaderBytes_ += headerBytes;
-    effectiveDataBytes_ += dataBytes;
-  }
+    /**
+     * @param headerBytes header bytes transfered part of a successful file
+     *                    transfer
+     * @param dataBytes   data bytes transferred part of a successful file
+     *                    transfer
+     */
+    void addEffectiveBytes(int64_t headerBytes, int64_t dataBytes) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        effectiveHeaderBytes_ += headerBytes;
+        effectiveDataBytes_ += dataBytes;
+    }
 
-  void subtractEffectiveBytes(int64_t headerBytes, int64_t dataBytes) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    effectiveHeaderBytes_ -= headerBytes;
-    effectiveDataBytes_ -= dataBytes;
-  }
+    void subtractEffectiveBytes(int64_t headerBytes, int64_t dataBytes) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        effectiveHeaderBytes_ -= headerBytes;
+        effectiveDataBytes_ -= dataBytes;
+    }
 
-  void setEncryptionType(EncryptionType encryptionType) {
-    folly::RWSpinLock::WriteHolder lock(mutex_.get());
-    encryptionType_ = encryptionType;
-  }
+    void setEncryptionType(EncryptionType encryptionType) {
+        folly::RWSpinLock::WriteHolder lock(mutex_.get());
+        encryptionType_ = encryptionType;
+    }
 
-  EncryptionType getEncryptionType() const {
-    folly::RWSpinLock::ReadHolder lock(mutex_.get());
-    return encryptionType_;
-  }
+    EncryptionType getEncryptionType() const {
+        folly::RWSpinLock::ReadHolder lock(mutex_.get());
+        return encryptionType_;
+    }
 
-  TransferStats &operator+=(const TransferStats &stats);
+    TransferStats &operator+=(const TransferStats &stats);
 
-  friend std::ostream &operator<<(std::ostream &os, const TransferStats &stats);
+    friend std::ostream &operator<<(std::ostream &os, const TransferStats &stats);
 };
 
 /**

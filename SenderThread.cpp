@@ -34,66 +34,61 @@ const SenderThread::StateFunction SenderThread::stateMap_[] = {
     &SenderThread::processWaitCmd,  &SenderThread::processErrCmd,
     &SenderThread::processAbortCmd, &SenderThread::processVersionMismatch};
 
-std::unique_ptr<ClientSocket> SenderThread::connectToReceiver(
-    const int port, IAbortChecker const *abortChecker, ErrorCode &errCode) {
-  auto startTime = Clock::now();
-  int connectAttempts = 0;
-  std::unique_ptr<ClientSocket> socket;
-  const EncryptionParams &encryptionData =
-      wdtParent_->transferRequest_.encryptionData;
-  int64_t ivChangeInterval = wdtParent_->transferRequest_.ivChangeInterval;
-  if (threadProtocolVersion_ <
-      Protocol::PERIODIC_ENCRYPTION_IV_CHANGE_VERSION) {
-    WTLOG(WARNING) << "Disabling periodic iv change for sender with version "
-                   << threadProtocolVersion_;
-    ivChangeInterval = 0;
-  }
-  if (!wdtParent_->socketCreator_) {
-    // socket creator not set, creating ClientSocket
-    socket = std::make_unique<ClientSocket>(*threadCtx_,
-                                            wdtParent_->getDestination(), port,
-                                            encryptionData, ivChangeInterval);
-  } else {
-    socket = wdtParent_->socketCreator_->makeSocket(
-        *threadCtx_, wdtParent_->getDestination(), port, encryptionData,
-        ivChangeInterval);
-  }
-  double retryInterval = options_.sleep_millis;
-  int maxRetries = options_.max_retries;
-  if (maxRetries < 1) {
-    WTLOG(ERROR) << "Invalid max_retries " << maxRetries << " using 1 instead";
-    maxRetries = 1;
-  }
-  for (int i = 1; i <= maxRetries; ++i) {
-    ++connectAttempts;
-    errCode = socket->connect();
-    if (errCode == OK) {
-      break;
-    } else if (errCode == CONN_ERROR) {
-      return nullptr;
+std::unique_ptr<ClientSocket> SenderThread::connectToReceiver(const int port, IAbortChecker const *abortChecker, ErrorCode &errCode) {
+    auto startTime = Clock::now();
+    int connectAttempts = 0;
+    std::unique_ptr<ClientSocket> socket;
+    const EncryptionParams &encryptionData = wdtParent_->transferRequest_.encryptionData;
+    
+    int64_t ivChangeInterval = wdtParent_->transferRequest_.ivChangeInterval;
+    if (threadProtocolVersion_ < Protocol::PERIODIC_ENCRYPTION_IV_CHANGE_VERSION) {
+        WTLOG(WARNING) << "Disabling periodic iv change for sender with version " << threadProtocolVersion_;
+        ivChangeInterval = 0;
     }
-    if (getThreadAbortCode() != OK) {
-      errCode = ABORT;
-      return nullptr;
+    
+    if (!wdtParent_->socketCreator_) {
+        // socket creator not set, creating ClientSocket
+        socket = std::make_unique<ClientSocket>(*threadCtx_, wdtParent_->getDestination(), port, encryptionData, ivChangeInterval);
+    } else {
+        socket = wdtParent_->socketCreator_->makeSocket( *threadCtx_, wdtParent_->getDestination(), port, encryptionData, ivChangeInterval);
     }
-    if (i != maxRetries) {
-      // sleep between attempts but not after the last
-      WTVLOG(1) << "Sleeping after failed attempt " << i;
-      /* sleep override */ usleep(retryInterval * 1000);
+    
+    double retryInterval = options_.sleep_millis;
+    int maxRetries = options_.max_retries;
+    if (maxRetries < 1) {
+        WTLOG(ERROR) << "Invalid max_retries " << maxRetries << " using 1 instead";
+        maxRetries = 1;
     }
-  }
-  double elapsedSecsConn = durationSeconds(Clock::now() - startTime);
-  if (errCode != OK) {
-    WTLOG(ERROR) << "Unable to connect to " << wdtParent_->getDestination()
-                 << " " << port << " despite " << connectAttempts
-                 << " retries in " << elapsedSecsConn << " seconds.";
-    errCode = CONN_ERROR;
-    return nullptr;
-  }
-  ((connectAttempts > 1) ? WTLOG(WARNING) : WTLOG(INFO))
-      << "Connection took " << connectAttempts << " attempt(s) and "
-      << elapsedSecsConn << " seconds. port " << port;
-  return socket;
+    
+    for (int i = 1; i <= maxRetries; ++i) {
+        ++connectAttempts;
+        errCode = socket->connect();
+        if (errCode == OK) {
+            break;
+        } else if (errCode == CONN_ERROR) {
+            return nullptr;
+        }
+        if (getThreadAbortCode() != OK) {
+            errCode = ABORT;
+            return nullptr;
+        }
+        if (i != maxRetries) {
+            // sleep between attempts but not after the last
+            WTVLOG(1) << "Sleeping after failed attempt " << i;
+            /* sleep override */ usleep(retryInterval * 1000);
+        }
+    }
+    
+    double elapsedSecsConn = durationSeconds(Clock::now() - startTime);
+    
+    if (errCode != OK) {
+        WTLOG(ERROR) << "Unable to connect to " << wdtParent_->getDestination() << " " << port << " despite " << connectAttempts << " retries in " << elapsedSecsConn << " seconds.";
+        errCode = CONN_ERROR;
+        return nullptr;
+    }
+    
+    ((connectAttempts > 1) ? WTLOG(WARNING) : WTLOG(INFO)) << "Connection took " << connectAttempts << " attempt(s) and " << elapsedSecsConn << " seconds. port " << port;
+    return socket;
 }
 
 SenderState SenderThread::connect() {
@@ -108,11 +103,13 @@ SenderState SenderThread::connect() {
         }
         socket_->closeNoCheck();
     }
+	
     if (numReconnectWithoutProgress_ >= options_.max_transfer_retries) {
         WTLOG(ERROR) << "Sender thread reconnected " << numReconnectWithoutProgress_ << " times without making any progress, giving up. port: " << socket_->getPort();
         threadStats_.setLocalErrorCode(NO_PROGRESS);
         return END;
     }
+	
     ErrorCode code;
     // TODO cleanup more but for now avoid having 2 socket object live per port
     socket_ = nullptr;
@@ -128,6 +125,7 @@ SenderState SenderThread::connect() {
         threadStats_.setLocalErrorCode(code);
         return END;
     }
+	
     auto nextState = SEND_SETTINGS;
     if (threadStats_.getLocalErrorCode() != OK) {
         nextState = READ_LOCAL_CHECKPOINT;
@@ -138,99 +136,101 @@ SenderState SenderThread::connect() {
 }
 
 SenderState SenderThread::readLocalCheckPoint() {
-  WTLOG(INFO) << "entered READ_LOCAL_CHECKPOINT state";
-  ThreadTransferHistory &transferHistory = getTransferHistory();
-  std::vector<Checkpoint> checkpoints;
-  int64_t decodeOffset = 0;
-  int checkpointLen =
-      Protocol::getMaxLocalCheckpointLength(threadProtocolVersion_);
-  int64_t numRead = socket_->read(buf_, checkpointLen);
-  if (numRead != checkpointLen) {
-    WTLOG(ERROR) << "read mismatch during reading local checkpoint "
-                 << checkpointLen << " " << numRead << " port " << port_;
-    threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
-    numReconnectWithoutProgress_++;
-    return CONNECT;
-  }
-  bool isValidCheckpoint = true;
-  if (!Protocol::decodeCheckpoints(threadProtocolVersion_, buf_, decodeOffset,
-                                   checkpointLen, checkpoints)) {
-    WTLOG(ERROR) << "checkpoint decode failure "
-                 << folly::humanify(std::string(buf_, numRead));
-    isValidCheckpoint = false;
-  } else if (checkpoints.size() != 1) {
-    WTLOG(ERROR) << "Illegal local checkpoint, unexpected num checkpoints "
-                 << checkpoints.size() << " "
-                 << folly::humanify(std::string(buf_, numRead));
-    isValidCheckpoint = false;
-  } else if (checkpoints[0].port != port_) {
-    WTLOG(ERROR) << "illegal checkpoint, checkpoint " << checkpoints[0]
-                 << " doesn't match the port " << port_;
-    isValidCheckpoint = false;
-  }
-  if (!isValidCheckpoint) {
-    threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
-    return END;
-  }
-  const Checkpoint &checkpoint = checkpoints[0];
-  auto numBlocks = checkpoint.numBlocks;
-  WTVLOG(1) << "received local checkpoint " << checkpoint;
+    WTLOG(INFO) << "entered READ_LOCAL_CHECKPOINT state";
 
-  if (numBlocks == -1) {
-    // Receiver failed while sending DONE cmd
-    return READ_RECEIVER_CMD;
-  }
+    ThreadTransferHistory &transferHistory = getTransferHistory();
+    std::vector<Checkpoint> checkpoints;
+    int64_t decodeOffset = 0;
+    int checkpointLen = Protocol::getMaxLocalCheckpointLength(threadProtocolVersion_);
+    int64_t numRead = socket_->read(buf_, checkpointLen);
+    if (numRead != checkpointLen) {
+        WTLOG(ERROR) << "read mismatch during reading local checkpoint " << checkpointLen << " " << numRead << " port " << port_;
+        threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
+        numReconnectWithoutProgress_++;
+        return CONNECT;
+    }
 
-  ErrorCode errCode = transferHistory.setLocalCheckpoint(checkpoint);
-  if (errCode == INVALID_CHECKPOINT) {
-    threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
-    return END;
-  }
-  if (errCode == NO_PROGRESS) {
-    ++numReconnectWithoutProgress_;
-  } else {
-    numReconnectWithoutProgress_ = 0;
-  }
-  return SEND_SETTINGS;
+    bool isValidCheckpoint = true;
+    if (!Protocol::decodeCheckpoints(threadProtocolVersion_, buf_, decodeOffset,
+                checkpointLen, checkpoints)) {
+        WTLOG(ERROR) << "checkpoint decode failure "
+            << folly::humanify(std::string(buf_, numRead));
+        isValidCheckpoint = false;
+    } else if (checkpoints.size() != 1) {
+        WTLOG(ERROR) << "Illegal local checkpoint, unexpected num checkpoints "
+            << checkpoints.size() << " "
+            << folly::humanify(std::string(buf_, numRead));
+        isValidCheckpoint = false;
+    } else if (checkpoints[0].port != port_) {
+        WTLOG(ERROR) << "illegal checkpoint, checkpoint " << checkpoints[0]
+            << " doesn't match the port " << port_;
+        isValidCheckpoint = false;
+    }
+    if (!isValidCheckpoint) {
+        threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
+        return END;
+    }
+    const Checkpoint &checkpoint = checkpoints[0];
+    auto numBlocks = checkpoint.numBlocks;
+    WTVLOG(1) << "received local checkpoint " << checkpoint;
+
+    if (numBlocks == -1) {
+        // Receiver failed while sending DONE cmd
+        return READ_RECEIVER_CMD;
+    }
+
+    ErrorCode errCode = transferHistory.setLocalCheckpoint(checkpoint);
+    if (errCode == INVALID_CHECKPOINT) {
+        threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
+        return END;
+    }
+    if (errCode == NO_PROGRESS) {
+        ++numReconnectWithoutProgress_;
+    } else {
+        numReconnectWithoutProgress_ = 0;
+    }
+    return SEND_SETTINGS;
 }
 
 SenderState SenderThread::sendSettings() {
-  WTVLOG(1) << "entered SEND_SETTINGS state";
-  int64_t readTimeoutMillis = options_.read_timeout_millis;
-  int64_t writeTimeoutMillis = options_.write_timeout_millis;
-  int64_t off = 0;
-  buf_[off++] = Protocol::SETTINGS_CMD;
-  bool sendFileChunks = wdtParent_->isSendFileChunks();
-  enableHeartBeat_ = false;
-  if (options_.enable_heart_beat) {
-    if (threadProtocolVersion_ < Protocol::HEART_BEAT_VERSION) {
-      WTLOG(INFO) << "Disabling heart beat because of the receiver version is "
-                  << threadProtocolVersion_;
-    } else {
-      enableHeartBeat_ = true;
+    WTVLOG(1) << "entered SEND_SETTINGS state";
+
+    int64_t readTimeoutMillis = options_.read_timeout_millis;
+    int64_t writeTimeoutMillis = options_.write_timeout_millis;
+    int64_t off = 0;
+    buf_[off++] = Protocol::SETTINGS_CMD;
+    bool sendFileChunks = wdtParent_->isSendFileChunks();
+	
+    enableHeartBeat_ = false;
+    if (options_.enable_heart_beat) {
+        if (threadProtocolVersion_ < Protocol::HEART_BEAT_VERSION) {
+            WTLOG(INFO) << "Disabling heart beat because of the receiver version is " << threadProtocolVersion_;
+        } else {
+            enableHeartBeat_ = true;
+        }
     }
-  }
-  enableHeartBeat_ = (threadProtocolVersion_ >= Protocol::HEART_BEAT_VERSION &&
-                      options_.enable_heart_beat);
-  Settings settings;
-  settings.readTimeoutMillis = readTimeoutMillis;
-  settings.writeTimeoutMillis = writeTimeoutMillis;
-  settings.transferId = wdtParent_->getTransferId();
-  settings.enableChecksum = (footerType_ == CHECKSUM_FOOTER);
-  settings.sendFileChunks = sendFileChunks;
-  settings.blockModeDisabled = (options_.block_size_mbytes <= 0);
-  settings.enableHeartBeat = enableHeartBeat_;
-  Protocol::encodeSettings(threadProtocolVersion_, buf_, off,
-                           Protocol::kMaxSettings, settings);
-  int64_t toWrite = sendFileChunks ? Protocol::kMinBufLength : off;
-  int64_t written = socket_->write(buf_, toWrite);
-  if (written != toWrite) {
-    WTLOG(ERROR) << "Socket write failure " << written << " " << toWrite;
-    threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
-    return CONNECT;
-  }
-  threadStats_.addHeaderBytes(toWrite);
-  return (sendFileChunks ? READ_FILE_CHUNKS : SEND_BLOCKS);
+    enableHeartBeat_ = (threadProtocolVersion_ >= Protocol::HEART_BEAT_VERSION && options_.enable_heart_beat);
+
+    Settings settings;
+    settings.readTimeoutMillis = readTimeoutMillis;
+    settings.writeTimeoutMillis = writeTimeoutMillis;
+    settings.transferId = wdtParent_->getTransferId();
+    settings.enableChecksum = (footerType_ == CHECKSUM_FOOTER);
+    settings.sendFileChunks = sendFileChunks;
+    settings.blockModeDisabled = (options_.block_size_mbytes <= 0);
+    settings.enableHeartBeat = enableHeartBeat_;
+	
+    Protocol::encodeSettings(threadProtocolVersion_, buf_, off, Protocol::kMaxSettings, settings);
+	
+    int64_t toWrite = sendFileChunks ? Protocol::kMinBufLength : off;
+    int64_t written = socket_->write(buf_, toWrite);
+    if (written != toWrite) {
+        WTLOG(ERROR) << "Socket write failure " << written << " " << toWrite;
+        threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
+        return CONNECT;
+    }
+    threadStats_.addHeaderBytes(toWrite);
+    return (sendFileChunks ? READ_FILE_CHUNKS : SEND_BLOCKS);
 }
 
 const int kHeartBeatReadTimeFactor = 10;
@@ -959,7 +959,7 @@ void SenderThread::start() {
     setFooterType();
 
     controller_->executeAtStart([&]() { wdtParent_->startNewTransfer(); });
-	
+    
     SenderState state = CONNECT;
     while (state != END) {
         ErrorCode abortCode = getThreadAbortCode();
@@ -977,16 +977,17 @@ void SenderThread::start() {
 
     EncryptionType encryptionType = (socket_ ? socket_->getEncryptionType() : ENC_NONE);
     threadStats_.setEncryptionType(encryptionType);
+
     double totalTime = durationSeconds(Clock::now() - startTime);
     WTLOG(INFO) << "Port " << port_ << " done. " << threadStats_ << " Total throughput = " << threadStats_.getEffectiveTotalBytes() / totalTime / kMbToB << " Mbytes/sec";
 
-	ThreadTransferHistory &transferHistory = getTransferHistory();
-	transferHistory.markNotInUse();
-	controller_->deRegisterThread(threadIndex_);
-	controller_->executeAtEnd([&]() { wdtParent_->endCurTransfer(); });
-	// Important to delete the socket before the thread dies for sub class
-	// of clientsocket which have thread local data
-	socket_ = nullptr;
+    ThreadTransferHistory &transferHistory = getTransferHistory();
+    transferHistory.markNotInUse();
+    controller_->deRegisterThread(threadIndex_);
+    controller_->executeAtEnd([&]() { wdtParent_->endCurTransfer(); });
+    // Important to delete the socket before the thread dies for sub class
+    // of clientsocket which have thread local data
+    socket_ = nullptr;
 
   return;
 }
@@ -1004,8 +1005,8 @@ ErrorCode SenderThread::init() {
 }
 
 void SenderThread::reset() {
-  totalSizeSent_ = false;
-  threadStats_.setLocalErrorCode(OK);
+    totalSizeSent_ = false;
+    threadStats_.setLocalErrorCode(OK);
 }
 
 ErrorCode SenderThread::getThreadAbortCode() {

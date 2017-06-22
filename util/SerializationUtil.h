@@ -64,10 +64,10 @@ bool decodeString(folly::ByteRange &br, std::string &str);
 
 // ZigZag is originally from folly/Varint.h :
 inline uint64_t encodeZigZag(int64_t val) {
-  // Bit-twiddling magic stolen from the Google protocol buffer document;
-  // val >> 63 is an arithmetic shift because val is signed
-  auto uval = static_cast<uint64_t>(val);
-  return (uval << 1) ^ static_cast<uint64_t>(val >> 63);
+    // Bit-twiddling magic stolen from the Google protocol buffer document;
+    // val >> 63 is an arithmetic shift because val is signed
+    auto uval = static_cast<uint64_t>(val);
+    return (uval << 1) ^ static_cast<uint64_t>(val >> 63);
 }
 
 inline int64_t decodeZigZag(uint64_t val) {
@@ -107,7 +107,7 @@ inline size_t encodeVarU64(std::string &buffer, uint64_t v) {
  * std::string version - see next one for pointer version
  */
 inline size_t encodeVarI64(std::string &buffer, int64_t i64) {
-  return encodeVarU64(buffer, encodeZigZag(i64));
+    return encodeVarU64(buffer, encodeZigZag(i64));
 }
 
 /**
@@ -115,28 +115,28 @@ inline size_t encodeVarI64(std::string &buffer, int64_t i64) {
  */
 inline bool encodeVarU64(char *data, size_t datasz, int64_t &pos, uint64_t v) {
 #if WDT_EDI64_DO_CHECKS
-  if (pos < 0) {
-    return false;
-  }
-#endif
-  char *p = data + pos;
-  char *const end = data + datasz;
-  int count = 0;
-  while ((++count < 9) && (v >= 128)) {
-#if WDT_EDI64_DO_CHECKS
-    if (p >= end) {
-      WLOG(WARNING) << "not enough space to store full value";
-      return false;
+    if (pos < 0) {
+        return false;
     }
 #endif
-    *p++ = static_cast<char>(0x80 | (v & 0x7f));
-    v >>= 7;
-  }
+    char *p = data + pos;
+    char *const end = data + datasz;
+    int count = 0;
+    while ((++count < 9) && (v >= 128)) {
 #if WDT_EDI64_DO_CHECKS
-  if (p >= end) {
-    WLOG(WARNING) << "not enough space to store full value";
-    return false;
-  }
+        if (p >= end) {
+            WLOG(WARNING) << "not enough space to store full value";
+            return false;
+        }
+#endif
+        *p++ = static_cast<char>(0x80 | (v & 0x7f));
+        v >>= 7;
+    }
+#if WDT_EDI64_DO_CHECKS
+    if (p >= end) {
+        WLOG(WARNING) << "not enough space to store full value";
+        return false;
+    }
 #endif
   *p++ = static_cast<char>(v);
   pos += count;

@@ -116,8 +116,7 @@ void Sender::setProtoNegotiationStatus(ProtoNegotiationStatus status) {
 }
 
 bool Sender::isSendFileChunks() const {
-  return (downloadResumptionEnabled_ &&
-          getProtocolVersion() >= Protocol::DOWNLOAD_RESUMPTION_VERSION);
+    return (downloadResumptionEnabled_ && getProtocolVersion() >= Protocol::DOWNLOAD_RESUMPTION_VERSION);
 }
 
 bool Sender::isFileChunksReceived() {
@@ -308,10 +307,10 @@ ErrorCode Sender::start() {
     WLOG(INFO) << "Client (sending) to " << getDestination() << ", Using ports [ " << transferRequest_.ports << "]";
 
     startTime_ = Clock::now();
-	
+    
     downloadResumptionEnabled_ = (transferRequest_.downloadResumptionEnabled || options_.enable_download_resumption);
     bool deleteExtraFiles = (transferRequest_.downloadResumptionEnabled || options_.delete_extra_files);
-	
+    
     if (!progressReporter_) {
         WVLOG(1) << "No progress reporter provided, making a default one";
         progressReporter_ = std::make_unique<ProgressReporter>(transferRequest_);

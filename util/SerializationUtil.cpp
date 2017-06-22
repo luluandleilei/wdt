@@ -156,33 +156,31 @@ bool encodeInt64FixedLength(char *dest, int64_t sz, int64_t &off, int64_t val) {
 }
 
 bool encodeString(char *dest, int64_t sz, int64_t &off, const string &str) {
-  if (!encodeVarU64(dest, sz, off, str.length())) {
-    return false;
-  }
-  const int64_t strLen = str.length();
-  if ((off + strLen) > sz) {
-    WLOG(ERROR) << "Not enough room to encode \"" << str << "\" in buf of size "
-                << sz;
-    return false;
-  }
-  memcpy(dest + off, str.data(), strLen);
-  off += strLen;
-  return true;
+	if (!encodeVarU64(dest, sz, off, str.length())) {
+		return false;
+	}
+	const int64_t strLen = str.length();
+	if ((off + strLen) > sz) {
+		WLOG(ERROR) << "Not enough room to encode \"" << str << "\" in buf of size " << sz;
+		return false;
+	}
+	memcpy(dest + off, str.data(), strLen);
+	off += strLen;
+	return true;
 }
 
 bool decodeString(ByteRange &br, string &str) {
-  uint64_t strLen;
-  if (!decodeUInt64(br, strLen)) {
-    return false;
-  }
-  if (strLen > br.size()) {
-    WLOG(ERROR) << "Not enough room with " << br.size() << " to decode "
-                << strLen;
-    return false;
-  }
-  str.assign((const char *)(br.start()), strLen);
-  br.advance(strLen);
-  return true;
+    uint64_t strLen;
+    if (!decodeUInt64(br, strLen)) {
+        return false;
+    }
+    if (strLen > br.size()) {
+        WLOG(ERROR) << "Not enough room with " << br.size() << " to decode " << strLen;
+        return false;
+    }
+    str.assign((const char *)(br.start()), strLen);
+    br.advance(strLen);
+    return true;
 }
 }
 }

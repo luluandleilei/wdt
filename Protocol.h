@@ -35,14 +35,14 @@ namespace wdt {
 /// blocks and number of bytes received for the last block
 struct Checkpoint {
   int32_t port{0};
-  /// number of complete blocks received
-  int64_t numBlocks{0};
+  
+  int64_t numBlocks{0}; /// number of complete blocks received
   /// Next three fields are only set if a block is received partially
   /// seq-id of the partially received block (and we don't use encryption
   /// which doesn't allow using partial blocks as they can't be authenticated)
   int64_t lastBlockSeqId{0};  // was -1 in 1.26
-  /// block offset of the partially received block
-  int64_t lastBlockOffset{0};
+ 
+  int64_t lastBlockOffset{0};    /// block offset of the partially received block
   /// number of bytes received for the partially received block
   int64_t lastBlockReceivedBytes{0};
   bool hasSeqId{false};
@@ -222,20 +222,13 @@ struct BlockDetails {
 
 /// structure representing settings cmd
 struct Settings {
-  /// sender side read timeout
-  int readTimeoutMillis{0};
-  /// sender side write timeout
-  int writeTimeoutMillis{0};
-  /// transfer-id
-  std::string transferId{0};
-  /// whether checksum in enabled or not
-  bool enableChecksum{0};
-  /// whether sender wants to read previously transferred chunks or not
-  bool sendFileChunks{0};
-  /// whether block mode is disabled
-  bool blockModeDisabled{false};
-  /// whether heart-beat is enabled
-  bool enableHeartBeat{false};
+    int readTimeoutMillis{0};       /// sender side read timeout
+    int writeTimeoutMillis{0};      /// sender side write timeout
+    std::string transferId{0};      /// transfer-id
+    bool enableChecksum{0};         /// whether checksum in enabled or not
+    bool sendFileChunks{0};         /// whether sender wants to read previously transferred chunks or not
+    bool blockModeDisabled{false};  /// whether block mode is disabled
+    bool enableHeartBeat{false};    /// whether heart-beat is enabled
 };
 
 class Protocol {
@@ -298,33 +291,21 @@ class Protocol {
   // TODO: move the rest of those definitions closer to where they need to be
   // correct, ie in cpp like kAbortLength and kChunksCmdLen
 
-  /// Max size of sender or receiver id
-  static constexpr int64_t kMaxTransferIdLength = 50;
+ 
+  static constexpr int64_t kMaxTransferIdLength = 50;    /// Max size of sender or receiver id
   /// 1 byte for cmd, 2 bytes for file-name length, Max size of filename, 4
   /// variants(seq-id, data-size, offset, file-size), 1 byte for flag, 10 bytes
   /// prev seq-id
   static constexpr int64_t kMaxHeader = 1 + 2 + PATH_MAX + 4 * 10 + 1 + 10;
-  /// min number of bytes that must be send to unblock receiver
-  static constexpr int64_t kMinBufLength = 256;
-  /// max size of done command encoding(1 byte for cmd, 1 for status, 10 for
-  /// number of blocks, 10 for number of bytes sent)
-  static constexpr int64_t kMaxDone = 2 + 2 * 10;
-  /// max length of the size cmd encoding
-  static constexpr int64_t kMaxSize = 1 + 10;
-  /// max size of settings command encoding
-  static constexpr int64_t kMaxSettings = 1 + 3 * 10 + kMaxTransferIdLength + 1;
-  /// max length of the footer cmd encoding, 10 byte for checksum
-  static constexpr int64_t kMaxFooter = 1 + 10;
-  /// max size of chunks cmd(4 bytes for buffer size and 4 bytes for number of
-  /// files)
-  static constexpr int64_t kChunksCmdLen = 2 * sizeof(int64_t);
-  /// max size of chunkInfo encoding length
-  static constexpr int64_t kMaxChunkEncodeLen = 20;
-  /// abort cmd length(4 bytes for protocol, 1 byte for error-code and 8 bytes
-  /// for checkpoint)
-  static constexpr int64_t kAbortLength = sizeof(int32_t) + 1 + sizeof(int64_t);
-  /// max size of version encoding
-  static constexpr int64_t kMaxVersion = 10;
+  static constexpr int64_t kMinBufLength = 256; /// min number of bytes that must be send to unblock receiver
+  static constexpr int64_t kMaxDone = 2 + 2 * 10;   /// max size of done command encoding(1 byte for cmd, 1 for status, 10 for number of blocks, 10 for number of bytes sent)
+  static constexpr int64_t kMaxSize = 1 + 10;   /// max length of the size cmd encoding
+  static constexpr int64_t kMaxSettings = 1 + 3 * 10 + kMaxTransferIdLength + 1;    /// max size of settings command encoding
+  static constexpr int64_t kMaxFooter = 1 + 10;  /// max length of the footer cmd encoding, 10 byte for checksum
+  static constexpr int64_t kChunksCmdLen = 2 * sizeof(int64_t);  /// max size of chunks cmd(4 bytes for buffer size and 4 bytes for number of files)
+  static constexpr int64_t kMaxChunkEncodeLen = 20; /// max size of chunkInfo encoding length
+  static constexpr int64_t kAbortLength = sizeof(int32_t) + 1 + sizeof(int64_t);     /// abort cmd length(4 bytes for protocol, 1 byte for error-code and 8 bytes for checkpoint)
+  static constexpr int64_t kMaxVersion = 10;      /// max size of version encoding
   /// max size of encryption cmd(1 byte for cmd, 1 byte for
   /// encryption type, rest for initialization vector and tag interval)
   static constexpr int64_t kEncryptionCmdLen = 1 + 1 + 1 + kAESBlockSize + sizeof(int32_t);

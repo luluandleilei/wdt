@@ -453,33 +453,31 @@ bool Protocol::decodeFileChunksInfoList(
   return true;
 }
 
-bool Protocol::encodeSettings(int senderProtocolVersion, char *dest,
-                              int64_t &off, int64_t max,
-                              const Settings &settings) {
-  bool ok = encodeVarI64C(dest, max, off, senderProtocolVersion) &&
-            encodeVarI64C(dest, max, off, settings.readTimeoutMillis) &&
-            encodeVarI64C(dest, max, off, settings.writeTimeoutMillis) &&
-            encodeString(dest, max, off, settings.transferId);
-  if (ok && senderProtocolVersion >= SETTINGS_FLAG_VERSION) {
-    uint8_t flags = 0;
-    if (settings.enableChecksum) {
-      flags |= 1;
+bool Protocol::encodeSettings(int senderProtocolVersion, char *dest, int64_t &off, int64_t max, const Settings &settings) {
+    bool ok = encodeVarI64C(dest, max, off, senderProtocolVersion) &&
+        encodeVarI64C(dest, max, off, settings.readTimeoutMillis) &&
+        encodeVarI64C(dest, max, off, settings.writeTimeoutMillis) &&
+        encodeString(dest, max, off, settings.transferId);
+    if (ok && senderProtocolVersion >= SETTINGS_FLAG_VERSION) {
+        uint8_t flags = 0;
+        if (settings.enableChecksum) {
+            flags |= 1;
+        }
+        if (settings.sendFileChunks) {
+            flags |= (1 << 1);
+        }
+        if (settings.blockModeDisabled) {
+            flags |= (1 << 2);
+        }
+        if (settings.enableHeartBeat) {
+            flags |= (1 << 3);
+        }
+        if (off >= max) {
+            return false;
+        }
+        dest[off++] = flags;
     }
-    if (settings.sendFileChunks) {
-      flags |= (1 << 1);
-    }
-    if (settings.blockModeDisabled) {
-      flags |= (1 << 2);
-    }
-    if (settings.enableHeartBeat) {
-      flags |= (1 << 3);
-    }
-    if (off >= max) {
-      return false;
-    }
-    dest[off++] = flags;
-  }
-  return ok;
+    return ok;
 }
 
 bool Protocol::decodeVersion(char *src, int64_t &off, int64_t max,

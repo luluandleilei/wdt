@@ -28,8 +28,8 @@ protected:
     /// sets the send buffer size for this socket
     void setSendBufferSize();
 
-    const std::string dest_;
-    std::string peerIp_;
+    const std::string dest_;    //服务端hostname
+    std::string peerIp_;        //服务端ip地址   
     struct addrinfo sa_;
 };
 }

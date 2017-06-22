@@ -83,15 +83,15 @@ const Buffer* ThreadCtx::getBuffer() const {
 }
 
 PerfStatReport& ThreadCtx::getPerfReport() {
-  return perfReport_;
+  	return perfReport_;
 }
 
 void ThreadCtx::setAbortChecker(IAbortChecker const* abortChecker) {
-  abortChecker_ = abortChecker;
+  	abortChecker_ = abortChecker;
 }
 
 const IAbortChecker* ThreadCtx::getAbortChecker() const {
-  return abortChecker_;
+  	return abortChecker_;
 }
 }
 }

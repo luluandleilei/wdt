@@ -18,37 +18,34 @@ ThreadTransferHistory::ThreadTransferHistory(DirectorySourceQueue &queue, Transf
 }
 
 std::string ThreadTransferHistory::getSourceId(int64_t index) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  std::string sourceId;
-  const int64_t historySize = history_.size();
-  if (index >= 0 && index < historySize) {
-    sourceId = history_[index]->getIdentifier();
-  } else {
-    WLOG(WARNING) << "Trying to read out of bounds data " << index << " "
-                  << history_.size();
-  }
-  return sourceId;
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::string sourceId;
+    const int64_t historySize = history_.size();
+    if (index >= 0 && index < historySize) {
+        sourceId = history_[index]->getIdentifier();
+    } else {
+        WLOG(WARNING) << "Trying to read out of bounds data " << index << " " << history_.size();
+    }
+    return sourceId;
 }
 
 bool ThreadTransferHistory::addSource(std::unique_ptr<ByteSource> &source) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (globalCheckpoint_) {
-    // already received an error for this thread
-    WVLOG(1) << "adding source after global checkpoint is received. returning "
-                "the source to the queue";
-    markSourceAsFailed(source, lastCheckpoint_.get());
-    lastCheckpoint_.reset();
-    queue_.returnToQueue(source);
-    return false;
-  }
-  history_.emplace_back(std::move(source));
-  return true;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (globalCheckpoint_) {
+        // already received an error for this thread
+        WVLOG(1) << "adding source after global checkpoint is received. returning " << "the source to the queue";
+        markSourceAsFailed(source, lastCheckpoint_.get());
+        lastCheckpoint_.reset();
+        queue_.returnToQueue(source);
+        return false;
+    }
+    history_.emplace_back(std::move(source));
+    return true;
 }
 
-ErrorCode ThreadTransferHistory::setLocalCheckpoint(
-    const Checkpoint &checkpoint) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return setCheckpointAndReturnToQueue(checkpoint, false);
+ErrorCode ThreadTransferHistory::setLocalCheckpoint( const Checkpoint &checkpoint) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return setCheckpointAndReturnToQueue(checkpoint, false);
 }
 
 ErrorCode ThreadTransferHistory::setGlobalCheckpoint(
@@ -63,6 +60,7 @@ ErrorCode ThreadTransferHistory::setGlobalCheckpoint(
   }
   return status;
 }
+
 ErrorCode ThreadTransferHistory::setCheckpointAndReturnToQueue(
     const Checkpoint &checkpoint, bool globalCheckpoint) {
   const int64_t historySize = history_.size();
@@ -225,8 +223,8 @@ void ThreadTransferHistory::markSourceAsFailed(
 }
 
 bool ThreadTransferHistory::isGlobalCheckpointReceived() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return globalCheckpoint_;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return globalCheckpoint_;
 }
 
 void ThreadTransferHistory::markNotInUse() {
@@ -239,18 +237,15 @@ TransferHistoryController::TransferHistoryController( DirectorySourceQueue &dirQ
     : dirQueue_(dirQueue) {
 }
 
-ThreadTransferHistory &TransferHistoryController::getTransferHistory(
-    int32_t port) {
-  auto it = threadHistoriesMap_.find(port);
-  WDT_CHECK(it != threadHistoriesMap_.end()) << "port not found" << port;
-  return *(it->second.get());
+ThreadTransferHistory &TransferHistoryController::getTransferHistory(int32_t port) {
+	auto it = threadHistoriesMap_.find(port);
+	WDT_CHECK(it != threadHistoriesMap_.end()) << "port not found" << port;
+	return *(it->second.get());
 }
 
-void TransferHistoryController::addThreadHistory(int32_t port,
-                                                 TransferStats &threadStats) {
-  WVLOG(1) << "Adding the history for " << port;
-  threadHistoriesMap_.emplace(port, std::make_unique<ThreadTransferHistory>(
-                                        dirQueue_, threadStats, port));
+void TransferHistoryController::addThreadHistory(int32_t port, TransferStats &threadStats) {
+	WVLOG(1) << "Adding the history for " << port;
+	threadHistoriesMap_.emplace(port, std::make_unique<ThreadTransferHistory>(dirQueue_, threadStats, port));
 }
 
 ErrorCode TransferHistoryController::handleVersionMismatch() {
