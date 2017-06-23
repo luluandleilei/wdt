@@ -154,52 +154,52 @@ protected:
     /// @return current transfer status
     TransferStatus getTransferStatus();
 
-  /// corrects buffer size if necessary
-  void checkAndUpdateBufferSize();
+    /// corrects buffer size if necessary
+    void checkAndUpdateBufferSize();
 
-  /// @param transferStatus   current transfer status
-  void setTransferStatus(TransferStatus transferStatus);
+    /// @param transferStatus   current transfer status
+    void setTransferStatus(TransferStatus transferStatus);
 
-  /// Sets the protocol version for the transfer
-  void negotiateProtocol();
+    /// Sets the protocol version for the transfer
+    void negotiateProtocol();
 
-  /// Dumps performance statistics if enable_perf_stat_collection is true.
-  virtual void logPerfStats() const = 0;
+    /// Dumps performance statistics if enable_perf_stat_collection is true.
+    virtual void logPerfStats() const = 0;
 
-  /// Input/output transfer request
-  WdtTransferRequest transferRequest_;
+    /// Input/output transfer request
+    WdtTransferRequest transferRequest_;
 
-  /// Global throttler across all threads
-  std::shared_ptr<Throttler> throttler_;
+    /// Global throttler across all threads
+    std::shared_ptr<Throttler> throttler_;
 
-  /// Holds the instance of the progress reporter default or customized
-  std::unique_ptr<ProgressReporter> progressReporter_;
+    /// Holds the instance of the progress reporter default or customized
+    std::unique_ptr<ProgressReporter> progressReporter_;
 
-  /// abort checker passed to socket functions
-  AbortChecker abortCheckerCallback_;
+    /// abort checker passed to socket functions
+    AbortChecker abortCheckerCallback_;
 
-  /// current transfer status
-  TransferStatus transferStatus_{NOT_STARTED};
+    /// current transfer status
+    TransferStatus transferStatus_{NOT_STARTED};
 
-  /// Mutex which is shared between the parent thread, transferring threads and
-  /// progress reporter thread
-  std::mutex mutex_;
+    /// Mutex which is shared between the parent thread, transferring threads and
+    /// progress reporter thread
+    std::mutex mutex_;
 
-  /// Mutex for the management of this instance, specifically to keep the
-  /// instance sane for multi threaded public API calls
-  std::mutex instanceManagementMutex_;
+    /// Mutex for the management of this instance, specifically to keep the
+    /// instance sane for multi threaded public API calls
+    std::mutex instanceManagementMutex_;
 
-  /// This condition is notified when the transfer is finished
-  std::condition_variable conditionFinished_;
+    /// This condition is notified when the transfer is finished
+    std::condition_variable conditionFinished_;
 
-  /// Controller for wdt threads shared between base and threads
-  ThreadsController* threadsController_{nullptr};
+    /// Controller for wdt threads shared between base and threads
+    ThreadsController* threadsController_{nullptr};
 
-  /// Dump perf stats if notified
-  ReportPerfSignalSubscriber reportPerfSignal_;
+    /// Dump perf stats if notified
+    ReportPerfSignalSubscriber reportPerfSignal_;
 
-  /// Options/config used by this object
-  WdtOptions options_;
+    /// Options/config used by this object
+    WdtOptions options_;
 
 private:
     mutable folly::RWSpinLock abortCodeLock_;

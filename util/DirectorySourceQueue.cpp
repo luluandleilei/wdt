@@ -139,17 +139,21 @@ void DirectorySourceQueue::clearSourceQueue() {
 void DirectorySourceQueue::setPreviouslyReceivedChunks(std::vector<FileChunksInfo> &previouslyTransferredChunks) {
     std::unique_lock<std::mutex> lock(mutex_);
     WDT_CHECK_EQ(0, numBlocksDequeued_);
+
     // reset all the queue variables
     nextSeqId_ = 0;
     totalFileSize_ = 0;
     numEntries_ = 0;
     numBlocks_ = 0;
+
     for (auto &chunkInfo : previouslyTransferredChunks) {
-        nextSeqId_ = std::max(nextSeqId_, chunkInfo.getSeqId() + 1);
+        nextSeqId_ = std::max(nextSeqId_, chunkInfo.getSeqId() + 1); //设置nextSeqId_为重传前的SeqId的最大值加1(新文件的SeqId不会与重传前的文件SeqId相同，以唯一标识文件)
         auto fileName = chunkInfo.getFileName();
         previouslyTransferredChunks_.insert( std::make_pair(std::move(fileName), std::move(chunkInfo)));
     }
+
     clearSourceQueue();
+
     // recreate the queue
     for (const auto metadata : sharedFileData_) {
         // TODO: do not notify inside createIntoQueueInternal. This method still
@@ -160,23 +164,23 @@ void DirectorySourceQueue::setPreviouslyReceivedChunks(std::vector<FileChunksInf
 }
 
 DirectorySourceQueue::~DirectorySourceQueue() {
-  // need to remove all the sources because they access metadata at the
-  // destructor.
-  clearSourceQueue();
-  for (SourceMetaData *fileData : sharedFileData_) {
-    if (fileData->needToClose && fileData->fd >= 0) {
-      int ret = ::close(fileData->fd);
-      if (ret) {
-        WPLOG(ERROR) << "Failed to close file " << fileData->fullPath;
-      }
+    // need to remove all the sources because they access metadata at the
+    // destructor.
+    clearSourceQueue();
+    for (SourceMetaData *fileData : sharedFileData_) {
+        if (fileData->needToClose && fileData->fd >= 0) {
+            int ret = ::close(fileData->fd);
+            if (ret) {
+                WPLOG(ERROR) << "Failed to close file " << fileData->fullPath;
+            }
+        }
+        delete fileData;
     }
-    delete fileData;
-  }
 }
 
 std::thread DirectorySourceQueue::buildQueueAsynchronously() {
-  // relying on RVO (and thread not copyable to avoid multiple ones)
-  return std::thread(&DirectorySourceQueue::buildQueueSynchronously, this);
+    // relying on RVO (and thread not copyable to avoid multiple ones)
+    return std::thread(&DirectorySourceQueue::buildQueueSynchronously, this);
 }
 
 bool DirectorySourceQueue::buildQueueSynchronously() {
@@ -400,24 +404,23 @@ void DirectorySourceQueue::smartNotify(int32_t addedSource) {
     }
 }
 
-void DirectorySourceQueue::returnToQueue(
-    std::vector<std::unique_ptr<ByteSource>> &sources) {
-  int returnedCount = 0;
-  std::unique_lock<std::mutex> lock(mutex_);
-  for (auto &source : sources) {
-    sourceQueue_.push(std::move(source));
-    returnedCount++;
-    WDT_CHECK_GT(numBlocksDequeued_, 0);
-    numBlocksDequeued_--;
-  }
-  lock.unlock();
-  smartNotify(returnedCount);
+void DirectorySourceQueue::returnToQueue(std::vector<std::unique_ptr<ByteSource>> &sources) {
+    int returnedCount = 0;
+    std::unique_lock<std::mutex> lock(mutex_);
+    for (auto &source : sources) {
+        sourceQueue_.push(std::move(source));
+        returnedCount++;
+        WDT_CHECK_GT(numBlocksDequeued_, 0);
+        numBlocksDequeued_--;
+    }
+    lock.unlock();
+    smartNotify(returnedCount);
 }
 
 void DirectorySourceQueue::returnToQueue(std::unique_ptr<ByteSource> &source) {
-  std::vector<std::unique_ptr<ByteSource>> sources;
-  sources.emplace_back(std::move(source));
-  returnToQueue(sources);
+    std::vector<std::unique_ptr<ByteSource>> sources;
+    sources.emplace_back(std::move(source));
+    returnToQueue(sources);
 }
 
 void DirectorySourceQueue::createIntoQueue(const string &fullPath, WdtFileInfo &fileInfo) {
@@ -432,6 +435,7 @@ void DirectorySourceQueue::createIntoQueue(const string &fullPath, WdtFileInfo &
     // block size once negotiated, since blocksize is sort of fixed.
     fileInfo.verifyAndFixFlags();
 
+    //构造SourceMetaData类型对象
     SourceMetaData *metadata = new SourceMetaData();
     metadata->fullPath = fullPath;
     metadata->relPath = fileInfo.fileName;
@@ -490,7 +494,7 @@ void DirectorySourceQueue::createIntoQueueInternal(SourceMetaData *metadata) {
         // No previously transferred chunks
         remainingChunks.emplace_back(0, fileSize);
         seqId = nextSeqId_++;
-        allocationStatus = NOT_EXISTS;
+        allocationStatus = NOT_EXISTS;  //receiver 不存在该文件
     } else if (it->second.getFileSize() > fileSize) {
         // file size is greater on the receiver side
         remainingChunks.emplace_back(0, fileSize);
@@ -517,6 +521,7 @@ void DirectorySourceQueue::createIntoQueueInternal(SourceMetaData *metadata) {
     metadata->prevSeqId = prevSeqId;
     metadata->allocationStatus = allocationStatus;
 
+    //将所有的chunks划分为block，存储到sourceQueue中
     for (const auto &chunk : remainingChunks) {
         int64_t offset = chunk.start_;
         int64_t remainingBytes = chunk.size();
@@ -530,33 +535,34 @@ void DirectorySourceQueue::createIntoQueueInternal(SourceMetaData *metadata) {
         } while (remainingBytes > 0);
         totalFileSize_ += chunk.size();
     }
+
     numEntries_++;
     numBlocks_ += blockCount;
     smartNotify(blockCount);
 }
 
 std::vector<TransferStats> &DirectorySourceQueue::getFailedSourceStats() {
-  while (!sourceQueue_.empty()) {
-    failedSourceStats_.emplace_back(
-        std::move(sourceQueue_.top()->getTransferStats()));
-    sourceQueue_.pop();
-  }
-  return failedSourceStats_;
+    while (!sourceQueue_.empty()) {
+        failedSourceStats_.emplace_back(std::move(sourceQueue_.top()->getTransferStats()));
+        sourceQueue_.pop();
+    }
+    return failedSourceStats_;
 }
 
 std::vector<string> &DirectorySourceQueue::getFailedDirectories() {
-  return failedDirectories_;
+    return failedDirectories_;
 }
 
 bool DirectorySourceQueue::enqueueFiles() {
     for (auto &info : fileInfo_) {
-        if (threadCtx_->getAbortChecker()->shouldAbort()) {
+        if (threadCtx_->getAbortChecker()->shouldAbort()) { //abort检查
             WLOG(ERROR) << "Directory transfer thread aborted";
             return false;
         }
 
-        string fullPath = rootDir_ + info.fileName;
-        if (info.fileSize < 0) {
+        string fullPath = rootDir_ + info.fileName; //获取文件的绝对路径
+
+        if (info.fileSize < 0) { //获取文件大小
             struct stat fileStat;
             if (stat(fullPath.c_str(), &fileStat) != 0) {
                 WPLOG(ERROR) << "stat failed on path " << fullPath;
@@ -578,34 +584,33 @@ bool DirectorySourceQueue::enqueueFiles() {
 }
 
 bool DirectorySourceQueue::finished() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return initFinished_ && sourceQueue_.empty();
+    std::lock_guard<std::mutex> lock(mutex_);
+    return initFinished_ && sourceQueue_.empty();
 }
 
 int64_t DirectorySourceQueue::getCount() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return numEntries_;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return numEntries_;
 }
 
 const PerfStatReport &DirectorySourceQueue::getPerfReport() const {
-  return threadCtx_->getPerfReport();
+    return threadCtx_->getPerfReport();
 }
 
-std::pair<int64_t, ErrorCode> DirectorySourceQueue::getNumBlocksAndStatus()
-    const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  ErrorCode status = OK;
-  if (!failedSourceStats_.empty() || !failedDirectories_.empty()) {
-    // this function is called by active sender threads. The only way files or
-    // directories can fail when sender threads are active is due to read errors
-    status = BYTE_SOURCE_READ_ERROR;
-  }
-  return std::make_pair(numBlocks_, status);
+std::pair<int64_t, ErrorCode> DirectorySourceQueue::getNumBlocksAndStatus() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ErrorCode status = OK;
+    if (!failedSourceStats_.empty() || !failedDirectories_.empty()) {
+        // this function is called by active sender threads. The only way files or
+        // directories can fail when sender threads are active is due to read errors
+        status = BYTE_SOURCE_READ_ERROR;
+    }
+    return std::make_pair(numBlocks_, status);
 }
 
 int64_t DirectorySourceQueue::getTotalSize() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return totalFileSize_;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return totalFileSize_;
 }
 
 int64_t DirectorySourceQueue::getPreviouslySentBytes() const {
@@ -613,89 +618,96 @@ int64_t DirectorySourceQueue::getPreviouslySentBytes() const {
 }
 
 bool DirectorySourceQueue::fileDiscoveryFinished() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return initFinished_;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return initFinished_;
 }
 
 void DirectorySourceQueue::enqueueFilesToBeDeleted() {
-  if (!deleteFiles_) {
-    return;
-  }
-  if (!initFinished_ || previouslyTransferredChunks_.empty()) {
-    // if the directory transfer has not finished yet or existing files list has
-    // not yet been received, return
-    return;
-  }
-  std::set<std::string> discoveredFiles;
-  for (const SourceMetaData *metadata : sharedFileData_) {
-    discoveredFiles.insert(metadata->relPath);
-  }
-  int64_t numFilesToBeDeleted = 0;
-  for (auto &it : previouslyTransferredChunks_) {
-    const std::string &fileName = it.first;
-    if (discoveredFiles.find(fileName) != discoveredFiles.end()) {
-      continue;
+    if (!deleteFiles_) {
+        return;
     }
-    int64_t seqId = it.second.getSeqId();
-    // extra file on the receiver side
-    WLOG(INFO) << "Extra file " << fileName << " seq-id " << seqId
-               << " on the receiver side, will be deleted";
-    SourceMetaData *metadata = new SourceMetaData();
-    metadata->relPath = fileName;
-    metadata->size = 0;
-    // we can reuse the previous seq-id
-    metadata->seqId = seqId;
-    metadata->allocationStatus = TO_BE_DELETED;
-    sharedFileData_.emplace_back(metadata);
-    // create a byte source with size and offset equal to 0
-    std::unique_ptr<ByteSource> source =
-        std::make_unique<FileByteSource>(metadata, 0, 0);
-    sourceQueue_.push(std::move(source));
-    numFilesToBeDeleted++;
-  }
-  numEntries_ += numFilesToBeDeleted;
-  numBlocks_ += numFilesToBeDeleted;
-  smartNotify(numFilesToBeDeleted);
+
+    if (!initFinished_ || previouslyTransferredChunks_.empty()) {
+        // if the directory transfer has not finished yet or existing files list has
+        // not yet been received, return
+        return;
+    }
+
+    std::set<std::string> discoveredFiles;
+    for (const SourceMetaData *metadata : sharedFileData_) {
+        discoveredFiles.insert(metadata->relPath);
+    }
+
+    int64_t numFilesToBeDeleted = 0;
+    for (auto &it : previouslyTransferredChunks_) {
+        const std::string &fileName = it.first;
+        if (discoveredFiles.find(fileName) != discoveredFiles.end()) {
+            continue;
+        }
+
+        int64_t seqId = it.second.getSeqId();
+        // extra file on the receiver side
+        WLOG(INFO) << "Extra file " << fileName << " seq-id " << seqId << " on the receiver side, will be deleted";
+        SourceMetaData *metadata = new SourceMetaData();
+        metadata->relPath = fileName;
+        metadata->size = 0;
+        // we can reuse the previous seq-id
+        metadata->seqId = seqId;
+        metadata->allocationStatus = TO_BE_DELETED;
+        sharedFileData_.emplace_back(metadata);
+        // create a byte source with size and offset equal to 0
+        std::unique_ptr<ByteSource> source = std::make_unique<FileByteSource>(metadata, 0, 0);
+        sourceQueue_.push(std::move(source));
+        numFilesToBeDeleted++;
+    }
+
+    numEntries_ += numFilesToBeDeleted;
+    numBlocks_ += numFilesToBeDeleted;
+    smartNotify(numFilesToBeDeleted);
 }
 
-std::unique_ptr<ByteSource> DirectorySourceQueue::getNextSource(
-    ThreadCtx *callerThreadCtx, ErrorCode &status) {
-  std::unique_ptr<ByteSource> source;
-  while (true) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    while (sourceQueue_.empty() && !initFinished_) {
-      conditionNotEmpty_.wait(lock);
+std::unique_ptr<ByteSource> DirectorySourceQueue::getNextSource(ThreadCtx *callerThreadCtx, ErrorCode &status) {
+    std::unique_ptr<ByteSource> source;
+    while (true) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        while (sourceQueue_.empty() && !initFinished_) {
+            conditionNotEmpty_.wait(lock);
+        }
+
+        if (!failedSourceStats_.empty() || !failedDirectories_.empty()) {
+            status = ERROR;
+        } else {
+            status = OK;
+        }
+
+        if (sourceQueue_.empty()) {
+            return nullptr;
+        }
+
+        // using const_cast since priority_queue returns a const reference
+        source = std::move( const_cast<std::unique_ptr<ByteSource> &>(sourceQueue_.top()));
+        sourceQueue_.pop();
+
+        if (sourceQueue_.empty() && initFinished_) {
+            conditionNotEmpty_.notify_all();
+        }
+
+        lock.unlock();
+
+        WVLOG(1) << "got next source " << rootDir_ + source->getIdentifier() << " size " << source->getSize();
+        // try to open the source
+        if (source->open(callerThreadCtx) == OK) {
+            lock.lock();
+            numBlocksDequeued_++;
+            return source;
+        }
+
+        source->close();
+        // we need to lock again as we will be adding element to failedSourceStats
+        // vector
+        lock.lock();
+        failedSourceStats_.emplace_back(std::move(source->getTransferStats()));
     }
-    if (!failedSourceStats_.empty() || !failedDirectories_.empty()) {
-      status = ERROR;
-    } else {
-      status = OK;
-    }
-    if (sourceQueue_.empty()) {
-      return nullptr;
-    }
-    // using const_cast since priority_queue returns a const reference
-    source = std::move(
-        const_cast<std::unique_ptr<ByteSource> &>(sourceQueue_.top()));
-    sourceQueue_.pop();
-    if (sourceQueue_.empty() && initFinished_) {
-      conditionNotEmpty_.notify_all();
-    }
-    lock.unlock();
-    WVLOG(1) << "got next source " << rootDir_ + source->getIdentifier()
-             << " size " << source->getSize();
-    // try to open the source
-    if (source->open(callerThreadCtx) == OK) {
-      lock.lock();
-      numBlocksDequeued_++;
-      return source;
-    }
-    source->close();
-    // we need to lock again as we will be adding element to failedSourceStats
-    // vector
-    lock.lock();
-    failedSourceStats_.emplace_back(std::move(source->getTransferStats()));
-  }
 }
 }
 }

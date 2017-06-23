@@ -107,90 +107,89 @@ struct Interval {
 
 /// class representing chunks in a file
 class FileChunksInfo {
- public:
-  /// making the object noncopyable
-  FileChunksInfo(const FileChunksInfo &) = delete;
-  FileChunksInfo &operator=(const FileChunksInfo &) = delete;
-  FileChunksInfo(FileChunksInfo &&) = default;
-  FileChunksInfo &operator=(FileChunksInfo &&) = default;
+public:
+    /// making the object noncopyable
+    FileChunksInfo(const FileChunksInfo &) = delete;
+    FileChunksInfo &operator=(const FileChunksInfo &) = delete;
+    FileChunksInfo(FileChunksInfo &&) = default;
+    FileChunksInfo &operator=(FileChunksInfo &&) = default;
 
-  FileChunksInfo() {
-  }
+    FileChunksInfo() {
+    }
 
-  /**
-   * @param seqId     seq-id of the file
-   * @param fileName  file-name
-   * @param fileSize  file-size
-   */
-  FileChunksInfo(int64_t seqId, std::string &fileName, int64_t fileSize)
-      : seqId_(seqId), fileName_(fileName), fileSize_(fileSize) {
-  }
+    /**
+     * @param seqId     seq-id of the file
+     * @param fileName  file-name
+     * @param fileSize  file-size
+     */
+    FileChunksInfo(int64_t seqId, std::string &fileName, int64_t fileSize)
+        : seqId_(seqId), fileName_(fileName), fileSize_(fileSize) {
+        }
 
-  /// @return   file-name
-  const std::string &getFileName() const {
-    return fileName_;
-  }
+    /// @return   file-name
+    const std::string &getFileName() const {
+        return fileName_;
+    }
 
-  /// @param fileName   file-name to be set
-  void setFileName(const std::string &fileName) {
-    fileName_ = fileName;
-  }
+    /// @param fileName   file-name to be set
+    void setFileName(const std::string &fileName) {
+        fileName_ = fileName;
+    }
 
-  /// @return   seq-id of the file
-  int64_t getSeqId() const {
-    return seqId_;
-  }
+    /// @return   seq-id of the file
+    int64_t getSeqId() const {
+        return seqId_;
+    }
 
-  /// @param seqId      seq-id to be set
-  void setSeqId(int64_t seqId) {
-    seqId_ = seqId;
-  }
+    /// @param seqId      seq-id to be set
+    void setSeqId(int64_t seqId) {
+        seqId_ = seqId;
+    }
 
-  /// @return         file-size
-  int64_t getFileSize() const {
-    return fileSize_;
-  }
+    /// @return         file-size
+    int64_t getFileSize() const {
+        return fileSize_;
+    }
 
-  /// @param fileSize   file-size to be set
-  void setFileSize(int64_t fileSize) {
-    fileSize_ = fileSize;
-  }
+    /// @param fileSize   file-size to be set
+    void setFileSize(int64_t fileSize) {
+        fileSize_ = fileSize;
+    }
 
-  /// @return         chunks of the file
-  const std::vector<Interval> &getChunks() const {
-    return chunks_;
-  }
+    /// @return         chunks of the file
+    const std::vector<Interval> &getChunks() const {
+        return chunks_;
+    }
 
-  /// @param chunk    chunk to be added
-  void addChunk(const Interval &chunk);
+    /// @param chunk    chunk to be added
+    void addChunk(const Interval &chunk);
 
-  /// merges all the chunks
-  void mergeChunks();
+    /// merges all the chunks
+    void mergeChunks();
 
-  int64_t getTotalChunkSize() const;
+    int64_t getTotalChunkSize() const;
 
-  /// @return   list of chunks which are not part of the chunks-list
-  std::vector<Interval> getRemainingChunks(int64_t curFileSize);
+    /// @return   list of chunks which are not part of the chunks-list
+    std::vector<Interval> getRemainingChunks(int64_t curFileSize);
 
-  bool operator==(const FileChunksInfo &fileChunksInfo) const {
-    return this->seqId_ == fileChunksInfo.seqId_ &&
-           this->fileName_ == fileChunksInfo.fileName_ &&
-           this->chunks_ == fileChunksInfo.chunks_ &&
-           this->fileSize_ == fileChunksInfo.fileSize_;
-  }
+    bool operator==(const FileChunksInfo &fileChunksInfo) const {
+        return this->seqId_ == fileChunksInfo.seqId_ &&
+            this->fileName_ == fileChunksInfo.fileName_ &&
+            this->chunks_ == fileChunksInfo.chunks_ &&
+            this->fileSize_ == fileChunksInfo.fileSize_;
+    }
 
-  friend std::ostream &operator<<(std::ostream &os,
-                                  const FileChunksInfo &fileChunksInfo);
+    friend std::ostream &operator<<(std::ostream &os, const FileChunksInfo &fileChunksInfo);
 
- private:
-  /// seq-id of the file
-  int64_t seqId_{0};
-  /// name of the file
-  std::string fileName_;
-  /// size of the file
-  int64_t fileSize_{0};
-  /// list of chunk info
-  std::vector<Interval> chunks_;
+private:
+    /// seq-id of the file
+    int64_t seqId_{0};
+    /// name of the file(relative)
+    std::string fileName;  
+    /// size of the file
+    int64_t fileSize_{0};
+    /// list of chunk info
+    std::vector<Interval> chunks_;
 };
 
 /// enum representing file allocation status at the receiver side

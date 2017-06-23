@@ -62,6 +62,7 @@ ErrorCode FileByteSource::open(ThreadCtx *threadCtx) {
     if (metadata_->allocationStatus == TO_BE_DELETED) {
         return OK;
     }
+
     bytesRead_ = 0;
     this->close();
     threadCtx_ = threadCtx;
@@ -74,19 +75,18 @@ ErrorCode FileByteSource::open(ThreadCtx *threadCtx) {
 #endif
     }
 
-  if (metadata_->fd >= 0) {
-    WVLOG(1) << "metadata already has fd, no need to open " << getIdentifier();
-    fd_ = metadata_->fd;
-  } else {
-    fd_ =
-        FileUtil::openForRead(*threadCtx_, metadata_->fullPath, isDirectReads);
-    if (fd_ < 0) {
-      errCode = BYTE_SOURCE_READ_ERROR;
+    if (metadata_->fd >= 0) {
+        WVLOG(1) << "metadata already has fd, no need to open " << getIdentifier();
+        fd_ = metadata_->fd;
+    } else {
+        fd_ = FileUtil::openForRead(*threadCtx_, metadata_->fullPath, isDirectReads);
+        if (fd_ < 0) {
+            errCode = BYTE_SOURCE_READ_ERROR;
+        }
     }
-  }
 
-  transferStats_.setLocalErrorCode(errCode);
-  return errCode;
+    transferStats_.setLocalErrorCode(errCode);
+    return errCode;
 }
 
 void FileByteSource::advanceOffset(int64_t numBytes) {
@@ -157,21 +157,20 @@ char *FileByteSource::read(int64_t &size) {
 
 void FileByteSource::clearPageCache() {
 #ifdef HAS_POSIX_FADVISE
-  if (metadata_->directReads) {
-    // no need to clear page cache for direct reads
-    return;
-  }
-  if (threadCtx_ == nullptr) {
-    return;
-  }
-  auto &options = threadCtx_->getOptions();
-  if (bytesRead_ > 0 && !options.skip_fadvise) {
-    PerfStatCollector statCollector(*threadCtx_, PerfStatReport::FADVISE);
-    if (posix_fadvise(fd_, offset_, bytesRead_, POSIX_FADV_DONTNEED) != 0) {
-      WPLOG(ERROR) << "posix_fadvise failed for " << getIdentifier() << " "
-                   << offset_ << " " << bytesRead_;
+    if (metadata_->directReads) {
+        // no need to clear page cache for direct reads
+        return;
     }
-  }
+    if (threadCtx_ == nullptr) {
+        return;
+    }
+    auto &options = threadCtx_->getOptions();
+    if (bytesRead_ > 0 && !options.skip_fadvise) {
+        PerfStatCollector statCollector(*threadCtx_, PerfStatReport::FADVISE);
+        if (posix_fadvise(fd_, offset_, bytesRead_, POSIX_FADV_DONTNEED) != 0) {
+            WPLOG(ERROR) << "posix_fadvise failed for " << getIdentifier() << " " << offset_ << " " << bytesRead_;
+        }
+    }
 #endif
 }
 
@@ -179,8 +178,7 @@ void FileByteSource::close() {
   clearPageCache();
   if (metadata_->fd >= 0) {
     // if the fd is not opened by this source, no need to close it
-    WVLOG(1) << "No need to close " << getIdentifier()
-             << ", this was not opened by FileByteSource";
+    WVLOG(1) << "No need to close " << getIdentifier() << ", this was not opened by FileByteSource";
   } else if (fd_ >= 0) {
     PerfStatCollector statCollector(*threadCtx_, PerfStatReport::FILE_CLOSE);
     ::close(fd_);

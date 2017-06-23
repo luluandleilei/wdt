@@ -72,7 +72,7 @@ public:
      */
     std::thread buildQueueAsynchronously();
 
-    /// @return true iff all regular files under root dir have been consumed
+    /// @return true if all regular files under root dir have been consumed
     bool finished() const override;
 
     /// @return true if all the files have been discovered, false otherwise
@@ -84,8 +84,7 @@ public:
      *
      * @return next FileByteSource to consume or nullptr when finished
      */
-    std::unique_ptr<ByteSource> getNextSource(ThreadCtx *callerThreadCtx,
-            ErrorCode &status) override;
+    std::unique_ptr<ByteSource> getNextSource(ThreadCtx *callerThreadCtx, ErrorCode &status) override;
 
     /// @return         total number of files processed/enqueued
     int64_t getCount() const override;
@@ -175,7 +174,7 @@ public:
      *
      * @param previouslyTransferredChunks   previously sent chunk info
      */
-    void setPreviouslyReceivedChunks( std::vector<FileChunksInfo> &previouslyTransferredChunks);
+    void setPreviouslyReceivedChunks(std::vector<FileChunksInfo> &previouslyTransferredChunks);
 
     /**
      * returns sources to the queue, checks for fail/retries, doesn't increment

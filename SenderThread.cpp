@@ -20,9 +20,9 @@ namespace facebook {
 namespace wdt {
 
 std::ostream &operator<<(std::ostream &os, const SenderThread &senderThread) {
-  os << "Thread[" << senderThread.threadIndex_
-     << ", port: " << senderThread.port_ << "] ";
-  return os;
+    os << "Thread[" << senderThread.threadIndex_
+        << ", port: " << senderThread.port_ << "] ";
+    return os;
 }
 
 const SenderThread::StateFunction SenderThread::stateMap_[] = {
@@ -269,36 +269,35 @@ ErrorCode SenderThread::readHeartBeats() {
 }
 
 SenderState SenderThread::sendBlocks() {
-  WTVLOG(1) << "entered SEND_BLOCKS state";
-  ThreadTransferHistory &transferHistory = getTransferHistory();
-  if (threadProtocolVersion_ >= Protocol::RECEIVER_PROGRESS_REPORT_VERSION &&
-      !totalSizeSent_ && dirQueue_->fileDiscoveryFinished()) {
-    return SEND_SIZE_CMD;
-  }
-  ErrorCode transferStatus;
-  std::unique_ptr<ByteSource> source =
-      dirQueue_->getNextSource(threadCtx_.get(), transferStatus);
-  if (!source) {
-    // try to read any buffered heart-beats
-    readHeartBeats();
+    WTVLOG(1) << "entered SEND_BLOCKS state";
 
-    return SEND_DONE_CMD;
-  }
-  WDT_CHECK(!source->hasError());
-  TransferStats transferStats = sendOneByteSource(source, transferStatus);
-  threadStats_ += transferStats;
-  source->addTransferStats(transferStats);
-  source->close();
-  if (!transferHistory.addSource(source)) {
-    // global checkpoint received for this thread. no point in
-    // continuing
-    WTLOG(ERROR) << "global checkpoint received. Stopping";
-    threadStats_.setLocalErrorCode(CONN_ERROR);
-    return END;
-  }
-  if (transferStats.getLocalErrorCode() != OK) {
-    return CHECK_FOR_ABORT;
-  }
+    ThreadTransferHistory &transferHistory = getTransferHistory();
+    if (threadProtocolVersion_ >= Protocol::RECEIVER_PROGRESS_REPORT_VERSION &&
+            !totalSizeSent_ && dirQueue_->fileDiscoveryFinished()) {
+        return SEND_SIZE_CMD;
+    }
+    ErrorCode transferStatus;
+    std::unique_ptr<ByteSource> source = dirQueue_->getNextSource(threadCtx_.get(), transferStatus);
+    if (!source) {
+        // try to read any buffered heart-beats
+        readHeartBeats();
+        return SEND_DONE_CMD;
+    }
+    WDT_CHECK(!source->hasError());
+    TransferStats transferStats = sendOneByteSource(source, transferStatus);
+    threadStats_ += transferStats;
+    source->addTransferStats(transferStats);
+    source->close();
+    if (!transferHistory.addSource(source)) {
+        // global checkpoint received for this thread. no point in
+        // continuing
+        WTLOG(ERROR) << "global checkpoint received. Stopping";
+        threadStats_.setLocalErrorCode(CONN_ERROR);
+        return END;
+    }
+    if (transferStats.getLocalErrorCode() != OK) {
+        return CHECK_FOR_ABORT;
+    }
   return SEND_BLOCKS;
 }
 
@@ -435,21 +434,21 @@ TransferStats SenderThread::sendOneByteSource(
 }
 
 SenderState SenderThread::sendSizeCmd() {
-  WTVLOG(1) << "entered SEND_SIZE_CMD state";
-  int64_t off = 0;
-  buf_[off++] = Protocol::SIZE_CMD;
+    WTVLOG(1) << "entered SEND_SIZE_CMD state";
+    int64_t off = 0;
+    buf_[off++] = Protocol::SIZE_CMD;
 
-  Protocol::encodeSize(buf_, off, Protocol::kMaxSize,
-                       dirQueue_->getTotalSize());
-  int64_t written = socket_->write(buf_, off);
-  if (written != off) {
-    WTLOG(ERROR) << "Socket write error " << off << " " << written;
-    threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
-    return CHECK_FOR_ABORT;
-  }
-  threadStats_.addHeaderBytes(off);
-  totalSizeSent_ = true;
-  return SEND_BLOCKS;
+    Protocol::encodeSize(buf_, off, Protocol::kMaxSize,
+            dirQueue_->getTotalSize());
+    int64_t written = socket_->write(buf_, off);
+    if (written != off) {
+        WTLOG(ERROR) << "Socket write error " << off << " " << written;
+        threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
+        return CHECK_FOR_ABORT;
+    }
+    threadStats_.addHeaderBytes(off);
+    totalSizeSent_ = true;
+    return SEND_BLOCKS;
 }
 
 SenderState SenderThread::sendDoneCmd() {
@@ -571,9 +570,7 @@ SenderState SenderThread::readFileChunks() {
             // number of chunks. This chunks are read and parsed and added to
             // fileChunksInfoList. Number of chunks we decode should match with the
             // number mentioned in the Chunks cmd.
-            WTLOG(ERROR) << "Number of file chunks received is more than the number "
-                "mentioned in CHUNKS_CMD "
-                << numFileChunks << " " << numFiles;
+            WTLOG(ERROR) << "Number of file chunks received is more than the number " << "mentioned in CHUNKS_CMD " << numFileChunks << " " << numFiles;
             threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
             return END;
         }

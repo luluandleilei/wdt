@@ -24,10 +24,8 @@ namespace wdt {
  * to read the file with
  */
 struct WdtFileInfo {
-    /**
-     * Name of the file to be read, generally as relative path
-     */
-    std::string fileName;
+    /// Name of the file to be read, generally as relative path
+    std::string fileName; 
     /// Size of the file to be read, default is -1
     int64_t fileSize;
     /// File descriptor. If this is not -1, then wdt uses this to read

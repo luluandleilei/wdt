@@ -716,11 +716,13 @@ ReceiverState ReceiverThread::processSizeCmd() {
 }
 
 ReceiverState ReceiverThread::sendFileChunks() {
-  WTLOG(INFO) << "entered SEND_FILE_CHUNKS state";
-  WDT_CHECK(senderReadTimeout_ > 0);  // must have received settings
-  int waitingTimeMillis = senderReadTimeout_ / kWaitTimeoutFactor;
-  auto execFunnel = controller_->getFunnel(SEND_FILE_CHUNKS_FUNNEL);
-  while (true) {
+    WTLOG(INFO) << "entered SEND_FILE_CHUNKS state";
+    WDT_CHECK(senderReadTimeout_ > 0);  // must have received settings
+
+    int waitingTimeMillis = senderReadTimeout_ / kWaitTimeoutFactor;
+    auto execFunnel = controller_->getFunnel(SEND_FILE_CHUNKS_FUNNEL);
+
+    while (true) {
     auto status = execFunnel->getStatus();
     switch (status) {
       case FUNNEL_END: {

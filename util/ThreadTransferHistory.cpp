@@ -249,18 +249,18 @@ void TransferHistoryController::addThreadHistory(int32_t port, TransferStats &th
 }
 
 ErrorCode TransferHistoryController::handleVersionMismatch() {
-  for (auto &historyPair : threadHistoriesMap_) {
-    auto &history = historyPair.second;
-    if (history->getNumAcked() > 0) {
-      WLOG(ERROR)
-          << "Even though the transfer aborted due to VERSION_MISMATCH, "
-             "some blocks got acked by the receiver, port "
-          << historyPair.first << " numAcked " << history->getNumAcked();
-      return ERROR;
+    for (auto &historyPair : threadHistoriesMap_) {
+        auto &history = historyPair.second;
+        if (history->getNumAcked() > 0) {
+            WLOG(ERROR)
+                << "Even though the transfer aborted due to VERSION_MISMATCH, "
+                "some blocks got acked by the receiver, port "
+                << historyPair.first << " numAcked " << history->getNumAcked();
+            return ERROR;
+        }
+        history->returnUnackedSourcesToQueue();
     }
-    history->returnUnackedSourcesToQueue();
-  }
-  return OK;
+    return OK;
 }
 
 void TransferHistoryController::handleGlobalCheckpoint(

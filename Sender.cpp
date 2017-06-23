@@ -299,8 +299,10 @@ ErrorCode Sender::start() {
         dirQueue_->setFileInfo(transferRequest_.fileInfo);
     }
 
+    //set up transfer history controller
     transferHistoryController_= std::make_unique<TransferHistoryController>(*dirQueue_);
 
+    //set up the sender thread buffer
     checkAndUpdateBufferSize();
 
     const bool twoPhases = options_.two_phases;
@@ -315,17 +317,22 @@ ErrorCode Sender::start() {
         WVLOG(1) << "No progress reporter provided, making a default one";
         progressReporter_ = std::make_unique<ProgressReporter>(transferRequest_);
     }
+
     bool progressReportEnabled = progressReporter_ && progressReportIntervalMillis_ > 0;
+
     if (throttler_) {
         WLOG(INFO) << "Skipping throttler setup. External throttler set." << "Throttler details : " << *throttler_;
     } else {
         configureThrottler();
     }
 
+    //set up threads controller
     threadsController_ = new ThreadsController(transferRequest_.ports.size());
     threadsController_->setNumBarriers(SenderThread::NUM_BARRIERS);
     threadsController_->setNumFunnels(SenderThread::NUM_FUNNELS);
     threadsController_->setNumConditions(SenderThread::NUM_CONDITIONS);
+
+    //set up sender threads
     // TODO: fix this ! use transferRequest! (and dup from Receiver)
     senderThreads_ = threadsController_->makeThreads<Sender, SenderThread>( this, transferRequest_.ports.size(), transferRequest_.ports);
 

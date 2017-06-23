@@ -1013,8 +1013,7 @@ ErrorCode LogParser::processDirectoryInvalidationEntry(char *buf,
   return INCONSISTENT_DIRECTORY;
 }
 
-ErrorCode LogParser::parseLog(int fd, string &senderIp,
-                              std::vector<FileChunksInfo> &fileChunksInfo) {
+ErrorCode LogParser::parseLog(int fd, string &senderIp, std::vector<FileChunksInfo> &fileChunksInfo) {
   char entry[TransferLogManager::kMaxEntryLength];
   // empty log is valid
   ErrorCode status = OK;

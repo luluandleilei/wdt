@@ -114,16 +114,19 @@ private:
 
     ThreadCtx *threadCtx_{nullptr};
 
-    /// shared file information 文件元信息
+    /// shared file information 
+    /// 文件元信息
     SourceMetaData *metadata_;
 
-    /// filesize 文件分片大小 
+    /// filesize 
+    /// 文件分片大小 
     int64_t size_;
 
     /// open file descriptor for file (set to < 0 on error)
     int fd_{-1};
 
-    /// block offset 文件分片起始偏移量 
+    /// block offset 
+    /// 文件分片起始偏移量 
     int64_t offset_;
 
     /// number of bytes read so far from file

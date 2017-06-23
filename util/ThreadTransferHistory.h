@@ -107,17 +107,26 @@ private:
      */
     ErrorCode setCheckpointAndReturnToQueue(const Checkpoint &checkpoint, bool globalCheckpoint);
 
-    
-    DirectorySourceQueue &queue_;                           /// reference to global queue
-    TransferStats &threadStats_;                            /// reference to thread stats
-    std::vector<std::unique_ptr<ByteSource>> history_;      /// history of the thread
-    bool globalCheckpoint_{false};                          /// whether a global error checkpoint has been received or not
-    int64_t numAcknowledged_{0};                            /// number of sources acked by the receiver thread
-    std::unique_ptr<Checkpoint> lastCheckpoint_{nullptr};   /// last received checkpoint
-    int32_t port_;                                          /// Port assosciated with the history
-    bool inUse_{true};                                      /// whether the owner thread is still using this
-    std::mutex mutex_;                                      /// Mutex used by history internally for synchronization
-    std::condition_variable conditionInUse_;                /// Condition variable to signify the history being in use
+    /// reference to global queue
+    DirectorySourceQueue &queue_;                           
+    /// reference to thread stats
+    TransferStats &threadStats_;                            
+    /// history of the thread
+    std::vector<std::unique_ptr<ByteSource>> history_;      
+    /// whether a global error checkpoint has been received or not
+    bool globalCheckpoint_{false};                          
+    /// number of sources acked by the receiver thread
+    int64_t numAcknowledged_{0};                            
+    /// last received checkpoint
+    std::unique_ptr<Checkpoint> lastCheckpoint_{nullptr};   
+    /// Port assosciated with the history
+    int32_t port_;                                          
+    /// whether the owner thread is still using this
+    bool inUse_{true};                                      
+    /// Mutex used by history internally for synchronization
+    std::mutex mutex_;                                      
+    /// Condition variable to signify the history being in use
+    std::condition_variable conditionInUse_;                
 };
 
 /// Controller for history across the sender threads
