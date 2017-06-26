@@ -70,7 +70,7 @@ int64_t FileChunksInfo::getTotalChunkSize() const {
 }
 
 void FileChunksInfo::addChunk(const Interval &chunk) {
-  chunks_.emplace_back(chunk);
+    chunks_.emplace_back(chunk);
 }
 
 void FileChunksInfo::mergeChunks() {
@@ -345,14 +345,12 @@ bool Protocol::encodeChunksCmd(char *dest, int64_t &off, int64_t max,
          encodeInt64FixedLength(dest, max, off, numFiles);
 }
 
-bool Protocol::decodeChunksCmd(char *src, int64_t &off, int64_t max,
-                               int64_t &bufSize, int64_t &numFiles) {
-  ByteRange br = makeByteRange(src, max, off);  // will check for off>0 max>0
-  const ByteRange obr = br;
-  bool ok = decodeInt64FixedLength(br, bufSize) &&
-            decodeInt64FixedLength(br, numFiles);
-  off += offset(br, obr);
-  return ok;
+bool Protocol::decodeChunksCmd(char *src, int64_t &off, int64_t max, int64_t &bufSize, int64_t &numFiles) {
+    ByteRange br = makeByteRange(src, max, off);  // will check for off>0 max>0
+    const ByteRange obr = br;
+    bool ok = decodeInt64FixedLength(br, bufSize) && decodeInt64FixedLength(br, numFiles);
+    off += offset(br, obr);
+    return ok;
 }
 
 bool Protocol::encodeChunkInfo(char *dest, int64_t &off, int64_t max,
@@ -480,13 +478,12 @@ bool Protocol::encodeSettings(int senderProtocolVersion, char *dest, int64_t &of
     return ok;
 }
 
-bool Protocol::decodeVersion(char *src, int64_t &off, int64_t max,
-                             int &senderProtocolVersion) {
-  ByteRange br = makeByteRange(src, max, off);
-  const ByteRange obr = br;
-  bool ok = decodeInt32C(br, senderProtocolVersion);
-  off += offset(br, obr);
-  return ok;
+bool Protocol::decodeVersion(char *src, int64_t &off, int64_t max, int &senderProtocolVersion) {
+    ByteRange br = makeByteRange(src, max, off);
+    const ByteRange obr = br;
+    bool ok = decodeInt32C(br, senderProtocolVersion);
+    off += offset(br, obr);
+    return ok;
 }
 
 bool Protocol::decodeSettings(int protocolVersion, char *src, int64_t &off,

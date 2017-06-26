@@ -34,6 +34,12 @@ ClientSocket::ClientSocket(ThreadCtx &threadCtx, const string &dest, const int p
     sa_.ai_socktype = SOCK_STREAM;
 }
 
+
+//返回值：
+//  ABORT -- abort by abort checker
+//  CONN_ERROR
+//  CONN_ERROR_RETRYABLE
+//  OK
 ErrorCode ClientSocket::connect() {
     WDT_CHECK(fd_ < 0) << "Previous connection not closed " << fd_ << " " << port_;
 

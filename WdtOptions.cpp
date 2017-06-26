@@ -56,32 +56,32 @@ void WdtOptions::modifyOptions(
 
 bool WdtOptions::shouldPreallocateFiles() const {
 #ifdef HAS_POSIX_FALLOCATE
-  return !disable_preallocation;
+    return !disable_preallocation;
 #else
-  return false;
+    return false;
 #endif
 }
 
 bool WdtOptions::isLogBasedResumption() const {
-  return enable_download_resumption && !resume_using_dir_tree;
+    return enable_download_resumption && !resume_using_dir_tree;
 }
 
 bool WdtOptions::isDirectoryTreeBasedResumption() const {
-  return enable_download_resumption && resume_using_dir_tree;
+    return enable_download_resumption && resume_using_dir_tree;
 }
 
 /* static */
 const WdtOptions& WdtOptions::get() {
-  return getMutable();
+    return getMutable();
 }
 
 WdtOptions& WdtOptions::getMutable() {
-  static WdtOptions opt;
-  return opt;
+    static WdtOptions opt;
+    return opt;
 }
 
 void WdtOptions::copyInto(const WdtOptions& src) {
-  *this = src;
+    *this = src;
 }
 }
 }

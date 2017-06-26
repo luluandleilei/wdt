@@ -34,45 +34,45 @@ namespace wdt {
 /// Checkpoint consists of port number, number of successfully transferred
 /// blocks and number of bytes received for the last block
 struct Checkpoint {
-  int32_t port{0};
-  
-  int64_t numBlocks{0}; /// number of complete blocks received
-  /// Next three fields are only set if a block is received partially
-  /// seq-id of the partially received block (and we don't use encryption
-  /// which doesn't allow using partial blocks as they can't be authenticated)
-  int64_t lastBlockSeqId{0};  // was -1 in 1.26
- 
-  int64_t lastBlockOffset{0};    /// block offset of the partially received block
-  /// number of bytes received for the partially received block
-  int64_t lastBlockReceivedBytes{0};
-  bool hasSeqId{false};
-  Checkpoint() {
-  }
+    int32_t port{0};
+    /// number of complete blocks received
+    int64_t numBlocks{0}; 
+    /// Next three fields are only set if a block is received partially
+    /// seq-id of the partially received block (and we don't use encryption
+    /// which doesn't allow using partial blocks as they can't be authenticated)
+    int64_t lastBlockSeqId{0};  // was -1 in 1.26
+    /// block offset of the partially received block
+    int64_t lastBlockOffset{0};    
+    /// number of bytes received for the partially received block
+    int64_t lastBlockReceivedBytes{0};
+    bool hasSeqId{false};
 
-  explicit Checkpoint(int32_t port) {
-    this->port = port;
-  }
+    Checkpoint() {
+    }
 
-  bool hasPartialBlockInfo() const {
-    return (hasSeqId && lastBlockSeqId >= 0 && lastBlockReceivedBytes > 0);
-  }
+    explicit Checkpoint(int32_t port) {
+        this->port = port;
+    }
 
-  void resetLastBlockDetails() {
-    lastBlockReceivedBytes = 0;
-    lastBlockSeqId = 0;  // was -1 in 1.26
-    lastBlockOffset = 0;
-  }
+    bool hasPartialBlockInfo() const {
+        return (hasSeqId && lastBlockSeqId >= 0 && lastBlockReceivedBytes > 0);
+    }
 
-  void setLastBlockDetails(int64_t seqId, int64_t offset,
-                           int64_t receivedBytes) {
-    this->lastBlockSeqId = seqId;
-    this->lastBlockOffset = offset;
-    this->lastBlockReceivedBytes = receivedBytes;
-  }
+    void resetLastBlockDetails() {
+        lastBlockReceivedBytes = 0;
+        lastBlockSeqId = 0;  // was -1 in 1.26
+        lastBlockOffset = 0;
+    }
 
-  void incrNumBlocks() {
-    numBlocks++;
-  }
+    void setLastBlockDetails(int64_t seqId, int64_t offset, int64_t receivedBytes) {
+        this->lastBlockSeqId = seqId;
+        this->lastBlockOffset = offset;
+        this->lastBlockReceivedBytes = receivedBytes;
+    }
+
+    void incrNumBlocks() {
+        numBlocks++;
+    }
 };
 
 std::ostream &operator<<(std::ostream &os, const Checkpoint &checkpoint);
@@ -185,7 +185,7 @@ private:
     /// seq-id of the file
     int64_t seqId_{0};
     /// name of the file(relative)
-    std::string fileName;  
+    std::string fileName_;  
     /// size of the file
     int64_t fileSize_{0};
     /// list of chunk info
@@ -203,20 +203,20 @@ enum FileAllocationStatus {
 
 /// structure representing details of a block
 struct BlockDetails {
-  /// name of the file
-  std::string fileName;
-  /// sequence-id of the file
-  int64_t seqId{0};
-  /// size of the file
-  int64_t fileSize{0};
-  /// offset of the block from the start of the file
-  int64_t offset{0};
-  /// size of the block
-  int64_t dataSize{0};
-  /// receiver side file allocation status
-  FileAllocationStatus allocationStatus{NOT_EXISTS};
-  /// seq-id of previous transfer, only valid if there is a size mismatch
-  int64_t prevSeqId{0};
+    /// name of the file
+    std::string fileName;
+    /// sequence-id of the file
+    int64_t seqId{0};
+    /// size of the file
+    int64_t fileSize{0};
+    /// offset of the block from the start of the file
+    int64_t offset{0};
+    /// size of the block
+    int64_t dataSize{0};
+    /// receiver side file allocation status
+    FileAllocationStatus allocationStatus{NOT_EXISTS};
+    /// seq-id of previous transfer, only valid if there is a size mismatch
+    int64_t prevSeqId{0};
 };
 
 /// structure representing settings cmd

@@ -34,6 +34,12 @@ const SenderThread::StateFunction SenderThread::stateMap_[] = {
     &SenderThread::processWaitCmd,  &SenderThread::processErrCmd,
     &SenderThread::processAbortCmd, &SenderThread::processVersionMismatch};
 
+//参数：
+//  errCode [out] --
+//      ABORT
+//      CONN_ERROR
+//      OK
+//      
 std::unique_ptr<ClientSocket> SenderThread::connectToReceiver(const int port, IAbortChecker const *abortChecker, ErrorCode &errCode) {
     auto startTime = Clock::now();
     int connectAttempts = 0;
@@ -81,7 +87,7 @@ std::unique_ptr<ClientSocket> SenderThread::connectToReceiver(const int port, IA
     
     double elapsedSecsConn = durationSeconds(Clock::now() - startTime);
     
-    if (errCode != OK) {
+    if (errCode != OK) { //errCode == CONN_ERROR_RETRYABLE
         WTLOG(ERROR) << "Unable to connect to " << wdtParent_->getDestination() << " " << port << " despite " << connectAttempts << " retries in " << elapsedSecsConn << " seconds.";
         errCode = CONN_ERROR;
         return nullptr;
@@ -121,7 +127,7 @@ SenderState SenderThread::connect() {
         }
         return END;
     }
-    if (code != OK) {
+    if (code != OK) { //code == CONN_ERROR
         threadStats_.setLocalErrorCode(code);
         return END;
     }
@@ -602,7 +608,9 @@ SenderState SenderThread::readFileChunks() {
             return END;
         }
     }
+
     wdtParent_->setFileChunksInfo(fileChunksInfoList);
+
     // send ack for file chunks list
     buf_[0] = Protocol::ACK_CMD;
     int64_t toWrite = 1;
@@ -717,37 +725,30 @@ SenderState SenderThread::readReceiverCmd() {
 }
 
 ErrorCode SenderThread::readAndVerifySpuriousCheckpoint() {
-  int checkpointLen =
-      Protocol::getMaxLocalCheckpointLength(threadProtocolVersion_);
-  int64_t toRead = checkpointLen - 1;
-  int numRead = socket_->read(buf_ + 1, toRead);
-  if (numRead != toRead) {
-    WTLOG(ERROR) << "Could not read possible local checkpoint " << toRead << " "
-                 << numRead << " " << port_;
-    threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
-    return SOCKET_READ_ERROR;
-  }
-  int64_t offset = 0;
-  std::vector<Checkpoint> checkpoints;
-  if (Protocol::decodeCheckpoints(threadProtocolVersion_, buf_, offset,
-                                  checkpointLen, checkpoints)) {
-    if (checkpoints.size() == 1 && checkpoints[0].port == port_ &&
-        checkpoints[0].numBlocks == 0 &&
-        checkpoints[0].lastBlockReceivedBytes == 0) {
-      // In a spurious local checkpoint, number of blocks and offset must both
-      // be zero
-      // Ignore the checkpoint
-      WTLOG(WARNING)
-          << "Received valid but unexpected local checkpoint, ignoring "
-          << port_ << " checkpoint " << checkpoints[0];
-      return OK;
+    int checkpointLen = Protocol::getMaxLocalCheckpointLength(threadProtocolVersion_);
+    int64_t toRead = checkpointLen - 1;
+    int numRead = socket_->read(buf_ + 1, toRead);
+    if (numRead != toRead) {
+        WTLOG(ERROR) << "Could not read possible local checkpoint " << toRead << " " << numRead << " " << port_;
+        threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
+        return SOCKET_READ_ERROR;
     }
-  }
-  WTLOG(ERROR) << "Failed to verify spurious local checkpoint, port " << port_
-               << " numRead " << numRead << " chkptsz " << checkpoints.size()
-               << " chkplen " << checkpointLen;
-  threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
-  return PROTOCOL_ERROR;
+
+    int64_t offset = 0;
+    std::vector<Checkpoint> checkpoints;
+    if (Protocol::decodeCheckpoints(threadProtocolVersion_, buf_, offset, checkpointLen, checkpoints)) {
+        if (checkpoints.size() == 1 && checkpoints[0].port == port_ && checkpoints[0].numBlocks == 0 && checkpoints[0].lastBlockReceivedBytes == 0) {
+            // In a spurious local checkpoint, number of blocks and offset must both
+            // be zero
+            // Ignore the checkpoint
+            WTLOG(WARNING) << "Received valid but unexpected local checkpoint, ignoring " << port_ << " checkpoint " << checkpoints[0];
+            return OK;
+        }
+    }
+
+    WTLOG(ERROR) << "Failed to verify spurious local checkpoint, port " << port_ << " numRead " << numRead << " chkptsz " << checkpoints.size() << " chkplen " << checkpointLen;
+    threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
+    return PROTOCOL_ERROR;
 }
 
 SenderState SenderThread::processDoneCmd() {

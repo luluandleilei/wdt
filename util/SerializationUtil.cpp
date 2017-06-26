@@ -25,8 +25,7 @@ ByteRange makeByteRange(char *dest, int64_t sz, int64_t off) {
   return ByteRange((uint8_t *)(dest + off), sz - off);
 }
 
-int64_t offset(const folly::ByteRange &newRange,
-               const folly::ByteRange &oldRange) {
+int64_t offset(const folly::ByteRange &newRange, const folly::ByteRange &oldRange) {
   WDT_CHECK_EQ(newRange.end(), oldRange.end());
   return newRange.start() - oldRange.start();
 }
@@ -71,34 +70,33 @@ bool decodeUInt64(ByteRange &br, uint64_t &res) {
 }
 
 bool decodeInt64C(ByteRange &br, int64_t &sres) {
-  uint64_t ures;
-  bool ret = decodeUInt64(br, ures);
-  if (!ret) {
-    return false;
-  }
-  if (ures > INT64_MAX) {
-    WLOG(ERROR) << "Decoded as unsigned into signed, too large " << ures;
-    return false;
-  }
-  sres = ures;
-  return true;
+    uint64_t ures;
+    bool ret = decodeUInt64(br, ures);
+    if (!ret) {
+        return false;
+    }
+    if (ures > INT64_MAX) {
+        WLOG(ERROR) << "Decoded as unsigned into signed, too large " << ures;
+        return false;
+    }
+    sres = ures;
+    return true;
 }
 
 bool decodeInt32C(ByteRange &br, int32_t &res32) {
-  int64_t res64;
-  ByteRange obr = br;
-  bool ok = decodeInt64C(br, res64);
-  if (!ok) {
-    return false;
-  }
-  if (res64 > INT32_MAX || res64 < 0) {
-    WLOG(ERROR) << "var int32 decoded value " << res64
-                << " does not fit in a 31 bit positive number as expected";
-    br = obr;
-    return false;
-  }
-  res32 = static_cast<int32_t>(res64);
-  return true;
+    int64_t res64;
+    ByteRange obr = br;
+    bool ok = decodeInt64C(br, res64);
+    if (!ok) {
+        return false;
+    }
+    if (res64 > INT32_MAX || res64 < 0) {
+        WLOG(ERROR) << "var int32 decoded value " << res64 << " does not fit in a 31 bit positive number as expected";
+        br = obr;
+        return false;
+    }
+    res32 = static_cast<int32_t>(res64);
+    return true;
 }
 
 template <typename T>

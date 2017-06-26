@@ -109,6 +109,10 @@ int ServerSocket::getSelectedPortAndNewAddress(int listeningFd, struct addrinfo 
     return port;
 }
 
+//返回值：
+//  CONN_ERROR_RETRYABLE 
+//  CONN_ERROR
+//  OK
 ErrorCode ServerSocket::listen() {
     if (!listeningFds_.empty()) {
         return OK;
@@ -257,6 +261,7 @@ ErrorCode ServerSocket::acceptNextConnection(int timeoutMillis, bool tryCurAddre
             WVLOG(3) << "poll() timed out on port : " << port_ << ", listening fds : " << listeningFds_;
             continue;
         }
+
         WPLOG(ERROR) << "poll() failed on port : " << port_ << ", listening fds : " << listeningFds_;
         return CONN_ERROR;
     }
@@ -305,17 +310,17 @@ void ServerSocket::setReceiveBufferSize(int fd) {
 }
 
 std::string ServerSocket::getPeerIp() const {
-  // we keep returning the peer ip for error printing
-  return peerIp_;
+    // we keep returning the peer ip for error printing
+    return peerIp_;
 }
 
 std::string ServerSocket::getPeerPort() const {
-  // we keep returning the peer port for error printing
-  return peerPort_;
+    // we keep returning the peer port for error printing
+    return peerPort_;
 }
 
 int ServerSocket::getBackLog() const {
-  return backlog_;
+    return backlog_;
 }
 }
 }  // end namespace facebook::wdt

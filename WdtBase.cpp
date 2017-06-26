@@ -132,6 +132,7 @@ WdtBase::TransferStatus WdtBase::getTransferStatus() {
     return transferStatus_;
 }
 
+//检查TransferRequest是否配置合理
 ErrorCode WdtBase::validateTransferRequest() {
     ErrorCode code = transferRequest_.errorCode;
     if (code != OK) {

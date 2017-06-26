@@ -28,52 +28,52 @@ namespace wdt {
  * mode where it accepts subsequent transfers and runs in an infinite loop.
  */
 class Receiver : public WdtBase {
- public:
-  /// Constructor using wdt transfer request (@see in WdtBase.h)
-  explicit Receiver(const WdtTransferRequest &transferRequest);
+public:
+    /// Constructor using wdt transfer request (@see in WdtBase.h)
+    explicit Receiver(const WdtTransferRequest &transferRequest);
 
-  /**
-   * Constructor with start port, number of ports and directory to write to.
-   * If the start port is specified as zero, it auto configures the ports
-   */
-  Receiver(int port, int numSockets, const std::string &destDir);
+    /**
+     * Constructor with start port, number of ports and directory to write to.
+     * If the start port is specified as zero, it auto configures the ports
+     */
+    Receiver(int port, int numSockets, const std::string &destDir);
 
-  /// Setup before starting (@see WdtBase.h)
-  const WdtTransferRequest &init() override;
+    /// Setup before starting (@see WdtBase.h)
+    const WdtTransferRequest &init() override;
 
-  /**
-   * Joins on the threads spawned by start. This method
-   * is called by default when the wdt receiver is expected
-   * to run as forever running process. However this has to
-   * be explicitly called when the caller expects to conclude
-   * a transfer.
-   */
-  std::unique_ptr<TransferReport> finish() override;
+    /**
+     * Joins on the threads spawned by start. This method
+     * is called by default when the wdt receiver is expected
+     * to run as forever running process. However this has to
+     * be explicitly called when the caller expects to conclude
+     * a transfer.
+     */
+    std::unique_ptr<TransferReport> finish() override;
 
-  /**
-   * Call this method instead of transferAsync() when you don't
-   * want the wdt receiver to stop after one transfer.
-   */
-  ErrorCode runForever();
+    /**
+     * Call this method instead of transferAsync() when you don't
+     * want the wdt receiver to stop after one transfer.
+     */
+    ErrorCode runForever();
 
-  /**
-   * Starts the threads, and returns. Caller should call finish() after
-   * calling this method to get the statistics of the transfer.
-   */
-  ErrorCode transferAsync() override;
+    /**
+     * Starts the threads, and returns. Caller should call finish() after
+     * calling this method to get the statistics of the transfer.
+     */
+    ErrorCode transferAsync() override;
 
-  /// @param recoveryId   unique-id used to verify transfer log
-  void setRecoveryId(const std::string &recoveryId);
+    /// @param recoveryId   unique-id used to verify transfer log
+    void setRecoveryId(const std::string &recoveryId);
 
-  /// Returns true if at least one thread has accepted connection
-  bool hasNewTransferStarted() const;
+    /// Returns true if at least one thread has accepted connection
+    bool hasNewTransferStarted() const;
 
-  // Different accept modes for the Receiver
-  enum AcceptMode {
-    ACCEPT_WITH_RETRIES,  // Receiver gives up after max_accept_retries
-    ACCEPT_FOREVER,       // Receiver never gives up
-    STOP_ACCEPTING,       // Receiver stops accepting
-  };
+    // Different accept modes for the Receiver
+    enum AcceptMode {
+        ACCEPT_WITH_RETRIES,  // Receiver gives up after max_accept_retries
+        ACCEPT_FOREVER,       // Receiver never gives up
+        STOP_ACCEPTING,       // Receiver stops accepting
+    };
 
   /// @param acceptMode   acceptMode to use
   void setAcceptMode(AcceptMode acceptMode);

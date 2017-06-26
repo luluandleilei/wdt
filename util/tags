@@ -1,0 +1,714 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+AESBase	EncryptionUtils.h	/^class AESBase {$/;"	c	namespace:facebook::wdt
+AESDecryptor	EncryptionUtils.h	/^class AESDecryptor : public AESBase {$/;"	c	namespace:facebook::wdt
+AESEncryptor	EncryptionUtils.h	/^class AESEncryptor : public AESBase {$/;"	c	namespace:facebook::wdt
+ASSIGN_OPT	WdtFlags.cpp	64;"	d	file:
+ASSIGN_OPT	WdtFlags.cpp	66;"	d	file:
+BLOCK_WRITE	TransferLogManager.h	/^    BLOCK_WRITE,             \/\/ Complete block fsynced to disk$/;"	e	enum:facebook::wdt::TransferLogManager::EntryType
+Barrier	ThreadsController.h	/^  explicit Barrier(int numThreads) {$/;"	f	class:facebook::wdt::Barrier
+Barrier	ThreadsController.h	/^class Barrier {$/;"	c	namespace:facebook::wdt
+Buffer	CommonImpl.cpp	/^Buffer::Buffer(const int64_t size) {$/;"	f	class:facebook::wdt::Buffer
+Buffer	CommonImpl.h	/^class Buffer {$/;"	c	namespace:facebook::wdt
+ClientSocket	ClientSocket.cpp	/^ClientSocket::ClientSocket(ThreadCtx &threadCtx, const string &dest, const int port, const EncryptionParams &encryptionParams, int64_t ivChangeInterval)$/;"	f	class:facebook::wdt::ClientSocket
+ClientSocket	ClientSocket.h	/^class ClientSocket : public WdtSocket {$/;"	c	namespace:facebook::wdt
+ConditionGuard	ThreadsController.h	/^    ConditionGuard() {$/;"	f	class:facebook::wdt::ConditionGuard
+ConditionGuard	ThreadsController.h	/^class ConditionGuard {$/;"	c	namespace:facebook::wdt
+ConditionGuardImpl	ThreadsController.cpp	/^ConditionGuardImpl::ConditionGuardImpl(mutex &guardMutex,$/;"	f	class:facebook::wdt::ConditionGuardImpl
+ConditionGuardImpl	ThreadsController.h	/^class ConditionGuardImpl {$/;"	c	namespace:facebook::wdt
+Counter	Stats.h	/^  explicit Counter(double printScale = 1.0)$/;"	f	class:facebook::wdt::Counter
+Counter	Stats.h	/^class Counter : crashifcopied {$/;"	c	namespace:facebook::wdt
+DIRECTORY_INVALIDATION	TransferLogManager.h	/^    DIRECTORY_INVALIDATION,  \/\/ Directory content is invalid$/;"	e	enum:facebook::wdt::TransferLogManager::EntryType
+DirectorySourceQueue	DirectorySourceQueue.cpp	/^DirectorySourceQueue::DirectorySourceQueue(const WdtOptions &options, const string &rootDir, IAbortChecker const *abortChecker) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+DirectorySourceQueue	DirectorySourceQueue.h	/^class DirectorySourceQueue : public SourceQueue {$/;"	c	namespace:facebook::wdt
+ENC_AES128_CTR	EncryptionUtils.h	/^enum EncryptionType { ENC_NONE, ENC_AES128_CTR, ENC_AES128_GCM, NUM_ENC_TYPES };$/;"	e	enum:facebook::wdt::EncryptionType
+ENC_AES128_GCM	EncryptionUtils.h	/^enum EncryptionType { ENC_NONE, ENC_AES128_CTR, ENC_AES128_GCM, NUM_ENC_TYPES };$/;"	e	enum:facebook::wdt::EncryptionType
+ENC_NONE	EncryptionUtils.h	/^enum EncryptionType { ENC_NONE, ENC_AES128_CTR, ENC_AES128_GCM, NUM_ENC_TYPES };$/;"	e	enum:facebook::wdt::EncryptionType
+EncryptionParams	EncryptionUtils.cpp	/^EncryptionParams::EncryptionParams(EncryptionType type, const string& data)$/;"	f	class:facebook::wdt::EncryptionParams
+EncryptionParams	EncryptionUtils.h	/^    EncryptionParams() : type_{ENC_NONE} {$/;"	f	class:facebook::wdt::EncryptionParams
+EncryptionParams	EncryptionUtils.h	/^class EncryptionParams {$/;"	c	namespace:facebook::wdt
+EncryptionType	EncryptionUtils.h	/^enum EncryptionType { ENC_NONE, ENC_AES128_CTR, ENC_AES128_GCM, NUM_ENC_TYPES };$/;"	g	namespace:facebook::wdt
+EntryType	TransferLogManager.h	/^  enum EntryType {$/;"	g	class:facebook::wdt::TransferLogManager
+ExecuteOnceFunc	ThreadsController.h	/^    ExecuteOnceFunc(int numThreads, bool execFirst) {$/;"	f	class:facebook::wdt::ExecuteOnceFunc
+ExecuteOnceFunc	ThreadsController.h	/^class ExecuteOnceFunc {$/;"	c	namespace:facebook::wdt
+FILE_CREATION	TransferLogManager.h	/^    FILE_CREATION,           \/\/ File created and space allocated$/;"	e	enum:facebook::wdt::TransferLogManager::EntryType
+FILE_INVALIDATION	TransferLogManager.h	/^    FILE_INVALIDATION,       \/\/ Missing file$/;"	e	enum:facebook::wdt::TransferLogManager::EntryType
+FILE_RESIZE	TransferLogManager.h	/^    FILE_RESIZE,             \/\/ File Resized$/;"	e	enum:facebook::wdt::TransferLogManager::EntryType
+FINISHED	ThreadsController.h	/^enum ThreadStatus { INIT, RUNNING, WAITING, FINISHED };$/;"	e	enum:facebook::wdt::ThreadStatus
+FLAGS_PREFIX	WdtFlags.cpp	/^const std::string FLAGS_PREFIX = WDT_TOSTR(WDT_LONG_PREFIX);$/;"	m	namespace:facebook::wdt	file:
+FUNNEL_END	ThreadsController.h	/^enum FunnelStatus { FUNNEL_START, FUNNEL_PROGRESS, FUNNEL_END };$/;"	e	enum:facebook::wdt::FunnelStatus
+FUNNEL_PROGRESS	ThreadsController.h	/^enum FunnelStatus { FUNNEL_START, FUNNEL_PROGRESS, FUNNEL_END };$/;"	e	enum:facebook::wdt::FunnelStatus
+FUNNEL_START	ThreadsController.h	/^enum FunnelStatus { FUNNEL_START, FUNNEL_PROGRESS, FUNNEL_END };$/;"	e	enum:facebook::wdt::FunnelStatus
+FileByteSource	FileByteSource.cpp	/^FileByteSource::FileByteSource(SourceMetaData *metadata, int64_t size, int64_t offset)$/;"	f	class:facebook::wdt::FileByteSource
+FileByteSource	FileByteSource.h	/^class FileByteSource : public ByteSource {$/;"	c	namespace:facebook::wdt
+FileCreator	FileCreator.h	/^  FileCreator(const std::string &rootDir, int numThreads,$/;"	f	class:facebook::wdt::FileCreator
+FileCreator	FileCreator.h	/^class FileCreator {$/;"	c	namespace:facebook::wdt
+FileUtil	FileByteSource.h	/^class FileUtil {$/;"	c	namespace:facebook::wdt
+FileWriter	FileWriter.h	/^  FileWriter(ThreadCtx &threadCtx, BlockDetails const *blockDetails,$/;"	f	class:facebook::wdt::FileWriter
+FileWriter	FileWriter.h	/^class FileWriter : public Writer {$/;"	c	namespace:facebook::wdt
+Funnel	ThreadsController.h	/^  Funnel() {$/;"	f	class:facebook::wdt::Funnel
+Funnel	ThreadsController.h	/^class Funnel {$/;"	c	namespace:facebook::wdt
+FunnelStatus	ThreadsController.h	/^enum FunnelStatus { FUNNEL_START, FUNNEL_PROGRESS, FUNNEL_END };$/;"	g	namespace:facebook::wdt
+GuardLock	ThreadsController.h	/^    typedef std::unique_lock<std::mutex> GuardLock;$/;"	t	class:facebook::wdt::ThreadsController
+HEADER	TransferLogManager.h	/^    HEADER,                  \/\/ log header$/;"	e	enum:facebook::wdt::TransferLogManager::EntryType
+Histogram	Stats.cpp	/^Histogram::Histogram(int32_t scale, double p1, double p2, int64_t offset)$/;"	f	class:facebook::wdt::Histogram
+Histogram	Stats.h	/^class Histogram : public Counter {$/;"	c	namespace:facebook::wdt
+Hold2	Stats.h	/^  Hold2(C* result, const P& p) : datav_{C(p), C(p)}, result_(result) {$/;"	f	class:facebook::wdt::Hold2
+Hold2	Stats.h	/^class Hold2 : boost::noncopyable {$/;"	c	namespace:facebook::wdt
+INIT	ThreadsController.h	/^enum ThreadStatus { INIT, RUNNING, WAITING, FINISHED };$/;"	e	enum:facebook::wdt::ThreadStatus
+LogEncoderDecoder	TransferLogManager.h	/^class LogEncoderDecoder {$/;"	c	namespace:facebook::wdt
+LogParser	TransferLogManager.cpp	/^LogParser::LogParser(const WdtOptions &options,$/;"	f	class:facebook::wdt::LogParser
+LogParser	TransferLogManager.h	/^class LogParser {$/;"	c	namespace:facebook::wdt
+NUM_ENC_TYPES	EncryptionUtils.h	/^enum EncryptionType { ENC_NONE, ENC_AES128_CTR, ENC_AES128_GCM, NUM_ENC_TYPES };$/;"	e	enum:facebook::wdt::EncryptionType
+OPTIONS	WdtFlagsMacros.h	7;"	d
+PRINT_OPT	WdtFlags.cpp	73;"	d	file:
+PRINT_OPT	WdtFlags.cpp	75;"	d	file:
+PerfStatCollector	CommonImpl.h	/^  PerfStatCollector(ThreadCtx &threadCtx,$/;"	f	class:facebook::wdt::PerfStatCollector
+PerfStatCollector	CommonImpl.h	/^class PerfStatCollector {$/;"	c	namespace:facebook::wdt
+PeriodicCounters	Stats.h	/^  explicit PeriodicCounters(const std::vector<SwapableNode*>& counters)$/;"	f	class:facebook::wdt::PeriodicCounters
+PeriodicCounters	Stats.h	/^class PeriodicCounters : private boost::noncopyable {$/;"	c	namespace:facebook::wdt
+RUNNING	ThreadsController.h	/^enum ThreadStatus { INIT, RUNNING, WAITING, FINISHED };$/;"	e	enum:facebook::wdt::ThreadStatus
+ReportPerfSignalSubscriber	CommonImpl.h	/^typedef SignalSubscriber<ReportPerfTag> ReportPerfSignalSubscriber;$/;"	t	namespace:facebook::wdt
+ReportPerfTag	CommonImpl.h	/^struct ReportPerfTag {};$/;"	s	namespace:facebook::wdt
+STATS_H_	Stats.h	51;"	d
+ServerSocket	ServerSocket.cpp	/^ServerSocket::ServerSocket(ThreadCtx &threadCtx, int port, int backlog, const EncryptionParams &encryptionParams, int64_t ivChangeInterval, Func &&tagVerificationSuccessCallback)$/;"	f	class:facebook::wdt::ServerSocket
+ServerSocket	ServerSocket.h	/^class ServerSocket : public WdtSocket {$/;"	c	namespace:facebook::wdt
+SignalSubscriber	CommonImpl.h	/^  SignalSubscriber() : epoch_(globalEpoch_.load(std::memory_order_relaxed)) {$/;"	f	class:facebook::wdt::SignalSubscriber
+SignalSubscriber	CommonImpl.h	/^class SignalSubscriber {$/;"	c	namespace:facebook::wdt
+SourceComparator	DirectorySourceQueue.h	/^    struct SourceComparator {$/;"	s	class:facebook::wdt::DirectorySourceQueue
+SwapableNode	Stats.h	/^  SwapableNode() : ptr_(0) {$/;"	f	class:facebook::wdt::SwapableNode
+SwapableNode	Stats.h	/^class SwapableNode : private boost::noncopyable {$/;"	c	namespace:facebook::wdt
+ThreadCtx	CommonImpl.cpp	/^ThreadCtx::ThreadCtx(const WdtOptions& options, bool allocateBuffer)$/;"	f	class:facebook::wdt::ThreadCtx
+ThreadCtx	CommonImpl.cpp	/^ThreadCtx::ThreadCtx(const WdtOptions& options, bool allocateBuffer, int threadIndex)$/;"	f	class:facebook::wdt::ThreadCtx
+ThreadCtx	CommonImpl.h	/^class ThreadCtx {$/;"	c	namespace:facebook::wdt
+ThreadLocalCounter	Stats.h	/^typedef ThreadLocalSwapableNode<Counter, double> ThreadLocalCounter;$/;"	t	namespace:facebook::wdt
+ThreadLocalHistogram	Stats.h	/^typedef ThreadLocalSwapableNode<Histogram, int32_t> ThreadLocalHistogram;$/;"	t	namespace:facebook::wdt
+ThreadLocalSwapableNode	Stats.h	/^  explicit ThreadLocalSwapableNode(const P& param,$/;"	f	class:facebook::wdt::ThreadLocalSwapableNode
+ThreadLocalSwapableNode	Stats.h	/^class ThreadLocalSwapableNode : public SwapableNode {$/;"	c	namespace:facebook::wdt
+ThreadStatus	ThreadsController.h	/^enum ThreadStatus { INIT, RUNNING, WAITING, FINISHED };$/;"	g	namespace:facebook::wdt
+ThreadTransferHistory	ThreadTransferHistory.cpp	/^ThreadTransferHistory::ThreadTransferHistory(DirectorySourceQueue &queue, TransferStats &threadStats, int32_t port)$/;"	f	class:facebook::wdt::ThreadTransferHistory
+ThreadTransferHistory	ThreadTransferHistory.h	/^class ThreadTransferHistory {$/;"	c	namespace:facebook::wdt
+ThreadsController	ThreadsController.cpp	/^ThreadsController::ThreadsController(int totalThreads) {$/;"	f	class:facebook::wdt::ThreadsController
+ThreadsController	ThreadsController.h	/^class ThreadsController {$/;"	c	namespace:facebook::wdt
+TransferHistoryController	ThreadTransferHistory.cpp	/^TransferHistoryController::TransferHistoryController( DirectorySourceQueue &dirQueue)$/;"	f	class:facebook::wdt::TransferHistoryController
+TransferHistoryController	ThreadTransferHistory.h	/^class TransferHistoryController {$/;"	c	namespace:facebook::wdt
+TransferLogManager	TransferLogManager.h	/^  TransferLogManager(const WdtOptions &options, const std::string &rootDir)$/;"	f	class:facebook::wdt::TransferLogManager
+TransferLogManager	TransferLogManager.h	/^class TransferLogManager {$/;"	c	namespace:facebook::wdt
+WAITING	ThreadsController.h	/^enum ThreadStatus { INIT, RUNNING, WAITING, FINISHED };$/;"	e	enum:facebook::wdt::ThreadStatus
+WDT_CONCAT	WdtFlagsMacros.h	20;"	d
+WDT_CONCAT1	WdtFlagsMacros.h	19;"	d
+WDT_EDI64_DO_CHECKS	SerializationUtil.h	81;"	d
+WDT_FLAG_DECLARATION	WdtFlagsMacros.h	61;"	d
+WDT_FLAG_DEFINITION	WdtFlagsMacros.h	62;"	d
+WDT_FLAG_STR	WdtFlagsMacros.h	40;"	d
+WDT_FLAG_SYM	WdtFlagsMacros.h	38;"	d
+WDT_FLAG_VAR	WdtFlagsMacros.h	42;"	d
+WDT_LONG_PREFIX	WdtFlagsMacros.h	28;"	d
+WDT_OPT	WdtFlagsMacros.h	45;"	d
+WDT_OPT	WdtFlagsMacros.h	52;"	d
+WDT_OPT	WdtFlagsMacros.h	56;"	d
+WDT_OPT	WdtFlagsMacros.h	67;"	d
+WDT_OPT	WdtFlagsMacros.h	71;"	d
+WDT_OPT_VARIABLE	WdtFlagsMacros.h	15;"	d
+WDT_PREFIX	WdtFlagsMacros.h	32;"	d
+WDT_PREFIX	WdtFlagsMacros.h	34;"	d
+WDT_READ_OPT	WdtFlagsMacros.h	14;"	d
+WDT_TOSTR	WdtFlagsMacros.h	25;"	d
+WDT_TOSTR1	WdtFlagsMacros.h	24;"	d
+WLOG_VERSION	TransferLogManager.cpp	/^const int TransferLogManager::WLOG_VERSION = 2;$/;"	m	class:facebook::wdt::TransferLogManager	file:
+WLOG_VERSION	TransferLogManager.h	/^  const static int WLOG_VERSION;$/;"	m	class:facebook::wdt::TransferLogManager
+WdtCryptoIntializer	EncryptionUtils.cpp	/^WdtCryptoIntializer::WdtCryptoIntializer() {$/;"	f	class:facebook::wdt::WdtCryptoIntializer
+WdtCryptoIntializer	EncryptionUtils.h	/^class WdtCryptoIntializer {$/;"	c	namespace:facebook::wdt
+WdtFileInfo	DirectorySourceQueue.cpp	/^WdtFileInfo::WdtFileInfo(const string &name, int64_t size, bool doDirectReads)$/;"	f	class:facebook::wdt::WdtFileInfo
+WdtFileInfo	DirectorySourceQueue.cpp	/^WdtFileInfo::WdtFileInfo(int fd, int64_t size, const string &name)$/;"	f	class:facebook::wdt::WdtFileInfo
+WdtFlags	WdtFlags.h	/^        class WdtFlags {$/;"	c	namespace:facebook::wdt
+WdtSocket	WdtSocket.cpp	/^WdtSocket::WdtSocket(ThreadCtx &threadCtx, const int port, const EncryptionParams &encryptionParams, const int64_t ivChangeInterval, Func &&tagVerificationSuccessCallback)$/;"	f	class:facebook::wdt::WdtSocket
+WdtSocket	WdtSocket.h	/^class WdtSocket {$/;"	c	namespace:facebook::wdt
+acceptNextConnection	ServerSocket.cpp	/^ErrorCode ServerSocket::acceptNextConnection(int timeoutMillis, bool tryCurAddressFirst) {$/;"	f	class:facebook::wdt::ServerSocket
+acquire	ThreadsController.cpp	/^ConditionGuardImpl ConditionGuard::acquire() {$/;"	f	class:facebook::wdt::ConditionGuard
+addBlockWriteEntry	TransferLogManager.cpp	/^void TransferLogManager::addBlockWriteEntry(int64_t seqId, int64_t offset,$/;"	f	class:facebook::wdt::TransferLogManager
+addFileCreationEntry	TransferLogManager.cpp	/^void TransferLogManager::addFileCreationEntry(const string &fileName,$/;"	f	class:facebook::wdt::TransferLogManager
+addFileInvalidationEntry	TransferLogManager.cpp	/^void TransferLogManager::addFileInvalidationEntry(int64_t seqId) {$/;"	f	class:facebook::wdt::TransferLogManager
+addFileResizeEntry	TransferLogManager.cpp	/^void TransferLogManager::addFileResizeEntry(int64_t seqId, int64_t fileSize) {$/;"	f	class:facebook::wdt::TransferLogManager
+addSource	ThreadTransferHistory.cpp	/^bool ThreadTransferHistory::addSource(std::unique_ptr<ByteSource> &source) {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+addThreadHistory	ThreadTransferHistory.cpp	/^void TransferHistoryController::addThreadHistory(int32_t port, TransferStats &threadStats) {$/;"	f	class:facebook::wdt::TransferHistoryController
+addTrailingSlash	FileCreator.cpp	/^void FileCreator::addTrailingSlash(string &path) {$/;"	f	class:facebook::wdt::FileCreator
+addrInfoList	ServerSocket.h	/^typedef struct addrinfo *addrInfoList;$/;"	t	namespace:facebook::wdt	typeref:struct:facebook::wdt::addrinfo
+advanceOffset	FileByteSource.cpp	/^void FileByteSource::advanceOffset(int64_t numBytes) {$/;"	f	class:facebook::wdt::FileByteSource
+aggregated_	Stats.h	/^  C aggregated_;  \/\/!< Object to hold aggregated results.$/;"	m	class:facebook::wdt::ThreadLocalSwapableNode
+allocationMutex_	FileCreator.h	/^  std::mutex allocationMutex_;$/;"	m	class:facebook::wdt::FileCreator
+atomic_add	Stats.h	/^inline static int64_t atomic_add(vint64_t& data, int64_t v) {$/;"	f	namespace:facebook::wdt
+atomic_get	Stats.h	/^inline static int64_t atomic_get(vint64_t& data) {$/;"	f	namespace:facebook::wdt
+atomic_set	Stats.h	/^inline static void atomic_set(vint64_t& dest, int64_t value) {$/;"	f	namespace:facebook::wdt
+atomic_set2	Stats.h	/^inline static void atomic_set2(vint64_t& dest, int64_t value) {$/;"	f	namespace:facebook::wdt
+atomic_set_old	Stats.h	/^inline static void atomic_set_old(vint64_t& dest, int64_t oldVal, int64_t val) {$/;"	f	namespace:facebook::wdt
+backlog_	ServerSocket.h	/^    const int backlog_;$/;"	m	class:facebook::wdt::ServerSocket
+barriers_	ThreadsController.h	/^    std::vector<std::shared_ptr<Barrier>> barriers_;$/;"	m	class:facebook::wdt::ThreadsController
+blockDetails_	FileWriter.h	/^  BlockDetails const *blockDetails_;$/;"	m	class:facebook::wdt::FileWriter
+buf_	WdtSocket.h	/^    char buf_[Protocol::kEncryptionCmdLen];$/;"	m	class:facebook::wdt::WdtSocket
+buildQueueAsynchronously	DirectorySourceQueue.cpp	/^std::thread DirectorySourceQueue::buildQueueAsynchronously() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+buildQueueSynchronously	DirectorySourceQueue.cpp	/^bool DirectorySourceQueue::buildQueueSynchronously() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+bytesRead_	FileByteSource.h	/^    int64_t bytesRead_;$/;"	m	class:facebook::wdt::FileByteSource
+calcPercentile	Stats.cpp	/^double Histogram::calcPercentile(double percentile) const {$/;"	f	class:facebook::wdt::Histogram
+checkAndChangeDecryptionIv	WdtSocket.cpp	/^bool WdtSocket::checkAndChangeDecryptionIv(const std::string &tag) {$/;"	f	class:facebook::wdt::WdtSocket
+checkAndChangeEncryptionIv	WdtSocket.cpp	/^bool WdtSocket::checkAndChangeEncryptionIv() {$/;"	f	class:facebook::wdt::WdtSocket
+checkForFinish	ThreadsController.cpp	/^bool Barrier::checkForFinish() {$/;"	f	class:facebook::wdt::Barrier
+checkLog	TransferLogManager.cpp	/^ErrorCode TransferLogManager::checkLog() {$/;"	f	class:facebook::wdt::TransferLogManager
+cleanupAndDestroyCtx	EncryptionUtils.cpp	/^void cleanupAndDestroyCtx(EVP_CIPHER_CTX* ctx) {$/;"	f	namespace:facebook::wdt
+clearAllocationMap	FileCreator.h	/^  void clearAllocationMap() {$/;"	f	class:facebook::wdt::FileCreator
+clearPageCache	FileByteSource.cpp	/^void FileByteSource::clearPageCache() {$/;"	f	class:facebook::wdt::FileByteSource
+clearParsedData	TransferLogManager.cpp	/^void LogParser::clearParsedData() {$/;"	f	class:facebook::wdt::LogParser
+clearSourceQueue	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::clearSourceQueue() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+cloneCtx	EncryptionUtils.cpp	/^bool AESBase::cloneCtx(EVP_CIPHER_CTX* ctxOut) const {$/;"	f	class:facebook::wdt::AESBase
+close	FileByteSource.cpp	/^void FileByteSource::close() {$/;"	f	class:facebook::wdt::FileByteSource
+close	FileWriter.cpp	/^void FileWriter::close() {$/;"	f	class:facebook::wdt::FileWriter
+close	TransferLogManager.cpp	/^void TransferLogManager::close() {$/;"	f	class:facebook::wdt::TransferLogManager
+closeAllNoCheck	ServerSocket.cpp	/^void ServerSocket::closeAllNoCheck() {$/;"	f	class:facebook::wdt::ServerSocket
+closeConnection	WdtSocket.cpp	/^ErrorCode WdtSocket::closeConnection() {$/;"	f	class:facebook::wdt::WdtSocket
+closeConnectionInternal	WdtSocket.cpp	/^ErrorCode WdtSocket::closeConnectionInternal(bool doTagIOs) {$/;"	f	class:facebook::wdt::WdtSocket
+closeLog	TransferLogManager.cpp	/^void TransferLogManager::closeLog() {$/;"	f	class:facebook::wdt::TransferLogManager
+closeNoCheck	WdtSocket.cpp	/^void WdtSocket::closeNoCheck() {$/;"	f	class:facebook::wdt::WdtSocket
+compactLog	TransferLogManager.cpp	/^void TransferLogManager::compactLog() {$/;"	f	class:facebook::wdt::TransferLogManager
+computeCurrentTag	EncryptionUtils.cpp	/^std::string AESEncryptor::computeCurrentTag() {$/;"	f	class:facebook::wdt::AESEncryptor
+computeNextTagOffset	WdtSocket.cpp	/^int WdtSocket::computeNextTagOffset(int64_t totalProcessed, int64_t tagInterval) {$/;"	f	class:facebook::wdt::WdtSocket
+conditionFinished_	TransferLogManager.h	/^  std::condition_variable conditionFinished_;$/;"	m	class:facebook::wdt::TransferLogManager
+conditionGuards_	ThreadsController.h	/^    std::vector<std::shared_ptr<ConditionGuard>> conditionGuards_;$/;"	m	class:facebook::wdt::ThreadsController
+conditionInUse_	ThreadTransferHistory.h	/^    std::condition_variable conditionInUse_;                \/\/\/ Condition variable to signify the history being in use$/;"	m	class:facebook::wdt::ThreadTransferHistory
+conditionNotEmpty_	DirectorySourceQueue.h	/^    mutable std::condition_variable conditionNotEmpty_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+config_	TransferLogManager.h	/^  int64_t config_;$/;"	m	class:facebook::wdt::LogParser
+config_	TransferLogManager.h	/^  int64_t config_;$/;"	m	class:facebook::wdt::TransferLogManager
+connect	ClientSocket.cpp	/^ErrorCode ClientSocket::connect() {$/;"	f	class:facebook::wdt::ClientSocket
+controllerMutex_	ThreadsController.h	/^    mutable std::mutex controllerMutex_;$/;"	m	class:facebook::wdt::ThreadsController
+count_	Stats.h	/^  int64_t count_, min_, max_, sum_, sumOfSquares_;$/;"	m	class:facebook::wdt::Counter
+counters_	Stats.h	/^  std::vector<SwapableNode*> counters_;$/;"	m	class:facebook::wdt::PeriodicCounters
+crashifcopied	Stats.h	/^  crashifcopied() {$/;"	f	class:facebook::wdt::crashifcopied
+crashifcopied	Stats.h	/^  crashifcopied(const crashifcopied& c) {$/;"	f	class:facebook::wdt::crashifcopied
+crashifcopied	Stats.h	/^class crashifcopied {$/;"	c	namespace:facebook::wdt
+createAndInitCtx	EncryptionUtils.cpp	/^EVP_CIPHER_CTX* createAndInitCtx() {$/;"	f	namespace:facebook::wdt
+createDirRecursively	FileCreator.cpp	/^bool FileCreator::createDirRecursively(const std::string dir, bool force) {$/;"	f	class:facebook::wdt::FileCreator
+createFile	FileCreator.cpp	/^int FileCreator::createFile(ThreadCtx &threadCtx, const string &relPathStr) {$/;"	f	class:facebook::wdt::FileCreator
+createIntoQueue	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::createIntoQueue(const string &fullPath, WdtFileInfo &fileInfo) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+createIntoQueueInternal	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::createIntoQueueInternal(SourceMetaData *metadata) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+createdDirs_	FileCreator.h	/^  std::unordered_set<std::string> createdDirs_;$/;"	m	class:facebook::wdt::FileCreator
+cv_	Stats.h	/^  std::condition_variable cv_;$/;"	m	class:facebook::wdt::PeriodicCounters
+cv_	ThreadsController.cpp	/^    : cv_(that.cv_) {$/;"	f	namespace:facebook::wdt
+cv_	ThreadsController.h	/^    std::condition_variable cv_;$/;"	m	class:facebook::wdt::ConditionGuard
+cv_	ThreadsController.h	/^  std::condition_variable &cv_;$/;"	m	class:facebook::wdt::ConditionGuardImpl
+cv_	ThreadsController.h	/^  std::condition_variable cv_;$/;"	m	class:facebook::wdt::Barrier
+cv_	ThreadsController.h	/^  std::condition_variable cv_;$/;"	m	class:facebook::wdt::Funnel
+data_	EncryptionUtils.h	/^    std::string data_;$/;"	m	class:facebook::wdt::EncryptionParams
+data_	Stats.h	/^  folly::ThreadLocalPtr<Hold2<C, P>, SwapableNode> data_;$/;"	m	class:facebook::wdt::ThreadLocalSwapableNode
+datav_	Stats.h	/^  C datav_[2];  \/\/!< Holds 2 objects.$/;"	m	class:facebook::wdt::Hold2
+deRegister	ThreadsController.cpp	/^void Barrier::deRegister() {$/;"	f	class:facebook::wdt::Barrier
+deRegisterThread	ThreadsController.cpp	/^void ThreadsController::deRegisterThread(int threadIndex) {$/;"	f	class:facebook::wdt::ThreadsController
+decodeBlockWriteEntry	TransferLogManager.cpp	/^bool LogEncoderDecoder::decodeBlockWriteEntry(char *buf, int16_t size,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+decodeDirectoryInvalidationEntry	TransferLogManager.cpp	/^bool LogEncoderDecoder::decodeDirectoryInvalidationEntry(char *buf,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+decodeFileCreationEntry	TransferLogManager.cpp	/^bool LogEncoderDecoder::decodeFileCreationEntry(char *buf, int16_t size,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+decodeFileInvalidationEntry	TransferLogManager.cpp	/^bool LogEncoderDecoder::decodeFileInvalidationEntry(char *buf, int16_t size,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+decodeFileResizeEntry	TransferLogManager.cpp	/^bool LogEncoderDecoder::decodeFileResizeEntry(char *buf, int16_t size,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+decodeInt16FixedLength	SerializationUtil.cpp	/^bool decodeInt16FixedLength(folly::ByteRange &br, int16_t &res) {$/;"	f	namespace:facebook::wdt
+decodeInt32	SerializationUtil.cpp	/^bool decodeInt32(ByteRange &br, int32_t &res32) {$/;"	f	namespace:facebook::wdt
+decodeInt32C	SerializationUtil.cpp	/^bool decodeInt32C(ByteRange &br, int32_t &res32) {$/;"	f	namespace:facebook::wdt
+decodeInt32FixedLength	SerializationUtil.cpp	/^bool decodeInt32FixedLength(folly::ByteRange &br, int32_t &res) {$/;"	f	namespace:facebook::wdt
+decodeInt64	SerializationUtil.cpp	/^bool decodeInt64(ByteRange &br, int64_t &res) {$/;"	f	namespace:facebook::wdt
+decodeInt64C	SerializationUtil.cpp	/^bool decodeInt64C(ByteRange &br, int64_t &sres) {$/;"	f	namespace:facebook::wdt
+decodeInt64FixedLength	SerializationUtil.cpp	/^bool decodeInt64FixedLength(folly::ByteRange &br, int64_t &res) {$/;"	f	namespace:facebook::wdt
+decodeIntFixedLength	SerializationUtil.cpp	/^bool decodeIntFixedLength(folly::ByteRange &br, T &res) {$/;"	f	namespace:facebook::wdt
+decodeLogHeader	TransferLogManager.cpp	/^bool LogEncoderDecoder::decodeLogHeader(char *buf, int16_t size,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+decodeString	SerializationUtil.cpp	/^bool decodeString(ByteRange &br, string &str) {$/;"	f	namespace:facebook::wdt
+decodeUInt64	SerializationUtil.cpp	/^bool decodeUInt64(ByteRange &br, uint64_t &res) {$/;"	f	namespace:facebook::wdt
+decodeVarI64	SerializationUtil.h	/^inline bool decodeVarI64(const char *data, size_t datalen, int64_t &pos,$/;"	f	namespace:facebook::wdt
+decodeVarU64	SerializationUtil.h	/^inline bool decodeVarU64(const char *data, size_t datalen, int64_t &pos,$/;"	f	namespace:facebook::wdt
+decodeZigZag	SerializationUtil.h	/^inline int64_t decodeZigZag(uint64_t val) {$/;"	f	namespace:facebook::wdt
+decrypt	EncryptionUtils.cpp	/^bool AESDecryptor::decrypt(const char* in, const int inLength, char* out) {$/;"	f	class:facebook::wdt::AESDecryptor
+decryptor_	WdtSocket.h	/^    std::unique_ptr<AESDecryptor> decryptor_;$/;"	m	class:facebook::wdt::WdtSocket
+dest_	ClientSocket.h	/^    const std::string dest_;    \/\/服务端hostname$/;"	m	class:facebook::wdt::ClientSocket
+dirCreated	FileCreator.h	/^  bool dirCreated(const std::string &dir) {$/;"	f	class:facebook::wdt::FileCreator
+dirQueue_	ThreadTransferHistory.h	/^    DirectorySourceQueue &dirQueue_;$/;"	m	class:facebook::wdt::TransferHistoryController
+disableIvChange	WdtSocket.h	/^    void disableIvChange() {$/;"	f	class:facebook::wdt::WdtSocket
+divider_	Stats.h	/^  const int32_t divider_;$/;"	m	class:facebook::wdt::Histogram
+enableFileDeletion	DirectorySourceQueue.h	/^    void enableFileDeletion() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+encodeBlockWriteEntry	TransferLogManager.cpp	/^int64_t LogEncoderDecoder::encodeBlockWriteEntry(char *dest, int64_t max,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+encodeDirectoryInvalidationEntry	TransferLogManager.cpp	/^int64_t LogEncoderDecoder::encodeDirectoryInvalidationEntry(char *dest,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+encodeFileCreationEntry	TransferLogManager.cpp	/^int64_t LogEncoderDecoder::encodeFileCreationEntry(char *dest, int64_t max,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+encodeFileInvalidationEntry	TransferLogManager.cpp	/^int64_t LogEncoderDecoder::encodeFileInvalidationEntry(char *dest, int64_t max,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+encodeFileResizeEntry	TransferLogManager.cpp	/^int64_t LogEncoderDecoder::encodeFileResizeEntry(char *dest, int64_t max,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+encodeInt16FixedLength	SerializationUtil.cpp	/^bool encodeInt16FixedLength(char *dest, int64_t sz, int64_t &off, int16_t val) {$/;"	f	namespace:facebook::wdt
+encodeInt32FixedLength	SerializationUtil.cpp	/^bool encodeInt32FixedLength(char *dest, int64_t sz, int64_t &off, int32_t val) {$/;"	f	namespace:facebook::wdt
+encodeInt64FixedLength	SerializationUtil.cpp	/^bool encodeInt64FixedLength(char *dest, int64_t sz, int64_t &off, int64_t val) {$/;"	f	namespace:facebook::wdt
+encodeIntFixedLength	SerializationUtil.cpp	/^bool encodeIntFixedLength(char *dest, int64_t sz, int64_t &off, const T val) {$/;"	f	namespace:facebook::wdt
+encodeLogHeader	TransferLogManager.cpp	/^int64_t LogEncoderDecoder::encodeLogHeader(char *dest, int64_t max,$/;"	f	class:facebook::wdt::LogEncoderDecoder
+encodeString	SerializationUtil.cpp	/^bool encodeString(char *dest, int64_t sz, int64_t &off, const string &str) {$/;"	f	namespace:facebook::wdt
+encodeVarI64	SerializationUtil.h	/^inline bool encodeVarI64(char *data, size_t datalen, int64_t &pos, int64_t sv) {$/;"	f	namespace:facebook::wdt
+encodeVarI64	SerializationUtil.h	/^inline size_t encodeVarI64(std::string &buffer, int64_t i64) {$/;"	f	namespace:facebook::wdt
+encodeVarI64C	SerializationUtil.h	/^inline bool encodeVarI64C(char *data, size_t datasz, int64_t &pos, int64_t v) {$/;"	f	namespace:facebook::wdt
+encodeVarU64	SerializationUtil.h	/^inline bool encodeVarU64(char *data, size_t datasz, int64_t &pos, uint64_t v) {$/;"	f	namespace:facebook::wdt
+encodeVarU64	SerializationUtil.h	/^inline size_t encodeVarU64(std::string &buffer, uint64_t v) {$/;"	f	namespace:facebook::wdt
+encodeZigZag	SerializationUtil.h	/^inline uint64_t encodeZigZag(int64_t val) {$/;"	f	namespace:facebook::wdt
+encoderDecoder_	TransferLogManager.h	/^  LogEncoderDecoder &encoderDecoder_;$/;"	m	class:facebook::wdt::LogParser
+encoderDecoder_	TransferLogManager.h	/^  LogEncoderDecoder encoderDecoder_;$/;"	m	class:facebook::wdt::TransferLogManager
+encrypt	EncryptionUtils.cpp	/^bool AESEncryptor::encrypt(const char* in, const int inLength, char* out) {$/;"	f	class:facebook::wdt::AESEncryptor
+encryptAndWrite	WdtSocket.cpp	/^int WdtSocket::encryptAndWrite(char *buf, int nbyte, int timeoutMs, bool retry) {$/;"	f	class:facebook::wdt::WdtSocket
+encryptAndWriteWithTag	WdtSocket.cpp	/^int WdtSocket::encryptAndWriteWithTag(char *buf, int nbyte, int timeoutMs, bool retry) {$/;"	f	class:facebook::wdt::WdtSocket
+encryptionParams_	WdtSocket.h	/^    EncryptionParams encryptionParams_;$/;"	m	class:facebook::wdt::WdtSocket
+encryptionTypeToStr	EncryptionUtils.cpp	/^std::string encryptionTypeToStr(EncryptionType encryptionType) {$/;"	f	namespace:facebook::wdt
+encryptionTypeToTagLen	EncryptionUtils.cpp	/^size_t encryptionTypeToTagLen(EncryptionType type) {$/;"	f	namespace:facebook::wdt
+encryptor_	WdtSocket.h	/^    std::unique_ptr<AESEncryptor> encryptor_;$/;"	m	class:facebook::wdt::WdtSocket
+enqueueFiles	DirectorySourceQueue.cpp	/^bool DirectorySourceQueue::enqueueFiles() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+enqueueFilesToBeDeleted	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::enqueueFilesToBeDeleted() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+entries_	TransferLogManager.h	/^  std::vector<std::string> entries_;$/;"	m	class:facebook::wdt::TransferLogManager
+epoch_	CommonImpl.h	/^  uint64_t epoch_;$/;"	m	class:facebook::wdt::SignalSubscriber
+erase	EncryptionUtils.cpp	/^void EncryptionParams::erase() {$/;"	f	class:facebook::wdt::EncryptionParams
+evpCtx_	EncryptionUtils.h	/^    std::unique_ptr<EVP_CIPHER_CTX, CipherCtxDeleter> evpCtx_;$/;"	m	class:facebook::wdt::AESBase
+excludePattern_	DirectorySourceQueue.h	/^    std::string excludePattern_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+execAtEnd_	ThreadsController.h	/^    std::unique_ptr<ExecuteOnceFunc> execAtEnd_;$/;"	m	class:facebook::wdt::ThreadsController
+execAtStart_	ThreadsController.h	/^    std::unique_ptr<ExecuteOnceFunc> execAtStart_;$/;"	m	class:facebook::wdt::ThreadsController
+execute	ThreadsController.cpp	/^void Barrier::execute() {$/;"	f	class:facebook::wdt::Barrier
+execute	ThreadsController.h	/^        void execute(Func &&execFunc) {$/;"	f	class:facebook::wdt::ExecuteOnceFunc
+executeAtEnd	ThreadsController.h	/^    void executeAtEnd(FunctionType &&fn) const {$/;"	f	class:facebook::wdt::ThreadsController
+executeAtStart	ThreadsController.h	/^    void executeAtStart(FunctionType &&fn) const {$/;"	f	class:facebook::wdt::ThreadsController
+expectEndOfStream	WdtSocket.cpp	/^ErrorCode WdtSocket::expectEndOfStream() {$/;"	f	class:facebook::wdt::WdtSocket
+explore	DirectorySourceQueue.cpp	/^bool DirectorySourceQueue::explore() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+facebook	ClientSocket.cpp	/^namespace facebook {$/;"	n	file:
+facebook	ClientSocket.h	/^namespace facebook {$/;"	n
+facebook	CommonImpl.cpp	/^namespace facebook {$/;"	n	file:
+facebook	CommonImpl.h	/^namespace facebook {$/;"	n
+facebook	DirectorySourceQueue.cpp	/^namespace facebook {$/;"	n	file:
+facebook	DirectorySourceQueue.h	/^namespace facebook {$/;"	n
+facebook	EncryptionUtils.cpp	/^namespace facebook {$/;"	n	file:
+facebook	EncryptionUtils.h	/^namespace facebook {$/;"	n
+facebook	FileByteSource.cpp	/^namespace facebook {$/;"	n	file:
+facebook	FileByteSource.h	/^namespace facebook {$/;"	n
+facebook	FileCreator.cpp	/^namespace facebook {$/;"	n	file:
+facebook	FileCreator.h	/^namespace facebook {$/;"	n
+facebook	FileWriter.cpp	/^namespace facebook {$/;"	n	file:
+facebook	FileWriter.h	/^namespace facebook {$/;"	n
+facebook	SerializationUtil.cpp	/^namespace facebook {$/;"	n	file:
+facebook	SerializationUtil.h	/^namespace facebook {$/;"	n
+facebook	ServerSocket.cpp	/^namespace facebook {$/;"	n	file:
+facebook	ServerSocket.h	/^namespace facebook {$/;"	n
+facebook	Stats.cpp	/^namespace facebook {$/;"	n	file:
+facebook	Stats.h	/^namespace facebook {$/;"	n
+facebook	ThreadTransferHistory.cpp	/^namespace facebook {$/;"	n	file:
+facebook	ThreadTransferHistory.h	/^namespace facebook {$/;"	n
+facebook	ThreadsController.cpp	/^namespace facebook {$/;"	n	file:
+facebook	ThreadsController.h	/^namespace facebook {$/;"	n
+facebook	TransferLogManager.cpp	/^namespace facebook {$/;"	n	file:
+facebook	TransferLogManager.h	/^namespace facebook {$/;"	n
+facebook	WdtFlags.cpp	/^namespace facebook {$/;"	n	file:
+facebook	WdtFlags.h	/^namespace facebook {$/;"	n
+facebook	WdtSocket.cpp	/^namespace facebook {$/;"	n	file:
+facebook	WdtSocket.h	/^namespace facebook {$/;"	n
+failedDirectories_	DirectorySourceQueue.h	/^    std::vector<std::string> failedDirectories_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+failedSourceStats_	DirectorySourceQueue.h	/^    std::vector<TransferStats> failedSourceStats_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+fileCreator_	FileWriter.h	/^  FileCreator *fileCreator_;$/;"	m	class:facebook::wdt::FileWriter
+fileDiscoveryFinished	DirectorySourceQueue.cpp	/^bool DirectorySourceQueue::fileDiscoveryFinished() const {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+fileInfoMap_	TransferLogManager.h	/^  std::map<int64_t, FileChunksInfo> fileInfoMap_;$/;"	m	class:facebook::wdt::LogParser
+fileInfo_	DirectorySourceQueue.h	/^    std::vector<WdtFileInfo> fileInfo_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+fileStatusMap_	FileCreator.h	/^  std::map<int64_t, int> fileStatusMap_;$/;"	m	class:facebook::wdt::FileCreator
+finalizeReads	WdtSocket.cpp	/^ErrorCode WdtSocket::finalizeReads(bool doTagIOs) {$/;"	f	class:facebook::wdt::WdtSocket
+finalizeWrites	WdtSocket.cpp	/^ErrorCode WdtSocket::finalizeWrites(bool doTagIOs) {$/;"	f	class:facebook::wdt::WdtSocket
+finish	EncryptionUtils.cpp	/^bool AESDecryptor::finish(const std::string& tag) {$/;"	f	class:facebook::wdt::AESDecryptor
+finish	EncryptionUtils.cpp	/^bool AESEncryptor::finish(std::string& tagOut) {$/;"	f	class:facebook::wdt::AESEncryptor
+finishInternal	EncryptionUtils.cpp	/^bool AESDecryptor::finishInternal(EVP_CIPHER_CTX* ctx,$/;"	f	class:facebook::wdt::AESDecryptor
+finishInternal	EncryptionUtils.cpp	/^bool AESEncryptor::finishInternal(EVP_CIPHER_CTX* ctx,$/;"	f	class:facebook::wdt::AESEncryptor
+finished	DirectorySourceQueue.cpp	/^bool DirectorySourceQueue::finished() const {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+fsyncLog	TransferLogManager.cpp	/^void TransferLogManager::fsyncLog() {$/;"	f	class:facebook::wdt::TransferLogManager
+func_	Stats.h	/^  std::function<void(const C&)> func_;$/;"	m	class:facebook::wdt::ThreadLocalSwapableNode
+funnelExecutors_	ThreadsController.h	/^    std::vector<std::shared_ptr<Funnel>> funnelExecutors_;$/;"	m	class:facebook::wdt::ThreadsController
+generateEncryptionParams	EncryptionUtils.cpp	/^EncryptionParams EncryptionParams::generateEncryptionParams(EncryptionType type) {$/;"	f	class:facebook::wdt::EncryptionParams
+get	Stats.h	/^  inline C& get(int idx) {$/;"	f	class:facebook::wdt::Hold2
+getAbortChecker	CommonImpl.cpp	/^const IAbortChecker* ThreadCtx::getAbortChecker() const {$/;"	f	class:facebook::wdt::ThreadCtx
+getActiveCounter	Stats.h	/^  inline C& getActiveCounter() {$/;"	f	class:facebook::wdt::ThreadLocalSwapableNode
+getActiveIndex	Stats.h	/^  inline int getActiveIndex() {$/;"	f	class:facebook::wdt::SwapableNode
+getAverage	Stats.h	/^  inline double getAverage() const {$/;"	f	class:facebook::wdt::Counter
+getBackLog	ServerSocket.cpp	/^int ServerSocket::getBackLog() const {$/;"	f	class:facebook::wdt::ServerSocket
+getBarrier	ThreadsController.cpp	/^shared_ptr<Barrier> ThreadsController::getBarrier(const uint64_t barrierIndex) {$/;"	f	class:facebook::wdt::ThreadsController
+getBuffer	CommonImpl.cpp	/^const Buffer* ThreadCtx::getBuffer() const {$/;"	f	class:facebook::wdt::ThreadCtx
+getCipher	EncryptionUtils.cpp	/^const EVP_CIPHER* AESBase::getCipher(const EncryptionType encryptionType) {$/;"	f	class:facebook::wdt::AESBase
+getCondition	ThreadsController.cpp	/^shared_ptr<ConditionGuard> ThreadsController::getCondition($/;"	f	class:facebook::wdt::ThreadsController
+getCount	DirectorySourceQueue.cpp	/^int64_t DirectorySourceQueue::getCount() const {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getCount	Stats.h	/^  inline int64_t getCount() const {$/;"	f	class:facebook::wdt::Counter
+getData	CommonImpl.cpp	/^char* Buffer::getData() const {$/;"	f	class:facebook::wdt::Buffer
+getDirectoryTime	DirectorySourceQueue.h	/^    double getDirectoryTime() const {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getDiscoveredFilesMetaData	DirectorySourceQueue.cpp	/^std::vector<SourceMetaData *> &DirectorySourceQueue::getDiscoveredFilesMetaData() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getEffectiveTimeout	WdtSocket.cpp	/^int WdtSocket::getEffectiveTimeout(int networkTimeout) {$/;"	f	class:facebook::wdt::WdtSocket
+getEncryptionType	WdtSocket.cpp	/^EncryptionType WdtSocket::getEncryptionType() const {$/;"	f	class:facebook::wdt::WdtSocket
+getFailedDirectories	DirectorySourceQueue.cpp	/^std::vector<string> &DirectorySourceQueue::getFailedDirectories() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getFailedSourceStats	DirectorySourceQueue.cpp	/^std::vector<TransferStats> &DirectorySourceQueue::getFailedSourceStats() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getFd	WdtSocket.cpp	/^int WdtSocket::getFd() const {$/;"	f	class:facebook::wdt::WdtSocket
+getFileInfo	DirectorySourceQueue.cpp	/^const std::vector<WdtFileInfo> &DirectorySourceQueue::getFileInfo() const {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getFormattedTimestamp	TransferLogManager.cpp	/^string LogParser::getFormattedTimestamp(int64_t timestampMicros) {$/;"	f	class:facebook::wdt::LogParser
+getFullPath	FileCreator.cpp	/^std::string FileCreator::getFullPath(const std::string &relPath) {$/;"	f	class:facebook::wdt::FileCreator
+getFullPath	TransferLogManager.cpp	/^string TransferLogManager::getFullPath(const string &relPath) {$/;"	f	class:facebook::wdt::TransferLogManager
+getFunnel	ThreadsController.cpp	/^shared_ptr<Funnel> ThreadsController::getFunnel(const uint64_t funnelIndex) {$/;"	f	class:facebook::wdt::ThreadsController
+getLogSafeString	EncryptionUtils.cpp	/^string EncryptionParams::getLogSafeString() const {$/;"	f	class:facebook::wdt::EncryptionParams
+getMax	Stats.h	/^  inline int64_t getMax() const {$/;"	f	class:facebook::wdt::Counter
+getMin	Stats.h	/^  inline int64_t getMin() const {$/;"	f	class:facebook::wdt::Counter
+getNameInfo	WdtSocket.cpp	/^bool WdtSocket::getNameInfo(const struct sockaddr *sa, socklen_t salen, std::string &host, std::string &port) {$/;"	f	class:facebook::wdt::WdtSocket
+getNextSource	DirectorySourceQueue.cpp	/^std::unique_ptr<ByteSource> DirectorySourceQueue::getNextSource($/;"	f	class:facebook::wdt::DirectorySourceQueue
+getNonRetryableErrCode	WdtSocket.cpp	/^ErrorCode WdtSocket::getNonRetryableErrCode() const {$/;"	f	class:facebook::wdt::WdtSocket
+getNumAcked	ThreadTransferHistory.h	/^    int64_t getNumAcked() const {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+getNumBlocksAndStatus	DirectorySourceQueue.cpp	/^std::pair<int64_t, ErrorCode> DirectorySourceQueue::getNumBlocksAndStatus()$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getNumProcessed	EncryptionUtils.h	/^    int64_t getNumProcessed() const {$/;"	f	class:facebook::wdt::AESBase
+getNumRead	WdtSocket.h	/^    int64_t getNumRead() const {$/;"	f	class:facebook::wdt::WdtSocket
+getNumWritten	WdtSocket.h	/^    int64_t getNumWritten() const {$/;"	f	class:facebook::wdt::WdtSocket
+getOptionNameFromFlagName	WdtFlags.cpp	/^std::string getOptionNameFromFlagName(const std::string &flagName) {$/;"	f	namespace:facebook::wdt
+getOptions	CommonImpl.cpp	/^const WdtOptions& ThreadCtx::getOptions() const {$/;"	f	class:facebook::wdt::ThreadCtx
+getPeerIp	ClientSocket.cpp	/^const std::string &ClientSocket::getPeerIp() const {$/;"	f	class:facebook::wdt::ClientSocket
+getPeerIp	ServerSocket.cpp	/^std::string ServerSocket::getPeerIp() const {$/;"	f	class:facebook::wdt::ServerSocket
+getPeerPort	ServerSocket.cpp	/^std::string ServerSocket::getPeerPort() const {$/;"	f	class:facebook::wdt::ServerSocket
+getPerfReport	CommonImpl.cpp	/^PerfStatReport& ThreadCtx::getPerfReport() {$/;"	f	class:facebook::wdt::ThreadCtx
+getPerfReport	DirectorySourceQueue.cpp	/^const PerfStatReport &DirectorySourceQueue::getPerfReport() const {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getPort	WdtSocket.cpp	/^int WdtSocket::getPort() const {$/;"	f	class:facebook::wdt::WdtSocket
+getPreviouslySentBytes	DirectorySourceQueue.cpp	/^int64_t DirectorySourceQueue::getPreviouslySentBytes() const {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getReadErrCode	WdtSocket.cpp	/^ErrorCode WdtSocket::getReadErrCode() const {$/;"	f	class:facebook::wdt::WdtSocket
+getReceiveBufferSize	WdtSocket.cpp	/^int WdtSocket::getReceiveBufferSize() const {$/;"	f	class:facebook::wdt::WdtSocket
+getResumptionStatus	TransferLogManager.cpp	/^ErrorCode TransferLogManager::getResumptionStatus() {$/;"	f	class:facebook::wdt::TransferLogManager
+getSecret	EncryptionUtils.h	/^    const std::string& getSecret() const {$/;"	f	class:facebook::wdt::EncryptionParams
+getSelectedPortAndNewAddress	ServerSocket.cpp	/^int ServerSocket::getSelectedPortAndNewAddress(int listeningFd, struct addrinfo &sa, const std::string &host, addrInfoList &infoList) {$/;"	f	class:facebook::wdt::ServerSocket
+getSendBufferSize	WdtSocket.cpp	/^int WdtSocket::getSendBufferSize() const {$/;"	f	class:facebook::wdt::WdtSocket
+getSize	CommonImpl.cpp	/^int64_t Buffer::getSize() const {$/;"	f	class:facebook::wdt::Buffer
+getSourceId	ThreadTransferHistory.cpp	/^std::string ThreadTransferHistory::getSourceId(int64_t index) {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+getState	ThreadsController.cpp	/^ThreadStatus ThreadsController::getState(int threadIndex) {$/;"	f	class:facebook::wdt::ThreadsController
+getStatus	ThreadsController.cpp	/^FunnelStatus Funnel::getStatus() {$/;"	f	class:facebook::wdt::Funnel
+getStdDev	Stats.cpp	/^double Counter::getStdDev() const {$/;"	f	class:facebook::wdt::Counter
+getSum	Stats.h	/^  inline int64_t getSum() const {$/;"	f	class:facebook::wdt::Counter
+getThreadIndex	CommonImpl.cpp	/^int ThreadCtx::getThreadIndex() const {$/;"	f	class:facebook::wdt::ThreadCtx
+getThreadStates	ThreadsController.cpp	/^unordered_map<int, ThreadStatus> ThreadsController::getThreadStates() const {$/;"	f	class:facebook::wdt::ThreadsController
+getTotalSize	DirectorySourceQueue.cpp	/^int64_t DirectorySourceQueue::getTotalSize() const {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+getTotalThreads	ThreadsController.cpp	/^int ThreadsController::getTotalThreads() {$/;"	f	class:facebook::wdt::ThreadsController
+getTransferHistory	ThreadTransferHistory.cpp	/^ThreadTransferHistory &TransferHistoryController::getTransferHistory(int32_t port) {$/;"	f	class:facebook::wdt::TransferHistoryController
+getType	EncryptionUtils.h	/^    EncryptionType getType() const {$/;"	f	class:facebook::wdt::EncryptionParams
+getUnackedBytes	WdtSocket.cpp	/^int WdtSocket::getUnackedBytes() const {$/;"	f	class:facebook::wdt::WdtSocket
+getUrlSafeString	EncryptionUtils.cpp	/^string EncryptionParams::getUrlSafeString() const {$/;"	f	class:facebook::wdt::EncryptionParams
+getUserSpecifiedOptions	WdtFlags.cpp	/^std::set<std::string> WdtFlags::getUserSpecifiedOptions() {$/;"	f	class:facebook::wdt::WdtFlags
+getWriteErrCode	WdtSocket.cpp	/^ErrorCode WdtSocket::getWriteErrCode() const {$/;"	f	class:facebook::wdt::WdtSocket
+globalEpoch_	CommonImpl.h	/^  static std::atomic<uint64_t> globalEpoch_;$/;"	m	class:facebook::wdt::SignalSubscriber
+globalEpoch_	CommonImpl.h	/^std::atomic<uint64_t> SignalSubscriber<Tag>::globalEpoch_ = {};$/;"	m	class:facebook::wdt::SignalSubscriber
+handleGlobalCheckpoint	ThreadTransferHistory.cpp	/^void TransferHistoryController::handleGlobalCheckpoint($/;"	f	class:facebook::wdt::TransferHistoryController
+handleVersionMismatch	ThreadTransferHistory.cpp	/^ErrorCode TransferHistoryController::handleVersionMismatch() {$/;"	f	class:facebook::wdt::TransferHistoryController
+hasThreads	ThreadsController.cpp	/^bool ThreadsController::hasThreads(ThreadStatus threadState) {$/;"	f	class:facebook::wdt::ThreadsController
+hasThreads	ThreadsController.cpp	/^bool ThreadsController::hasThreads(int threadIndex, ThreadStatus threadState) {$/;"	f	class:facebook::wdt::ThreadsController
+hdata_	Stats.h	/^  int32_t hdata_[kLastIndex + 1];  \/\/ n+1 buckets (for last one)$/;"	m	class:facebook::wdt::Histogram
+history_	ThreadTransferHistory.h	/^    std::vector<std::unique_ptr<ByteSource>> history_;      \/\/\/ history of the thread$/;"	m	class:facebook::wdt::ThreadTransferHistory
+includePattern_	DirectorySourceQueue.h	/^    std::string includePattern_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+initHistLookup	Stats.cpp	/^int32_t* initHistLookup() {$/;"	f	namespace:facebook::wdt
+initializeFromFlags	WdtFlags.cpp	/^void WdtFlags::initializeFromFlags(WdtOptions &options) {$/;"	f	class:facebook::wdt::WdtFlags
+intervalInMs_	Stats.h	/^  int64_t intervalInMs_;$/;"	m	class:facebook::wdt::PeriodicCounters
+invalidSeqIds_	TransferLogManager.h	/^  std::set<int64_t> invalidSeqIds_;$/;"	m	class:facebook::wdt::LogParser
+invalidateDirectory	TransferLogManager.cpp	/^void TransferLogManager::invalidateDirectory() {$/;"	f	class:facebook::wdt::TransferLogManager
+ioWithAbortCheck	WdtSocket.cpp	/^int64_t WdtSocket::ioWithAbortCheck(F readOrWrite, T tbuf, int64_t numBytes, int timeoutMs, bool tryFull) {$/;"	f	class:facebook::wdt::WdtSocket
+isAligned	CommonImpl.cpp	/^bool Buffer::isAligned() const {$/;"	f	class:facebook::wdt::Buffer
+isGlobalCheckpointReceived	ThreadTransferHistory.cpp	/^bool ThreadTransferHistory::isGlobalCheckpointReceived() {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+isSet	EncryptionUtils.h	/^    bool isSet() const {$/;"	f	class:facebook::wdt::EncryptionParams
+kAESBlockSize	EncryptionUtils.h	/^const int kAESBlockSize = 16;$/;"	m	namespace:facebook::wdt
+kDiskBlockSize	CommonImpl.h	/^const int64_t kDiskBlockSize = 4 * 1024;$/;"	m	namespace:facebook::wdt
+kEncryptionTypeDescriptions	EncryptionUtils.cpp	/^const char* const kEncryptionTypeDescriptions[] = {"none", "aes128ctr", "aes128gcm"};$/;"	m	namespace:facebook::wdt	file:
+kFirstValue	Stats.cpp	/^static const int32_t kFirstValue = Histogram::kHistogramBuckets[0];$/;"	m	namespace:facebook::wdt	file:
+kHistogramBuckets	Stats.cpp	/^constexpr int32_t Histogram::kHistogramBuckets[];  \/\/ buckets, values are in .h$/;"	m	class:facebook::wdt::Histogram	file:
+kHistogramBuckets	Stats.h	/^  static constexpr int32_t kHistogramBuckets[] = {$/;"	m	class:facebook::wdt::Histogram
+kLastIndex	Stats.cpp	/^const size_t Histogram::kLastIndex;  \/\/ storage placeholder- value is from .h$/;"	m	class:facebook::wdt::Histogram	file:
+kLastIndex	Stats.h	/^  static const size_t kLastIndex =$/;"	m	class:facebook::wdt::Histogram
+kLastValue	Stats.cpp	/^static const int32_t kLastValue =$/;"	m	namespace:facebook::wdt	file:
+kMaxEntryLength	TransferLogManager.h	/^  static const int64_t kMaxEntryLength = 2 + 1 + 10 + PATH_MAX + 2 * 10;$/;"	m	class:facebook::wdt::TransferLogManager
+kVal2Bucket	Stats.cpp	/^static const int32_t* kVal2Bucket = initHistLookup();$/;"	m	namespace:facebook::wdt	file:
+kWdtBuggyLogName	TransferLogManager.h	/^constexpr char kWdtBuggyLogName[] = ".wdt.log.bug";$/;"	m	namespace:facebook::wdt
+kWdtLogName	TransferLogManager.h	/^constexpr char kWdtLogName[] = ".wdt.log";$/;"	m	namespace:facebook::wdt
+listen	ServerSocket.cpp	/^ErrorCode ServerSocket::listen() {$/;"	f	class:facebook::wdt::ServerSocket
+listenInternal	ServerSocket.cpp	/^int ServerSocket::listenInternal(struct addrinfo *info, const std::string &host) {$/;"	f	class:facebook::wdt::ServerSocket
+listeningFds_	ServerSocket.h	/^    std::vector<int> listeningFds_;$/;"	m	class:facebook::wdt::ServerSocket
+lock_	FileCreator.h	/^  folly::SpinLock lock_;$/;"	m	class:facebook::wdt::FileCreator
+makeByteRange	SerializationUtil.cpp	/^ByteRange makeByteRange(char *dest, int64_t sz, int64_t off) {$/;"	f	namespace:facebook::wdt
+makeByteRange	SerializationUtil.cpp	/^ByteRange makeByteRange(string str) {$/;"	f	namespace:facebook::wdt
+makeThreads	ThreadsController.h	/^    std::vector<std::unique_ptr<WdtThread>> makeThreads(WdtBaseType *wdtParent, int numThreads, const std::vector<int32_t> &ports) {$/;"	f	class:facebook::wdt::ThreadsController
+markAllAcknowledged	ThreadTransferHistory.cpp	/^void ThreadTransferHistory::markAllAcknowledged() {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+markNotInUse	ThreadTransferHistory.cpp	/^void ThreadTransferHistory::markNotInUse() {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+markSourceAsFailed	ThreadTransferHistory.cpp	/^void ThreadTransferHistory::markSourceAsFailed($/;"	f	class:facebook::wdt::ThreadTransferHistory
+markState	ThreadsController.cpp	/^void ThreadsController::markState(int threadIndex, ThreadStatus threadState) {$/;"	f	class:facebook::wdt::ThreadsController
+max_	Stats.h	/^  int64_t count_, min_, max_, sum_, sumOfSquares_;$/;"	m	class:facebook::wdt::Counter
+merge	Stats.cpp	/^void Counter::merge(const Counter& c) {$/;"	f	class:facebook::wdt::Counter
+merge	Stats.cpp	/^void Histogram::merge(const Histogram& h) {$/;"	f	class:facebook::wdt::Histogram
+mergeAndReset	Stats.h	/^  inline void mergeAndReset(int idx, C& merged) {$/;"	f	class:facebook::wdt::ThreadLocalSwapableNode
+metadata_	FileByteSource.h	/^    SourceMetaData *metadata_;$/;"	m	class:facebook::wdt::FileByteSource
+min_	Stats.h	/^  int64_t count_, min_, max_, sum_, sumOfSquares_;$/;"	m	class:facebook::wdt::Counter
+mutex_	DirectorySourceQueue.h	/^    mutable std::mutex mutex_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+mutex_	FileCreator.h	/^  std::mutex mutex_;$/;"	m	class:facebook::wdt::FileCreator
+mutex_	Stats.h	/^  std::mutex mutex_;$/;"	m	class:facebook::wdt::PeriodicCounters
+mutex_	ThreadTransferHistory.h	/^    std::mutex mutex_;                                      \/\/\/ Mutex used by history internally for synchronization$/;"	m	class:facebook::wdt::ThreadTransferHistory
+mutex_	ThreadsController.h	/^    std::mutex mutex_;$/;"	m	class:facebook::wdt::ConditionGuard
+mutex_	ThreadsController.h	/^    std::mutex mutex_;$/;"	m	class:facebook::wdt::ExecuteOnceFunc
+mutex_	ThreadsController.h	/^  std::mutex mutex_;$/;"	m	class:facebook::wdt::Barrier
+mutex_	ThreadsController.h	/^  std::mutex mutex_;$/;"	m	class:facebook::wdt::Funnel
+mutex_	TransferLogManager.h	/^  std::mutex mutex_;$/;"	m	class:facebook::wdt::TransferLogManager
+nextSyncOffset_	FileWriter.h	/^  int64_t nextSyncOffset_;$/;"	m	class:facebook::wdt::FileWriter
+noexcept	ThreadsController.h	/^  ConditionGuardImpl(ConditionGuardImpl &&that) noexcept;$/;"	m	class:facebook::wdt::ConditionGuardImpl
+notified	CommonImpl.h	/^  bool notified() {$/;"	f	class:facebook::wdt::SignalSubscriber
+notify	CommonImpl.h	/^  static void notify() {$/;"	f	class:facebook::wdt::SignalSubscriber
+notifyAll	ThreadsController.cpp	/^void ConditionGuardImpl::notifyAll() {$/;"	f	class:facebook::wdt::ConditionGuardImpl
+notifyFail	ThreadsController.cpp	/^void Funnel::notifyFail() {$/;"	f	class:facebook::wdt::Funnel
+notifyOne	ThreadsController.cpp	/^void ConditionGuardImpl::notifyOne() {$/;"	f	class:facebook::wdt::ConditionGuardImpl
+notifySuccess	ThreadsController.cpp	/^void Funnel::notifySuccess() {$/;"	f	class:facebook::wdt::Funnel
+numThreads_	ThreadsController.h	/^    int numThreads_;$/;"	m	class:facebook::wdt::ExecuteOnceFunc
+offset	SerializationUtil.cpp	/^int64_t offset(const folly::ByteRange &newRange,$/;"	f	namespace:facebook::wdt
+offset_	FileByteSource.h	/^    int64_t offset_;$/;"	m	class:facebook::wdt::FileByteSource
+offset_	Stats.h	/^  const int64_t offset_;$/;"	m	class:facebook::wdt::Histogram
+open	FileByteSource.cpp	/^ErrorCode FileByteSource::open(ThreadCtx *threadCtx) {$/;"	f	class:facebook::wdt::FileByteSource
+open	FileWriter.cpp	/^ErrorCode FileWriter::open() {$/;"	f	class:facebook::wdt::FileWriter
+openAndSetSize	FileCreator.cpp	/^int FileCreator::openAndSetSize(ThreadCtx &threadCtx,$/;"	f	class:facebook::wdt::FileCreator
+openExistingFile	FileCreator.cpp	/^int FileCreator::openExistingFile(ThreadCtx &threadCtx,$/;"	f	class:facebook::wdt::FileCreator
+openForBlocks	FileCreator.cpp	/^int FileCreator::openForBlocks(ThreadCtx &threadCtx,$/;"	f	class:facebook::wdt::FileCreator
+openForFirstBlock	FileCreator.cpp	/^int FileCreator::openForFirstBlock(ThreadCtx &threadCtx,$/;"	f	class:facebook::wdt::FileCreator
+openForRead	FileByteSource.cpp	/^int FileUtil::openForRead(ThreadCtx &threadCtx, const std::string &filename, const bool isDirectReads) {$/;"	f	class:facebook::wdt::FileUtil
+openLog	TransferLogManager.cpp	/^ErrorCode TransferLogManager::openLog() {$/;"	f	class:facebook::wdt::TransferLogManager
+opensslLock	EncryptionUtils.cpp	/^static void opensslLock(int mode, int type, const char* file, int line) {$/;"	f	namespace:facebook::wdt
+opensslThreadId	EncryptionUtils.cpp	/^static void opensslThreadId(CRYPTO_THREADID* id) {$/;"	f	namespace:facebook::wdt
+operator ()	DirectorySourceQueue.h	/^        bool operator()(const std::unique_ptr<ByteSource> &source1, const std::unique_ptr<ByteSource> &source2) {$/;"	f	struct:facebook::wdt::DirectorySourceQueue::SourceComparator
+operator ==	EncryptionUtils.cpp	/^bool EncryptionParams::operator==(const EncryptionParams& that) const {$/;"	f	class:facebook::wdt::EncryptionParams
+options_	CommonImpl.h	/^    const WdtOptions &options_;$/;"	m	class:facebook::wdt::ThreadCtx
+options_	TransferLogManager.h	/^  const WdtOptions &options_;$/;"	m	class:facebook::wdt::LogParser
+options_	TransferLogManager.h	/^  const WdtOptions &options_;$/;"	m	class:facebook::wdt::TransferLogManager
+override	ClientSocket.h	/^    ~ClientSocket() override;$/;"	m	class:facebook::wdt::ClientSocket
+override	DirectorySourceQueue.h	/^            ErrorCode &status) override;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+override	DirectorySourceQueue.h	/^    bool finished() const override;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+override	DirectorySourceQueue.h	/^    int64_t getCount() const override;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+override	DirectorySourceQueue.h	/^    int64_t getTotalSize() const override;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+override	DirectorySourceQueue.h	/^    ~DirectorySourceQueue() override;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+override	FileByteSource.h	/^    ErrorCode open(ThreadCtx *threadCtx) override;$/;"	m	class:facebook::wdt::FileByteSource
+override	FileByteSource.h	/^    char *read(int64_t &size) override;$/;"	m	class:facebook::wdt::FileByteSource
+override	FileByteSource.h	/^    void advanceOffset(int64_t numBytes) override;$/;"	m	class:facebook::wdt::FileByteSource
+override	FileByteSource.h	/^    void close() override;$/;"	m	class:facebook::wdt::FileByteSource
+override	FileWriter.h	/^  ErrorCode open() override;$/;"	m	class:facebook::wdt::FileWriter
+override	FileWriter.h	/^  ErrorCode write(char *buf, int64_t size) override;$/;"	m	class:facebook::wdt::FileWriter
+override	FileWriter.h	/^  void close() override;$/;"	m	class:facebook::wdt::FileWriter
+override	ServerSocket.h	/^    ~ServerSocket() override;$/;"	m	class:facebook::wdt::ServerSocket
+override	Stats.h	/^  ~Histogram() override;$/;"	m	class:facebook::wdt::Histogram
+param_	Stats.h	/^  P param_;       \/\/!< Value for constructor for class C.$/;"	m	class:facebook::wdt::ThreadLocalSwapableNode
+parseAndMatch	TransferLogManager.cpp	/^ErrorCode TransferLogManager::parseAndMatch($/;"	f	class:facebook::wdt::TransferLogManager
+parseAndPrint	TransferLogManager.cpp	/^bool TransferLogManager::parseAndPrint() {$/;"	f	class:facebook::wdt::TransferLogManager
+parseEncryptionType	EncryptionUtils.cpp	/^EncryptionType parseEncryptionType(const std::string& str) {$/;"	f	namespace:facebook::wdt
+parseLog	TransferLogManager.cpp	/^ErrorCode LogParser::parseLog(int fd, string &senderIp,$/;"	f	class:facebook::wdt::LogParser
+parseOnly_	TransferLogManager.h	/^  bool parseOnly_;$/;"	m	class:facebook::wdt::LogParser
+parseVerifyAndFix	TransferLogManager.cpp	/^ErrorCode TransferLogManager::parseVerifyAndFix($/;"	f	class:facebook::wdt::TransferLogManager
+peerIp_	ClientSocket.h	/^    std::string peerIp_;        \/\/服务端ip地址   $/;"	m	class:facebook::wdt::ClientSocket
+peerIp_	ServerSocket.h	/^    std::string peerIp_;$/;"	m	class:facebook::wdt::ServerSocket
+peerPort_	ServerSocket.h	/^    std::string peerPort_;$/;"	m	class:facebook::wdt::ServerSocket
+percentile1_	Stats.h	/^  double percentile1_, percentile2_;$/;"	m	class:facebook::wdt::Histogram
+percentile2_	Stats.h	/^  double percentile1_, percentile2_;$/;"	m	class:facebook::wdt::Histogram
+perfReport_	CommonImpl.h	/^    PerfStatReport perfReport_;$/;"	m	class:facebook::wdt::ThreadCtx
+popAckedSourceStats	ThreadTransferHistory.cpp	/^std::vector<TransferStats> ThreadTransferHistory::popAckedSourceStats() {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+port_	ThreadTransferHistory.h	/^    int32_t port_;                                          \/\/\/ Port assosciated with the history$/;"	m	class:facebook::wdt::ThreadTransferHistory
+previouslyTransferredChunks_	DirectorySourceQueue.h	/^    std::unordered_map<std::string, FileChunksInfo> previouslyTransferredChunks_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+print	Stats.cpp	/^void Counter::print(std::ostream& os, double multiplier) const {$/;"	f	class:facebook::wdt::Counter
+print	Stats.cpp	/^void Histogram::print(std::ostream& os) const {$/;"	f	class:facebook::wdt::Histogram
+printCounterHeader	Stats.cpp	/^void Counter::printCounterHeader(std::ostream& os) const {$/;"	f	class:facebook::wdt::Counter
+printOptions	WdtFlags.cpp	/^void WdtFlags::printOptions(std::ostream &out, const WdtOptions &options) {$/;"	f	class:facebook::wdt::WdtFlags
+printScale_	Stats.h	/^  double printScale_;$/;"	m	class:facebook::wdt::Counter
+processBlockWriteEntry	TransferLogManager.cpp	/^ErrorCode LogParser::processBlockWriteEntry(char *buf, int64_t size) {$/;"	f	class:facebook::wdt::LogParser
+processDirectoryInvalidationEntry	TransferLogManager.cpp	/^ErrorCode LogParser::processDirectoryInvalidationEntry(char *buf,$/;"	f	class:facebook::wdt::LogParser
+processFileCreationEntry	TransferLogManager.cpp	/^ErrorCode LogParser::processFileCreationEntry(char *buf, int64_t size) {$/;"	f	class:facebook::wdt::LogParser
+processFileInvalidationEntry	TransferLogManager.cpp	/^ErrorCode LogParser::processFileInvalidationEntry(char *buf, int64_t size) {$/;"	f	class:facebook::wdt::LogParser
+processFileResizeEntry	TransferLogManager.cpp	/^ErrorCode LogParser::processFileResizeEntry(char *buf, int64_t size) {$/;"	f	class:facebook::wdt::LogParser
+processHeaderEntry	TransferLogManager.cpp	/^ErrorCode LogParser::processHeaderEntry(char *buf, int64_t max, int64_t size,$/;"	f	class:facebook::wdt::LogParser
+pruneDirPattern_	DirectorySourceQueue.h	/^    std::string pruneDirPattern_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+ptr_	Stats.h	/^  int ptr_;  \/\/!< 0 or 1; index of current active object.$/;"	m	class:facebook::wdt::SwapableNode
+queue_	ThreadTransferHistory.h	/^    DirectorySourceQueue &queue_;                           \/\/\/ reference to global queue$/;"	m	class:facebook::wdt::ThreadTransferHistory
+read	FileByteSource.cpp	/^char *FileByteSource::read(int64_t &size) {$/;"	f	class:facebook::wdt::FileByteSource
+read	WdtSocket.cpp	/^int WdtSocket::read(char *buf, int nbyte, bool tryFull) {$/;"	f	class:facebook::wdt::WdtSocket
+readAndDecrypt	WdtSocket.cpp	/^int WdtSocket::readAndDecrypt(char *buf, int nbyte, int timeoutMs, bool tryFull) {$/;"	f	class:facebook::wdt::WdtSocket
+readAndDecryptWithTag	WdtSocket.cpp	/^int WdtSocket::readAndDecryptWithTag(char *buf, int nbyte, int timeoutMs, bool tryFull) {$/;"	f	class:facebook::wdt::WdtSocket
+readAndReset	Stats.h	/^  inline void readAndReset(C& merged, bool delay = false) {$/;"	f	class:facebook::wdt::ThreadLocalSwapableNode
+readEncryptionSettingsOnce	WdtSocket.cpp	/^void WdtSocket::readEncryptionSettingsOnce(int timeoutMs) {$/;"	f	class:facebook::wdt::WdtSocket
+readEncryptionTag	WdtSocket.cpp	/^std::string WdtSocket::readEncryptionTag() {$/;"	f	class:facebook::wdt::WdtSocket
+readInternal	WdtSocket.cpp	/^int WdtSocket::readInternal(char *buf, int nbyte, int timeoutMs, bool tryFull) {$/;"	f	class:facebook::wdt::WdtSocket
+readWithAbortCheck	WdtSocket.cpp	/^int64_t WdtSocket::readWithAbortCheck(char *buf, int64_t nbyte, int timeoutMs, bool tryFull) {$/;"	f	class:facebook::wdt::WdtSocket
+readWithTimeout	WdtSocket.cpp	/^int WdtSocket::readWithTimeout(char *buf, int nbyte, int timeoutMs, bool tryFull) {$/;"	f	class:facebook::wdt::WdtSocket
+record	Stats.cpp	/^void Counter::record(int64_t v) {$/;"	f	class:facebook::wdt::Counter
+record	Stats.cpp	/^void Histogram::record(int64_t value) {$/;"	f	class:facebook::wdt::Histogram
+record	Stats.h	/^  inline void record(int64_t value) {$/;"	f	class:facebook::wdt::ThreadLocalSwapableNode
+recoveryId_	TransferLogManager.h	/^  std::string recoveryId_;$/;"	m	class:facebook::wdt::LogParser
+recoveryId_	TransferLogManager.h	/^  std::string recoveryId_;$/;"	m	class:facebook::wdt::TransferLogManager
+registerThread	ThreadsController.cpp	/^void ThreadsController::registerThread(int threadIndex) {$/;"	f	class:facebook::wdt::ThreadsController
+renameBuggyLog	TransferLogManager.cpp	/^void TransferLogManager::renameBuggyLog() {$/;"	f	class:facebook::wdt::TransferLogManager
+reset	Stats.cpp	/^void Histogram::reset() {$/;"	f	class:facebook::wdt::Histogram
+reset	Stats.h	/^  inline void reset() {$/;"	f	class:facebook::wdt::Counter
+reset	ThreadsController.cpp	/^void ThreadsController::reset() {$/;"	f	class:facebook::wdt::ThreadsController
+reset	ThreadsController.h	/^    void reset() {$/;"	f	class:facebook::wdt::ExecuteOnceFunc
+resetDecryptor	WdtSocket.cpp	/^void WdtSocket::resetDecryptor() {$/;"	f	class:facebook::wdt::WdtSocket
+resetDirCache	FileCreator.h	/^  void resetDirCache() {$/;"	f	class:facebook::wdt::FileCreator
+resetEncryptor	WdtSocket.cpp	/^void WdtSocket::resetEncryptor() {$/;"	f	class:facebook::wdt::WdtSocket
+resolvePath	DirectorySourceQueue.cpp	/^string DirectorySourceQueue::resolvePath(const string &path) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+result_	Stats.h	/^  C* result_;   \/\/!< Result object to merge into upon destruction.$/;"	m	class:facebook::wdt::Hold2
+result_	Stats.h	/^  Hold2(C* result, const P& p) : datav_{C(p), C(p)}, result_(result) {$/;"	f	class:facebook::wdt::Hold2
+resumptionStatus_	TransferLogManager.h	/^  ErrorCode resumptionStatus_;$/;"	m	class:facebook::wdt::TransferLogManager
+returnToQueue	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::returnToQueue($/;"	f	class:facebook::wdt::DirectorySourceQueue
+returnToQueue	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::returnToQueue(std::unique_ptr<ByteSource> &source) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+returnUnackedSourcesToQueue	ThreadTransferHistory.cpp	/^void ThreadTransferHistory::returnUnackedSourcesToQueue() {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+rootDir_	DirectorySourceQueue.h	/^    std::string rootDir_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+rootDir_	FileCreator.h	/^  std::string rootDir_;$/;"	m	class:facebook::wdt::FileCreator
+rootDir_	TransferLogManager.h	/^  std::string rootDir_;$/;"	m	class:facebook::wdt::LogParser
+rootDir_	TransferLogManager.h	/^  std::string rootDir_;$/;"	m	class:facebook::wdt::TransferLogManager
+run	Stats.h	/^  void run() {$/;"	f	class:facebook::wdt::PeriodicCounters
+s_numOpensslLocks	EncryptionUtils.cpp	/^static int s_numOpensslLocks = 0;$/;"	m	namespace:facebook::wdt	file:
+sa_	ClientSocket.h	/^    struct addrinfo sa_;$/;"	m	class:facebook::wdt::ClientSocket	typeref:struct:facebook::wdt::ClientSocket::addrinfo
+schedule	Stats.h	/^  bool schedule(double intervalInSec) {$/;"	f	class:facebook::wdt::PeriodicCounters
+senderIp_	TransferLogManager.h	/^  std::string senderIp_;$/;"	m	class:facebook::wdt::TransferLogManager
+seqIdToSizeMap_	TransferLogManager.h	/^  std::map<int64_t, int64_t> seqIdToSizeMap_;$/;"	m	class:facebook::wdt::LogParser
+setAbortChecker	CommonImpl.cpp	/^void ThreadCtx::setAbortChecker(IAbortChecker const* abortChecker) {$/;"	f	class:facebook::wdt::ThreadCtx
+setBlockSizeMbytes	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::setBlockSizeMbytes(int64_t blockSizeMbytes) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setCheckpointAndReturnToQueue	ThreadTransferHistory.cpp	/^ErrorCode ThreadTransferHistory::setCheckpointAndReturnToQueue($/;"	f	class:facebook::wdt::ThreadTransferHistory
+setDirectReads	DirectorySourceQueue.h	/^    void setDirectReads(bool directReads) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setExcludePattern	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::setExcludePattern(const string &excludePattern) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setFileInfo	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::setFileInfo(const std::vector<WdtFileInfo> &fileInfo) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setFileSize	FileCreator.cpp	/^bool FileCreator::setFileSize(ThreadCtx &threadCtx, int fd, int64_t fileSize) {$/;"	f	class:facebook::wdt::FileCreator
+setFollowSymlinks	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::setFollowSymlinks(const bool followSymlinks) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setGlobalCheckpoint	ThreadTransferHistory.cpp	/^ErrorCode ThreadTransferHistory::setGlobalCheckpoint($/;"	f	class:facebook::wdt::ThreadTransferHistory
+setIncludePattern	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::setIncludePattern(const string &includePattern) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setLocalCheckpoint	ThreadTransferHistory.cpp	/^ErrorCode ThreadTransferHistory::setLocalCheckpoint( const Checkpoint &checkpoint) {$/;"	f	class:facebook::wdt::ThreadTransferHistory
+setNumBarriers	ThreadsController.cpp	/^void ThreadsController::setNumBarriers(int numBarriers) {$/;"	f	class:facebook::wdt::ThreadsController
+setNumClientThreads	DirectorySourceQueue.h	/^    void setNumClientThreads(int64_t numClientThreads) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setNumConditions	ThreadsController.cpp	/^void ThreadsController::setNumConditions(int numConditions) {$/;"	f	class:facebook::wdt::ThreadsController
+setNumFunnels	ThreadsController.cpp	/^void ThreadsController::setNumFunnels(int numFunnels) {$/;"	f	class:facebook::wdt::ThreadsController
+setOpenFilesDuringDiscovery	DirectorySourceQueue.h	/^    void setOpenFilesDuringDiscovery(int64_t openFilesDuringDiscovery) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setPercentile1	Stats.cpp	/^void Histogram::setPercentile1(double p) {$/;"	f	class:facebook::wdt::Histogram
+setPercentile2	Stats.cpp	/^void Histogram::setPercentile2(double p) {$/;"	f	class:facebook::wdt::Histogram
+setPreviouslyReceivedChunks	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::setPreviouslyReceivedChunks(std::vector<FileChunksInfo> &previouslyTransferredChunks) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setPruneDirPattern	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::setPruneDirPattern(const string &pruneDirPattern) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setReceiveBufferSize	ServerSocket.cpp	/^void ServerSocket::setReceiveBufferSize(int fd) {$/;"	f	class:facebook::wdt::ServerSocket
+setRootDir	DirectorySourceQueue.cpp	/^bool DirectorySourceQueue::setRootDir(const string &newRootDir) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+setSendBufferSize	ClientSocket.cpp	/^void ClientSocket::setSendBufferSize() {$/;"	f	class:facebook::wdt::ClientSocket
+setSocketTimeouts	WdtSocket.cpp	/^void WdtSocket::setSocketTimeouts() {$/;"	f	class:facebook::wdt::WdtSocket
+sharedFileData_	DirectorySourceQueue.h	/^    std::vector<SourceMetaData *> sharedFileData_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+shutdownThread	TransferLogManager.cpp	/^void TransferLogManager::shutdownThread() {$/;"	f	class:facebook::wdt::TransferLogManager
+shutdownWrites	WdtSocket.cpp	/^ErrorCode WdtSocket::shutdownWrites() {$/;"	f	class:facebook::wdt::WdtSocket
+size_	FileByteSource.h	/^    int64_t size_;$/;"	m	class:facebook::wdt::FileByteSource
+skipWrites_	FileCreator.h	/^  bool skipWrites_;$/;"	m	class:facebook::wdt::FileCreator
+smartNotify	DirectorySourceQueue.cpp	/^void DirectorySourceQueue::smartNotify(int32_t addedSource) {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+sourceQueue_	DirectorySourceQueue.h	/^    std::priority_queue<std::unique_ptr<ByteSource>, std::vector<std::unique_ptr<ByteSource>>, SourceComparator> sourceQueue_;$/;"	m	class:facebook::wdt::DirectorySourceQueue
+start	EncryptionUtils.cpp	/^bool AESDecryptor::start(const EncryptionParams& encryptionData, const std::string& iv) {$/;"	f	class:facebook::wdt::AESDecryptor
+start	EncryptionUtils.cpp	/^bool AESEncryptor::start(const EncryptionParams& encryptionData,$/;"	f	class:facebook::wdt::AESEncryptor
+startThread	TransferLogManager.cpp	/^ErrorCode TransferLogManager::startThread() {$/;"	f	class:facebook::wdt::TransferLogManager
+startTime_	CommonImpl.h	/^  Clock::time_point startTime_;$/;"	m	class:facebook::wdt::PerfStatCollector
+statType_	CommonImpl.h	/^  const PerfStatReport::StatType statType_;$/;"	m	class:facebook::wdt::PerfStatCollector
+stats	CommonImpl.h	/^    Buffer &operator=(Buffer &&stats) = delete;$/;"	m	class:facebook::wdt::Buffer
+stats	CommonImpl.h	/^    Buffer &operator=(const Buffer &stats) = delete;$/;"	m	class:facebook::wdt::Buffer
+stats	CommonImpl.h	/^    Buffer(Buffer &&stats) = delete;$/;"	m	class:facebook::wdt::Buffer
+stats	CommonImpl.h	/^    Buffer(const Buffer &stats) = delete;$/;"	m	class:facebook::wdt::Buffer
+stats	CommonImpl.h	/^    ThreadCtx &operator=(ThreadCtx &&stats) = delete;$/;"	m	class:facebook::wdt::ThreadCtx
+stats	CommonImpl.h	/^    ThreadCtx &operator=(const ThreadCtx &stats) = delete;$/;"	m	class:facebook::wdt::ThreadCtx
+stats	CommonImpl.h	/^    ThreadCtx(ThreadCtx &&stats) = delete;$/;"	m	class:facebook::wdt::ThreadCtx
+stats	CommonImpl.h	/^    ThreadCtx(const ThreadCtx &stats) = delete;$/;"	m	class:facebook::wdt::ThreadCtx
+stats	WdtSocket.h	/^    WdtSocket &operator=(WdtSocket &&stats) = delete;$/;"	m	class:facebook::wdt::WdtSocket
+stats	WdtSocket.h	/^    WdtSocket &operator=(const WdtSocket &stats) = delete;$/;"	m	class:facebook::wdt::WdtSocket
+stats	WdtSocket.h	/^    WdtSocket(WdtSocket &&stats) = delete;$/;"	m	class:facebook::wdt::WdtSocket
+stats	WdtSocket.h	/^    WdtSocket(const WdtSocket &stats) = delete;$/;"	m	class:facebook::wdt::WdtSocket
+status_	ThreadsController.h	/^  FunnelStatus status_;$/;"	m	class:facebook::wdt::Funnel
+sumOfSquares_	Stats.h	/^  int64_t count_, min_, max_, sum_, sumOfSquares_;$/;"	m	class:facebook::wdt::Counter
+sum_	Stats.h	/^  int64_t count_, min_, max_, sum_, sumOfSquares_;$/;"	m	class:facebook::wdt::Counter
+swap	Stats.h	/^  inline int swap() {$/;"	f	class:facebook::wdt::SwapableNode
+swapAndRead	Stats.h	/^  void swapAndRead(bool delay = true) {$/;"	f	class:facebook::wdt::PeriodicCounters
+syncFileRange	FileWriter.cpp	/^void FileWriter::syncFileRange(int64_t written, bool forced) {$/;"	f	class:facebook::wdt::FileWriter
+tag_	EncryptionUtils.h	/^    std::string tag_;$/;"	m	class:facebook::wdt::EncryptionParams
+that	ThreadTransferHistory.h	/^    ThreadTransferHistory &operator=(const ThreadTransferHistory &that) = delete;$/;"	m	class:facebook::wdt::ThreadTransferHistory
+that	ThreadTransferHistory.h	/^    ThreadTransferHistory(const ThreadTransferHistory &that) = delete;$/;"	m	class:facebook::wdt::ThreadTransferHistory
+that	ThreadsController.h	/^    ConditionGuard &operator=(const ConditionGuard &that) = delete;$/;"	m	class:facebook::wdt::ConditionGuard
+that	ThreadsController.h	/^    ConditionGuard(const ConditionGuard &that) = delete;$/;"	m	class:facebook::wdt::ConditionGuard
+that	ThreadsController.h	/^    ExecuteOnceFunc &operator=(const ExecuteOnceFunc &that) = delete;$/;"	m	class:facebook::wdt::ExecuteOnceFunc
+that	ThreadsController.h	/^    ExecuteOnceFunc(const ExecuteOnceFunc &that) = delete;$/;"	m	class:facebook::wdt::ExecuteOnceFunc
+that	ThreadsController.h	/^  Barrier &operator=(const Barrier &that) = delete;$/;"	m	class:facebook::wdt::Barrier
+that	ThreadsController.h	/^  Barrier(const Barrier &that) = delete;$/;"	m	class:facebook::wdt::Barrier
+that	ThreadsController.h	/^  ConditionGuardImpl &operator=(ConditionGuardImpl &&that) = delete;$/;"	m	class:facebook::wdt::ConditionGuardImpl
+that	ThreadsController.h	/^  ConditionGuardImpl &operator=(const ConditionGuardImpl &that) = delete;$/;"	m	class:facebook::wdt::ConditionGuardImpl
+that	ThreadsController.h	/^  ConditionGuardImpl(const ConditionGuardImpl &that) = delete;$/;"	m	class:facebook::wdt::ConditionGuardImpl
+that	ThreadsController.h	/^  Funnel &operator=(const Funnel &that) = delete;$/;"	m	class:facebook::wdt::Funnel
+that	ThreadsController.h	/^  Funnel(const Funnel &that) = delete;$/;"	m	class:facebook::wdt::Funnel
+threadConditionVariables_	FileCreator.h	/^  std::condition_variable *threadConditionVariables_;$/;"	m	class:facebook::wdt::FileCreator
+threadCtx_	CommonImpl.h	/^  ThreadCtx &threadCtx_;$/;"	m	class:facebook::wdt::PerfStatCollector
+threadCtx_	FileWriter.h	/^  ThreadCtx &threadCtx_;$/;"	m	class:facebook::wdt::FileWriter
+threadCtx_	WdtSocket.h	/^    ThreadCtx &threadCtx_;$/;"	m	class:facebook::wdt::WdtSocket
+threadHistoriesMap_	ThreadTransferHistory.h	/^    std::unordered_map<int32_t, std::unique_ptr<ThreadTransferHistory>> threadHistoriesMap_;$/;"	m	class:facebook::wdt::TransferHistoryController
+threadProcWriteEntriesToDisk	TransferLogManager.cpp	/^void TransferLogManager::threadProcWriteEntriesToDisk() {$/;"	f	class:facebook::wdt::TransferLogManager
+threadStateMap_	ThreadsController.h	/^    std::unordered_map<int, ThreadStatus> threadStateMap_;$/;"	m	class:facebook::wdt::ThreadsController
+threadStats_	ThreadTransferHistory.h	/^    TransferStats &threadStats_;                            \/\/\/ reference to thread stats$/;"	m	class:facebook::wdt::ThreadTransferHistory
+thread_	Stats.h	/^  std::thread thread_;$/;"	m	class:facebook::wdt::PeriodicCounters
+timestampInMicroseconds	TransferLogManager.cpp	/^int64_t LogEncoderDecoder::timestampInMicroseconds() const {$/;"	f	class:facebook::wdt::LogEncoderDecoder
+totalThreads_	ThreadsController.h	/^    int totalThreads_;$/;"	m	class:facebook::wdt::ThreadsController
+transferLogManager_	FileCreator.h	/^  TransferLogManager &transferLogManager_;$/;"	m	class:facebook::wdt::FileCreator
+transferStats_	FileByteSource.h	/^    TransferStats transferStats_;$/;"	m	class:facebook::wdt::FileByteSource
+truncateExtraBytesAtEnd	TransferLogManager.cpp	/^bool LogParser::truncateExtraBytesAtEnd(int fd, int64_t extraBytes) {$/;"	f	class:facebook::wdt::LogParser
+type_	EncryptionUtils.h	/^    EncryptionType type_;$/;"	m	class:facebook::wdt::EncryptionParams
+unlink	TransferLogManager.cpp	/^void TransferLogManager::unlink() {$/;"	f	class:facebook::wdt::TransferLogManager
+unserialize	EncryptionUtils.cpp	/^ErrorCode EncryptionParams::unserialize(const string& input, EncryptionParams& out) {$/;"	f	class:facebook::wdt::EncryptionParams
+validateCheckpoint	ThreadTransferHistory.cpp	/^ErrorCode ThreadTransferHistory::validateCheckpoint($/;"	f	class:facebook::wdt::ThreadTransferHistory
+verifyAndFixFlags	DirectorySourceQueue.cpp	/^void WdtFileInfo::verifyAndFixFlags() {$/;"	f	class:facebook::wdt::WdtFileInfo
+verifySenderIp	TransferLogManager.cpp	/^bool TransferLogManager::verifySenderIp(const string &curSenderIp) {$/;"	f	class:facebook::wdt::TransferLogManager
+verifyTag	EncryptionUtils.cpp	/^bool AESDecryptor::verifyTag(const std::string& tag) {$/;"	f	class:facebook::wdt::AESDecryptor
+vint64_t	Stats.h	/^typedef volatile int64_t vint64_t;$/;"	t	namespace:facebook::wdt
+wait	ThreadsController.cpp	/^void ConditionGuardImpl::wait(int timeoutMillis, const ThreadCtx &threadCtx) {$/;"	f	class:facebook::wdt::ConditionGuardImpl
+wait	ThreadsController.cpp	/^void Funnel::wait() {$/;"	f	class:facebook::wdt::Funnel
+wait	ThreadsController.cpp	/^void Funnel::wait(int32_t waitingTime, const ThreadCtx &threadCtx) {$/;"	f	class:facebook::wdt::Funnel
+waitForAllocationFinish	FileCreator.cpp	/^bool FileCreator::waitForAllocationFinish(int allocatingThreadIndex,$/;"	f	class:facebook::wdt::FileCreator
+wdt	ClientSocket.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	ClientSocket.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	CommonImpl.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	CommonImpl.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	DirectorySourceQueue.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	DirectorySourceQueue.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	EncryptionUtils.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	EncryptionUtils.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	FileByteSource.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	FileByteSource.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	FileCreator.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	FileCreator.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	FileWriter.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	FileWriter.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	SerializationUtil.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	SerializationUtil.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	ServerSocket.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	ServerSocket.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	Stats.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	Stats.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	ThreadTransferHistory.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	ThreadTransferHistory.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	ThreadsController.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	ThreadsController.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	TransferLogManager.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	TransferLogManager.h	/^namespace wdt {$/;"	n	namespace:facebook
+wdt	WdtFlags.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	WdtFlags.h	/^    namespace wdt {$/;"	n	namespace:facebook
+wdt	WdtSocket.cpp	/^namespace wdt {$/;"	n	namespace:facebook	file:
+wdt	WdtSocket.h	/^namespace wdt {$/;"	n	namespace:facebook
+write	FileWriter.cpp	/^ErrorCode FileWriter::write(char *buf, int64_t size) {$/;"	f	class:facebook::wdt::FileWriter
+write	WdtSocket.cpp	/^int WdtSocket::write(char *buf, int nbyte, bool retry) {$/;"	f	class:facebook::wdt::WdtSocket
+writeEncryptionSettingsOnce	WdtSocket.cpp	/^void WdtSocket::writeEncryptionSettingsOnce() {$/;"	f	class:facebook::wdt::WdtSocket
+writeEncryptionTag	WdtSocket.cpp	/^bool WdtSocket::writeEncryptionTag() {$/;"	f	class:facebook::wdt::WdtSocket
+writeEntriesToDiskNoLock	TransferLogManager.cpp	/^bool TransferLogManager::writeEntriesToDiskNoLock($/;"	f	class:facebook::wdt::TransferLogManager
+writeFileInvalidationEntries	TransferLogManager.cpp	/^bool LogParser::writeFileInvalidationEntries(int fd,$/;"	f	class:facebook::wdt::LogParser
+writeInternal	WdtSocket.cpp	/^int WdtSocket::writeInternal(const char *buf, int nbyte, int timeoutMs, bool retry) {$/;"	f	class:facebook::wdt::WdtSocket
+writeLogHeader	TransferLogManager.cpp	/^void TransferLogManager::writeLogHeader() {$/;"	f	class:facebook::wdt::TransferLogManager
+writeWithAbortCheck	WdtSocket.cpp	/^int64_t WdtSocket::writeWithAbortCheck(const char *buf, int64_t nbyte, int timeoutMs, bool tryFull) {$/;"	f	class:facebook::wdt::WdtSocket
+writerThread_	TransferLogManager.h	/^  std::thread writerThread_;$/;"	m	class:facebook::wdt::TransferLogManager
+~AESDecryptor	EncryptionUtils.cpp	/^AESDecryptor::~AESDecryptor() {$/;"	f	class:facebook::wdt::AESDecryptor
+~AESEncryptor	EncryptionUtils.cpp	/^AESEncryptor::~AESEncryptor() {$/;"	f	class:facebook::wdt::AESEncryptor
+~Buffer	CommonImpl.cpp	/^Buffer::~Buffer() {$/;"	f	class:facebook::wdt::Buffer
+~ClientSocket	ClientSocket.cpp	/^ClientSocket::~ClientSocket() {$/;"	f	class:facebook::wdt::ClientSocket
+~ConditionGuardImpl	ThreadsController.cpp	/^ConditionGuardImpl::~ConditionGuardImpl() {$/;"	f	class:facebook::wdt::ConditionGuardImpl
+~Counter	Stats.h	/^  virtual ~Counter() {$/;"	f	class:facebook::wdt::Counter
+~DirectorySourceQueue	DirectorySourceQueue.cpp	/^DirectorySourceQueue::~DirectorySourceQueue() {$/;"	f	class:facebook::wdt::DirectorySourceQueue
+~EncryptionParams	EncryptionUtils.cpp	/^EncryptionParams::~EncryptionParams() {$/;"	f	class:facebook::wdt::EncryptionParams
+~FileCreator	FileCreator.h	/^  virtual ~FileCreator() {$/;"	f	class:facebook::wdt::FileCreator
+~Histogram	Stats.cpp	/^Histogram::~Histogram() {$/;"	f	class:facebook::wdt::Histogram
+~Hold2	Stats.h	/^  ~Hold2() {$/;"	f	class:facebook::wdt::Hold2
+~PerfStatCollector	CommonImpl.h	/^  ~PerfStatCollector() {$/;"	f	class:facebook::wdt::PerfStatCollector
+~PeriodicCounters	Stats.h	/^  virtual ~PeriodicCounters() {$/;"	f	class:facebook::wdt::PeriodicCounters
+~ServerSocket	ServerSocket.cpp	/^ServerSocket::~ServerSocket() {$/;"	f	class:facebook::wdt::ServerSocket
+~SwapableNode	Stats.h	/^  virtual ~SwapableNode() {$/;"	f	class:facebook::wdt::SwapableNode
+~ThreadsController	ThreadsController.h	/^    ~ThreadsController() {$/;"	f	class:facebook::wdt::ThreadsController
+~TransferLogManager	TransferLogManager.cpp	/^TransferLogManager::~TransferLogManager() {$/;"	f	class:facebook::wdt::TransferLogManager
+~WdtCryptoIntializer	EncryptionUtils.cpp	/^WdtCryptoIntializer::~WdtCryptoIntializer() {$/;"	f	class:facebook::wdt::WdtCryptoIntializer
+~WdtSocket	WdtSocket.cpp	/^WdtSocket::~WdtSocket() {$/;"	f	class:facebook::wdt::WdtSocket
+~crashifcopied	Stats.h	/^  ~crashifcopied() {$/;"	f	class:facebook::wdt::crashifcopied

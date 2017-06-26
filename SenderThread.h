@@ -74,7 +74,7 @@ public:
 
     /// Constructor for the sender thread
     SenderThread(Sender *sender, int threadIndex, int32_t port, ThreadsController *threadsController)
-        : WdtThread(sender->options, threadIndex, port, sender->getProtocolVersion(), threadsController), wdtParent_(sender), 
+        : WdtThread(sender->options_, threadIndex, port, sender->getProtocolVersion(), threadsController), wdtParent_(sender), 
         dirQueue_(sender->dirQueue_.get()), transferHistoryController_(sender->transferHistoryController_.get()) {
             controller_->registerThread(threadIndex_);
             transferHistoryController_->addThreadHistory(port_, threadStats_);

@@ -115,6 +115,7 @@ void Sender::setProtoNegotiationStatus(ProtoNegotiationStatus status) {
     protoNegotiationStatus_ = status;
 }
 
+///检查是否启用断点重传功能
 bool Sender::isSendFileChunks() const {
     return (downloadResumptionEnabled_ && getProtocolVersion() >= Protocol::DOWNLOAD_RESUMPTION_VERSION);
 }
@@ -126,7 +127,7 @@ bool Sender::isFileChunksReceived() {
 
 void Sender::setFileChunksInfo( std::vector<FileChunksInfo> &fileChunksInfoList) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (fileChunksReceived) {
+    if (fileChunksReceived_) {
         WLOG(WARNING) << "File chunks list received multiple times";
         return;
     }

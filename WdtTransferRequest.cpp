@@ -298,7 +298,7 @@ WdtTransferRequest::WdtTransferRequest(int startPort, int numPorts, const string
 	for (int i = 0; i < numPorts; i++) {
 		ports.push_back(portNum);
 		if (startPort) {
-		  ++portNum;
+            ++portNum;
 		}
 	}
 }
