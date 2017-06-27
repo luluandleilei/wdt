@@ -302,12 +302,9 @@ private:
 /// class responsible for parsing and fixing transfer log
 class LogParser {
     public:
-        LogParser(const WdtOptions &options, LogEncoderDecoder &encoderDecoder,
-                const std::string &rootDir, const std::string &recoveryId,
-                int64_t config, bool parseOnly);
+        LogParser(const WdtOptions &options, LogEncoderDecoder &encoderDecoder, const std::string &rootDir, const std::string &recoveryId, int64_t config, bool parseOnly);
 
-        ErrorCode parseLog(int fd, std::string &senderIp,
-                std::vector<FileChunksInfo> &fileChunksInfo);
+        ErrorCode parseLog(int fd, std::string &senderIp, std::vector<FileChunksInfo> &fileChunksInfo);
 
     private:
         std::string getFormattedTimestamp(int64_t timestamp);

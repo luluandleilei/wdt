@@ -339,116 +339,112 @@ private:
  */
 class TransferReport {
 public:
-  // TODO: too many constructor parameters, needs to clean-up
-  /**
-   * This constructor moves all the stat objects to member variables. This is
-   * only called at the end of transfer by the sender
-   */
-  TransferReport(std::vector<TransferStats> &transferredSourceStats,
-                 std::vector<TransferStats> &failedSourceStats,
-                 std::vector<TransferStats> &threadStats,
-                 std::vector<std::string> &failedDirectories, double totalTime,
-                 int64_t totalFileSize, int64_t numDiscoveredFiles,
-                 int64_t previouslySentBytes, bool fileDiscoveryFinished);
+    // TODO: too many constructor parameters, needs to clean-up
+    /**
+     * This constructor moves all the stat objects to member variables. This is
+     * only called at the end of transfer by the sender
+     */
+    TransferReport(std::vector<TransferStats> &transferredSourceStats,
+            std::vector<TransferStats> &failedSourceStats,
+            std::vector<TransferStats> &threadStats,
+            std::vector<std::string> &failedDirectories, double totalTime,
+            int64_t totalFileSize, int64_t numDiscoveredFiles,
+            int64_t previouslySentBytes, bool fileDiscoveryFinished);
 
-  /**
-   * This function does not move the thread stats passed to it. This is called
-   * by the progress reporter thread.
-   */
-  TransferReport(const std::vector<TransferStats> &threadStats,
-                 double totalTime, int64_t totalFileSize,
-                 int64_t numDiscoveredFiles, bool fileDiscoveryFinished);
+    /**
+     * This function does not move the thread stats passed to it. This is called by the progress reporter thread.
+     */
+    TransferReport(const std::vector<TransferStats> &threadStats, double totalTime, int64_t totalFileSize, int64_t numDiscoveredFiles, bool fileDiscoveryFinished);
 
-  TransferReport(TransferStats &&stats, double totalTime, int64_t totalFileSize,
-                 int64_t numDiscoveredFiles, bool fileDiscoveryFinished);
-  /// constructor used by receiver, does move the stats
-  explicit TransferReport(TransferStats &&globalStats);
-  /// @return   summary of the report
-  const TransferStats &getSummary() const {
-    return summary_;
-  }
-  /// @return   transfer throughput in Mbytes/sec
-  double getThroughputMBps() const {
-    return summary_.getEffectiveTotalBytes() / totalTime_ / kMbToB;
-  }
-  /// @return total time taken in transfer
-  double getTotalTime() const {
-    return totalTime_;
-  }
-  /// @return   stats for successfully transferred sources
-  const std::vector<TransferStats> &getTransferredSourceStats() const {
-    return transferredSourceStats_;
-  }
-  /// @return   stats for failed sources
-  const std::vector<TransferStats> &getFailedSourceStats() const {
-    return failedSourceStats_;
-  }
-  /// @return   stats for threads
-  const std::vector<TransferStats> &getThreadStats() const {
-    return threadStats_;
-  }
-  const std::vector<std::string> &getFailedDirectories() const {
-    return failedDirectories_;
-  }
-  int64_t getTotalFileSize() const {
-    return totalFileSize_;
-  }
-  /// @return   recent throughput in Mbytes/sec
-  double getCurrentThroughputMBps() const {
-    return currentThroughput_ / kMbToB;
-  }
-  /// @param stats  stats to added
-  void addTransferStats(const TransferStats &stats) {
-    summary_ += stats;
-  }
-  /// @param currentThroughput  current throughput
-  void setCurrentThroughput(double currentThroughput) {
-    currentThroughput_ = currentThroughput;
-  }
-  void setTotalTime(double totalTime) {
-    totalTime_ = totalTime;
-  }
-  void setTotalFileSize(int64_t totalFileSize) {
-    totalFileSize_ = totalFileSize;
-  }
-  void setErrorCode(const ErrorCode errCode) {
-    summary_.setLocalErrorCode(errCode);
-    summary_.setRemoteErrorCode(errCode);
-  }
-  int64_t getNumDiscoveredFiles() const {
-    return numDiscoveredFiles_;
-  }
-  bool fileDiscoveryFinished() const {
-    return fileDiscoveryFinished_;
-  }
-  int64_t getPreviouslySentBytes() const {
-    return previouslySentBytes_;
-  }
-  friend std::ostream &operator<<(std::ostream &os,
-                                  const TransferReport &report);
+    TransferReport(TransferStats &&stats, double totalTime, int64_t totalFileSize, int64_t numDiscoveredFiles, bool fileDiscoveryFinished); 
+    /// constructor used by receiver, does move the stats
+    explicit TransferReport(TransferStats &&globalStats);
+    /// @return   summary of the report
+    const TransferStats &getSummary() const {
+        return summary_;
+    }
+    /// @return   transfer throughput in Mbytes/sec
+    double getThroughputMBps() const {
+        return summary_.getEffectiveTotalBytes() / totalTime_ / kMbToB;
+    }
+    /// @return total time taken in transfer
+    double getTotalTime() const {
+        return totalTime_;
+    }
+    /// @return   stats for successfully transferred sources
+    const std::vector<TransferStats> &getTransferredSourceStats() const {
+        return transferredSourceStats_;
+    }
+    /// @return   stats for failed sources
+    const std::vector<TransferStats> &getFailedSourceStats() const {
+        return failedSourceStats_;
+    }
+    /// @return   stats for threads
+    const std::vector<TransferStats> &getThreadStats() const {
+        return threadStats_;
+    }
+    const std::vector<std::string> &getFailedDirectories() const {
+        return failedDirectories_;
+    }
+    int64_t getTotalFileSize() const {
+        return totalFileSize_;
+    }
+    /// @return   recent throughput in Mbytes/sec
+    double getCurrentThroughputMBps() const {
+        return currentThroughput_ / kMbToB;
+    }
+    /// @param stats  stats to added
+    void addTransferStats(const TransferStats &stats) {
+        summary_ += stats;
+    }
+    /// @param currentThroughput  current throughput
+    void setCurrentThroughput(double currentThroughput) {
+        currentThroughput_ = currentThroughput;
+    }
+    void setTotalTime(double totalTime) {
+        totalTime_ = totalTime;
+    }
+    void setTotalFileSize(int64_t totalFileSize) {
+        totalFileSize_ = totalFileSize;
+    }
+    void setErrorCode(const ErrorCode errCode) {
+        summary_.setLocalErrorCode(errCode);
+        summary_.setRemoteErrorCode(errCode);
+    }
+    int64_t getNumDiscoveredFiles() const {
+        return numDiscoveredFiles_;
+    }
+    bool fileDiscoveryFinished() const {
+        return fileDiscoveryFinished_;
+    }
+    int64_t getPreviouslySentBytes() const {
+        return previouslySentBytes_;
+    }
+    friend std::ostream &operator<<(std::ostream &os,
+            const TransferReport &report);
 
- private:
-  TransferStats summary_;
-  /// stats for successfully transferred sources
-  std::vector<TransferStats> transferredSourceStats_;
-  /// stats for failed sources
-  std::vector<TransferStats> failedSourceStats_;
-  /// stats for client threads
-  std::vector<TransferStats> threadStats_;
-  /// directories which could not be opened
-  std::vector<std::string> failedDirectories_;
-  /// total transfer time
-  double totalTime_{0};
-  /// sum of all the file sizes
-  int64_t totalFileSize_{0};
-  /// recent throughput in bytes/sec
-  double currentThroughput_{0};
-  /// Count of all files discovered so far
-  int64_t numDiscoveredFiles_{0};
-  /// Number of bytes sent in previous transfers
-  int64_t previouslySentBytes_{0};
-  /// Is file discovery finished?
-  bool fileDiscoveryFinished_{false};
+private:
+    TransferStats summary_;
+    /// stats for successfully transferred sources
+    std::vector<TransferStats> transferredSourceStats_;
+    /// stats for failed sources
+    std::vector<TransferStats> failedSourceStats_;
+    /// stats for client threads
+    std::vector<TransferStats> threadStats_;
+    /// directories which could not be opened
+    std::vector<std::string> failedDirectories_;
+    /// total transfer time
+    double totalTime_{0};
+    /// sum of all the file sizes
+    int64_t totalFileSize_{0};
+    /// recent throughput in bytes/sec
+    double currentThroughput_{0};
+    /// Count of all files discovered so far
+    int64_t numDiscoveredFiles_{0};
+    /// Number of bytes sent in previous transfers
+    int64_t previouslySentBytes_{0};
+    /// Is file discovery finished?
+    bool fileDiscoveryFinished_{false};
 };
 
 /**

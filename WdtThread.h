@@ -74,14 +74,20 @@ protected:
 
     std::unique_ptr<ThreadCtx> threadCtx_{nullptr};
 
-        
-    char *buf_{nullptr};            /// buffer size. this is the size of buffer in threadCtx_
-    int64_t bufSize_{0};            /// buffer size. this is the size of buffer in threadCtx_
-    const WdtOptions &options_;     /// reference to parent options
-    int threadIndex_;               /// Index of this thread with respect to other threads
-    const int port_;                /// port number for this thread
-    int threadProtocolVersion_;     /// Copy of the protocol version that might be changed
-    bool enableHeartBeat_{false};   /// whether heart-beat is enabled
+    /// buffer size. this is the size of buffer in threadCtx_
+    char *buf_{nullptr};           
+    /// buffer size. this is the size of buffer in threadCtx_  
+    int64_t bufSize_{0};            
+    /// reference to parent options
+    const WdtOptions &options_;     
+    /// Index of this thread with respect to other threads
+    int threadIndex_;               
+    /// port number for this thread
+    const int port_;               
+    /// Copy of the protocol version that might be changed  
+    int threadProtocolVersion_;     
+    /// whether heart-beat is enabled
+    bool enableHeartBeat_{false};   
 
     Clock::time_point lastHeartBeatTime_;
 

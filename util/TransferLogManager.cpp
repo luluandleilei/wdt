@@ -565,20 +565,18 @@ bool TransferLogManager::parseAndPrint() {
     return parseVerifyAndFix("", 0, true, parsedInfo) == OK;
 }
 
-ErrorCode TransferLogManager::parseAndMatch( const string &recoveryId, int64_t config, std::vector<FileChunksInfo> &fileChunksInfo) {
+ErrorCode TransferLogManager::parseAndMatch(const string &recoveryId, int64_t config, std::vector<FileChunksInfo> &fileChunksInfo) {
     recoveryId_ = recoveryId;
     config_ = config;
     return parseVerifyAndFix(recoveryId_, config, false, fileChunksInfo);
 }
 
-ErrorCode TransferLogManager::parseVerifyAndFix(
-        const string &recoveryId, int64_t config, bool parseOnly,
-        std::vector<FileChunksInfo> &parsedInfo) {
+ErrorCode TransferLogManager::parseVerifyAndFix(const string &recoveryId, int64_t config, bool parseOnly, std::vector<FileChunksInfo> &parsedInfo) {
     if (fd_ < 0) {
         return INVALID_LOG;
     }
-    LogParser parser(options_, encoderDecoder_, rootDir_, recoveryId, config,
-            parseOnly);
+
+    LogParser parser(options_, encoderDecoder_, rootDir_, recoveryId, config, parseOnly);
     resumptionStatus_ = parser.parseLog(fd_, senderIp_, parsedInfo);
     if (resumptionStatus_ == INVALID_LOG) {
         // leave the log, but close it. Keeping the invalid log ensures that the
@@ -678,15 +676,8 @@ void TransferLogManager::compactLog() {
     }
 }
 
-LogParser::LogParser(const WdtOptions &options,
-                     LogEncoderDecoder &encoderDecoder, const string &rootDir,
-                     const string &recoveryId, int64_t config, bool parseOnly)
-    : options_(options),
-      encoderDecoder_(encoderDecoder),
-      rootDir_(rootDir),
-      recoveryId_(recoveryId),
-      config_(config),
-      parseOnly_(parseOnly) {
+LogParser::LogParser(const WdtOptions &options, LogEncoderDecoder &encoderDecoder, const string &rootDir, const string &recoveryId, int64_t config, bool parseOnly)
+    : options_(options), encoderDecoder_(encoderDecoder), rootDir_(rootDir), recoveryId_(recoveryId), config_(config), parseOnly_(parseOnly) {
 }
 
 bool LogParser::writeFileInvalidationEntries(int fd,
@@ -897,69 +888,74 @@ ErrorCode LogParser::processFileResizeEntry(char *buf, int64_t size) {
 }
 
 ErrorCode LogParser::processBlockWriteEntry(char *buf, int64_t size) {
-  if (!headerParsed_) {
-    WLOG(ERROR)
-        << "Invalid log: Block write entry found before transfer log header";
-    return INVALID_LOG;
-  }
-  int64_t timestamp, seqId, offset, blockSize;
-  if (!encoderDecoder_.decodeBlockWriteEntry(buf, size, timestamp, seqId,
-                                             offset, blockSize)) {
-    return INVALID_LOG;
-  }
-  if (parseOnly_) {
-    std::cout << getFormattedTimestamp(timestamp) << " Block written,"
-              << " seq-id " << seqId << " offset " << offset << " block-size "
-              << blockSize << std::endl;
+    if (!headerParsed_) {
+        WLOG(ERROR)
+            << "Invalid log: Block write entry found before transfer log header";
+        return INVALID_LOG;
+    }
+    int64_t timestamp, seqId, offset, blockSize;
+    if (!encoderDecoder_.decodeBlockWriteEntry(buf, size, timestamp, seqId,
+                offset, blockSize)) {
+        return INVALID_LOG;
+    }
+    if (parseOnly_) {
+        std::cout << getFormattedTimestamp(timestamp) << " Block written,"
+            << " seq-id " << seqId << " offset " << offset << " block-size "
+            << blockSize << std::endl;
+        return OK;
+    }
+    if (options_.resume_using_dir_tree) {
+        WLOG(ERROR) << "Can not have a block write entry in directory based resumption mode " << seqId << " " << offset << " " << blockSize;
+        return INVALID_LOG;
+    }
+    if (invalidSeqIds_.find(seqId) != invalidSeqIds_.end()) {
+        WLOG(INFO) << "Block entry for an invalid sequence-id " << seqId << ", ignoring";
+        return OK;
+    }
+    auto it = fileInfoMap_.find(seqId);
+    if (it == fileInfoMap_.end()) {
+        WLOG(ERROR) << "Block entry for unknown sequence-id " << seqId << " " << offset << " " << blockSize;
+        return INVALID_LOG;
+    }
+    FileChunksInfo &chunksInfo = it->second;
+    // check whether the block is within disk size
+    if (offset + blockSize > chunksInfo.getFileSize()) {
+        WLOG(ERROR) << "Block end point is greater than file size in disk "
+            << chunksInfo.getFileName() << " seq-id " << seqId << " offset "
+            << offset << " block-size " << blockSize
+            << " file size in disk " << chunksInfo.getFileSize();
+        return INVALID_LOG;
+    }
+    chunksInfo.addChunk(Interval(offset, offset + blockSize));
     return OK;
-  }
-  if (options_.resume_using_dir_tree) {
-    WLOG(ERROR) << "Can not have a block write entry in directory based resumption mode " << seqId << " " << offset << " " << blockSize;
-    return INVALID_LOG;
-  }
-  if (invalidSeqIds_.find(seqId) != invalidSeqIds_.end()) {
-    WLOG(INFO) << "Block entry for an invalid sequence-id " << seqId << ", ignoring";
-    return OK;
-  }
-  auto it = fileInfoMap_.find(seqId);
-  if (it == fileInfoMap_.end()) {
-    WLOG(ERROR) << "Block entry for unknown sequence-id " << seqId << " " << offset << " " << blockSize;
-    return INVALID_LOG;
-  }
-  FileChunksInfo &chunksInfo = it->second;
-  // check whether the block is within disk size
-  if (offset + blockSize > chunksInfo.getFileSize()) {
-    WLOG(ERROR) << "Block end point is greater than file size in disk "
-                << chunksInfo.getFileName() << " seq-id " << seqId << " offset "
-                << offset << " block-size " << blockSize
-                << " file size in disk " << chunksInfo.getFileSize();
-    return INVALID_LOG;
-  }
-  chunksInfo.addChunk(Interval(offset, offset + blockSize));
-  return OK;
 }
 
 ErrorCode LogParser::processFileInvalidationEntry(char *buf, int64_t size) {
     if (!headerParsed_) {
-        WLOG(ERROR) << "Invalid log: File invalidation entry found before transfer << "log header";
+        WLOG(ERROR) << "Invalid log: File invalidation entry found before transfer" << "log header";
         return INVALID_LOG;
     }
+
     int64_t timestamp, seqId;
     if (!encoderDecoder_.decodeFileInvalidationEntry(buf, size, timestamp, seqId)) {
         return INVALID_LOG;
     }
+
     if (parseOnly_) {
         std::cout << getFormattedTimestamp(timestamp) << " Invalidation entry for seq-id " << seqId << std::endl;
         return OK;
     }
+
     if (options_.resume_using_dir_tree) {
         WLOG(ERROR) << "Can not have a file invalidation entry in directory based resumption mode " << seqId;
         return INVALID_LOG;
     }
+
     if (fileInfoMap_.find(seqId) == fileInfoMap_.end() && invalidSeqIds_.find(seqId) == invalidSeqIds_.end()) {
         WLOG(ERROR) << "Invalidation entry for an unknown sequence id " << seqId;
         return INVALID_LOG;
     }
+
     fileInfoMap_.erase(seqId);
     invalidSeqIds_.erase(seqId);
     return OK;
@@ -979,107 +975,106 @@ ErrorCode LogParser::processDirectoryInvalidationEntry(char *buf, int64_t size) 
 }
 
 ErrorCode LogParser::parseLog(int fd, string &senderIp, std::vector<FileChunksInfo> &fileChunksInfo) {
-  char entry[TransferLogManager::kMaxEntryLength];
-  // empty log is valid
-  ErrorCode status = OK;
-  while (true) {
-    int16_t entrySize;
-    int64_t toRead = sizeof(int16_t);
-    int64_t numRead = ::read(fd, &entrySize, toRead);
-    if (numRead < 0) {
-      WPLOG(ERROR) << "Error while reading transfer log " << numRead << " "
-                   << toRead;
-      return INVALID_LOG;
+    char entry[TransferLogManager::kMaxEntryLength];
+    // empty log is valid
+    ErrorCode status = OK;
+    while (true) {
+        int16_t entrySize;
+        int64_t toRead = sizeof(int16_t);
+        int64_t numRead = ::read(fd, &entrySize, toRead);
+        if (numRead < 0) {
+            WPLOG(ERROR) << "Error while reading transfer log " << numRead << " " << toRead;
+            return INVALID_LOG;
+        }
+        if (numRead == 0) {
+            WVLOG(1) << "got EOF, toRead " << toRead;
+            break;
+        }
+        if (numRead != toRead) {
+            // extra bytes at the end, most likely part of the previous write
+            // succeeded partially
+            if (parseOnly_) {
+                WLOG(INFO) << "Extra " << numRead << " bytes at the end of the log";
+            } else if (!truncateExtraBytesAtEnd(fd, numRead)) {
+                return INVALID_LOG;
+            }
+            break;
+        }
+        if (entrySize <= 0 || entrySize > TransferLogManager::kMaxEntryLength) {
+            WLOG(ERROR) << "Transfer log parse error, invalid entry length "
+                << entrySize;
+            return INVALID_LOG;
+        }
+        numRead = ::read(fd, entry, entrySize);
+        if (numRead < 0) {
+            WPLOG(ERROR) << "Error while reading transfer log " << numRead << " "
+                << entrySize;
+            return INVALID_LOG;
+        }
+        if (numRead != entrySize) {
+            // extra bytes also includes the size entry
+            int64_t extraBytes = numRead + sizeof(int16_t);
+            if (parseOnly_) {
+                WLOG(INFO) << "Extra " << extraBytes << " bytes at the end of the log";
+            } else if (!truncateExtraBytesAtEnd(fd, extraBytes)) {
+                return INVALID_LOG;
+            }
+            break;
+        }
+        TransferLogManager::EntryType type = (TransferLogManager::EntryType)entry[0];
+        if (status == INCONSISTENT_DIRECTORY &&
+                type != TransferLogManager::HEADER) {
+            // If the directory is invalid, no need to process any entry other than
+            // header, because only a header can validate a directory
+            continue;
+        }
+        char *buf = entry + 1;
+        const int64_t bufSize = sizeof(entry) - 1;
+        const int64_t entryLen = entrySize - 1;
+        switch (type) {
+            case TransferLogManager::HEADER:
+                status = processHeaderEntry(buf, bufSize, entryLen, senderIp);
+                break;
+            case TransferLogManager::FILE_CREATION:
+                status = processFileCreationEntry(buf, entryLen);
+                break;
+            case TransferLogManager::BLOCK_WRITE:
+                status = processBlockWriteEntry(buf, entryLen);
+                break;
+            case TransferLogManager::FILE_RESIZE:
+                status = processFileResizeEntry(buf, entryLen);
+                break;
+            case TransferLogManager::FILE_INVALIDATION:
+                status = processFileInvalidationEntry(buf, entryLen);
+                break;
+            case TransferLogManager::DIRECTORY_INVALIDATION:
+                status = processDirectoryInvalidationEntry(buf, entryLen);
+                break;
+            default:
+                WLOG(ERROR) << "Invalid entry type found " << type;
+                return INVALID_LOG;
+        }
+        if (status == INVALID_LOG) {
+            WLOG(ERROR) << "Invalid transfer log";
+            return status;
+        }
+        if (status == INCONSISTENT_DIRECTORY) {
+            clearParsedData();
+        }
     }
-    if (numRead == 0) {
-      WVLOG(1) << "got EOF, toRead " << toRead;
-      break;
+    if (status == OK) {
+        for (auto &pair : fileInfoMap_) {
+            FileChunksInfo &fileInfo = pair.second;
+            fileInfo.mergeChunks();
+            fileChunksInfo.emplace_back(std::move(fileInfo));
+        }
+        if (!invalidSeqIds_.empty()) {
+            if (!writeFileInvalidationEntries(fd, invalidSeqIds_)) {
+                return INVALID_LOG;
+            }
+        }
     }
-    if (numRead != toRead) {
-      // extra bytes at the end, most likely part of the previous write
-      // succeeded partially
-      if (parseOnly_) {
-        WLOG(INFO) << "Extra " << numRead << " bytes at the end of the log";
-      } else if (!truncateExtraBytesAtEnd(fd, numRead)) {
-        return INVALID_LOG;
-      }
-      break;
-    }
-    if (entrySize <= 0 || entrySize > TransferLogManager::kMaxEntryLength) {
-      WLOG(ERROR) << "Transfer log parse error, invalid entry length "
-                  << entrySize;
-      return INVALID_LOG;
-    }
-    numRead = ::read(fd, entry, entrySize);
-    if (numRead < 0) {
-      WPLOG(ERROR) << "Error while reading transfer log " << numRead << " "
-                   << entrySize;
-      return INVALID_LOG;
-    }
-    if (numRead != entrySize) {
-      // extra bytes also includes the size entry
-      int64_t extraBytes = numRead + sizeof(int16_t);
-      if (parseOnly_) {
-        WLOG(INFO) << "Extra " << extraBytes << " bytes at the end of the log";
-      } else if (!truncateExtraBytesAtEnd(fd, extraBytes)) {
-        return INVALID_LOG;
-      }
-      break;
-    }
-    TransferLogManager::EntryType type = (TransferLogManager::EntryType)entry[0];
-    if (status == INCONSISTENT_DIRECTORY &&
-        type != TransferLogManager::HEADER) {
-      // If the directory is invalid, no need to process any entry other than
-      // header, because only a header can validate a directory
-      continue;
-    }
-    char *buf = entry + 1;
-    const int64_t bufSize = sizeof(entry) - 1;
-    const int64_t entryLen = entrySize - 1;
-    switch (type) {
-      case TransferLogManager::HEADER:
-        status = processHeaderEntry(buf, bufSize, entryLen, senderIp);
-        break;
-      case TransferLogManager::FILE_CREATION:
-        status = processFileCreationEntry(buf, entryLen);
-        break;
-      case TransferLogManager::BLOCK_WRITE:
-        status = processBlockWriteEntry(buf, entryLen);
-        break;
-      case TransferLogManager::FILE_RESIZE:
-        status = processFileResizeEntry(buf, entryLen);
-        break;
-      case TransferLogManager::FILE_INVALIDATION:
-        status = processFileInvalidationEntry(buf, entryLen);
-        break;
-      case TransferLogManager::DIRECTORY_INVALIDATION:
-        status = processDirectoryInvalidationEntry(buf, entryLen);
-        break;
-      default:
-        WLOG(ERROR) << "Invalid entry type found " << type;
-        return INVALID_LOG;
-    }
-    if (status == INVALID_LOG) {
-      WLOG(ERROR) << "Invalid transfer log";
-      return status;
-    }
-    if (status == INCONSISTENT_DIRECTORY) {
-      clearParsedData();
-    }
-  }
-  if (status == OK) {
-    for (auto &pair : fileInfoMap_) {
-      FileChunksInfo &fileInfo = pair.second;
-      fileInfo.mergeChunks();
-      fileChunksInfo.emplace_back(std::move(fileInfo));
-    }
-    if (!invalidSeqIds_.empty()) {
-      if (!writeFileInvalidationEntries(fd, invalidSeqIds_)) {
-        return INVALID_LOG;
-      }
-    }
-  }
-  return status;
+    return status;
 }
 }
 }

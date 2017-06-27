@@ -15,19 +15,19 @@ namespace facebook {
 namespace wdt {
 
 ByteRange makeByteRange(string str) {
-  return ByteRange((uint8_t *)str.data(), str.size());
+    return ByteRange((uint8_t *)str.data(), str.size());
 }
 
 ByteRange makeByteRange(char *dest, int64_t sz, int64_t off) {
-  WDT_CHECK_GE(off, 0);
-  WDT_CHECK_GE(sz, 0);
-  WDT_CHECK(dest != nullptr);
-  return ByteRange((uint8_t *)(dest + off), sz - off);
+    WDT_CHECK_GE(off, 0);
+    WDT_CHECK_GE(sz, 0);
+    WDT_CHECK(dest != nullptr);
+    return ByteRange((uint8_t *)(dest + off), sz - off);
 }
 
 int64_t offset(const folly::ByteRange &newRange, const folly::ByteRange &oldRange) {
-  WDT_CHECK_EQ(newRange.end(), oldRange.end());
-  return newRange.start() - oldRange.start();
+    WDT_CHECK_EQ(newRange.end(), oldRange.end());
+    return newRange.start() - oldRange.start();
 }
 
 bool decodeInt32(ByteRange &br, int32_t &res32) {
@@ -59,14 +59,14 @@ bool decodeInt64(ByteRange &br, int64_t &res) {
 }
 
 bool decodeUInt64(ByteRange &br, uint64_t &res) {
-  int64_t pos = 0;
-  bool ret = decodeVarU64((const char *)(br.start()), br.size(), pos, res);
-  if (!ret) {
-    return false;
-  }
-  WDT_CHECK_GE(pos, 1);
-  br.advance(pos);
-  return true;
+    int64_t pos = 0;
+    bool ret = decodeVarU64((const char *)(br.start()), br.size(), pos, res);
+    if (!ret) {
+        return false;
+    }
+    WDT_CHECK_GE(pos, 1);
+    br.advance(pos);
+    return true;
 }
 
 bool decodeInt64C(ByteRange &br, int64_t &sres) {

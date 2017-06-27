@@ -109,6 +109,7 @@ int ServerSocket::getSelectedPortAndNewAddress(int listeningFd, struct addrinfo 
     return port;
 }
 
+/// Sets up listening socket (first wildcard type (ipv4 or ipv6 depending on flag)).
 //返回值：
 //  CONN_ERROR_RETRYABLE 
 //  CONN_ERROR
@@ -286,7 +287,7 @@ ErrorCode ServerSocket::acceptNextConnection(int timeoutMillis, bool tryCurAddre
             }
             getNameInfo((struct sockaddr *)&addr, addrLen, peerIp_, peerPort_);
             WVLOG(1) << "New connection, fd : " << fd_ << " from " << peerIp_ << " " << peerPort_;
-            setSocketTimeouts();
+            setSocketTimeouts(); //设置已连接套接字的读写超时时间
             return OK;
         }
         lastCheckedPollIndex_ = (lastCheckedPollIndex_ + 1) % numFds;
@@ -296,6 +297,7 @@ ErrorCode ServerSocket::acceptNextConnection(int timeoutMillis, bool tryCurAddre
     return CONN_ERROR;
 }
 
+/// sets the receive buffer size for this socket
 void ServerSocket::setReceiveBufferSize(int fd) {
     int bufSize = threadCtx_.getOptions().receive_buffer_size;
     if (bufSize <= 0) {

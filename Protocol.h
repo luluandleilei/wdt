@@ -231,39 +231,39 @@ struct Settings {
 };
 
 class Protocol {
- public:
-  /// current protocol version
-  static const int protocol_version;
+public:
+    /// current protocol version
+    static const int protocol_version;
 
-  // list of feature versions
-  /// version from which receiver side progress reporting is supported
-  static const int RECEIVER_PROGRESS_REPORT_VERSION;
-  /// version from which checksum is supported
-  static const int CHECKSUM_VERSION;
-  /// version from which download resumption is supported
-  static const int DOWNLOAD_RESUMPTION_VERSION;
+    // list of feature versions
+    /// version from which receiver side progress reporting is supported
+    static const int RECEIVER_PROGRESS_REPORT_VERSION;
+    /// version from which checksum is supported
+    static const int CHECKSUM_VERSION;
+    /// version from which download resumption is supported
+    static const int DOWNLOAD_RESUMPTION_VERSION;
 
-  // list of encoding/decoding versions
-  /// version from which flags are sent with settings cmd
-  static const int SETTINGS_FLAG_VERSION;
-  /// version from which flags and prevSeqId are sent with header cmd
-  static const int HEADER_FLAG_AND_PREV_SEQ_ID_VERSION;
-  /// version from which checkpoint started including file offset
-  static const int CHECKPOINT_OFFSET_VERSION;
-  /// version from which checkpoint started including seq-id
-  static const int CHECKPOINT_SEQ_ID_VERSION;
-  /// version from which wdt supports encryption
-  static const int ENCRYPTION_V1_VERSION;
-  /// version from which GCM tags were verified incrementally
-  static const int INCREMENTAL_TAG_VERIFICATION_VERSION;
-  /// version from which file deletion was supported for resumption
-  static const int DELETE_CMD_VERSION;
-  /// version from which we switched varint to better one
-  static const int VARINT_CHANGE;
-  /// version from which heart-beat was introduced
-  static const int HEART_BEAT_VERSION;
-  /// version from which wdt started to change encryption iv periodically
-  static const int PERIODIC_ENCRYPTION_IV_CHANGE_VERSION;
+    // list of encoding/decoding versions
+    /// version from which flags are sent with settings cmd
+    static const int SETTINGS_FLAG_VERSION;
+    /// version from which flags and prevSeqId are sent with header cmd
+    static const int HEADER_FLAG_AND_PREV_SEQ_ID_VERSION;
+    /// version from which checkpoint started including file offset
+    static const int CHECKPOINT_OFFSET_VERSION;
+    /// version from which checkpoint started including seq-id
+    static const int CHECKPOINT_SEQ_ID_VERSION;
+    /// version from which wdt supports encryption
+    static const int ENCRYPTION_V1_VERSION;
+    /// version from which GCM tags were verified incrementally
+    static const int INCREMENTAL_TAG_VERIFICATION_VERSION;
+    /// version from which file deletion was supported for resumption
+    static const int DELETE_CMD_VERSION;
+    /// version from which we switched varint to better one
+    static const int VARINT_CHANGE;
+    /// version from which heart-beat was introduced
+    static const int HEART_BEAT_VERSION;
+    /// version from which wdt started to change encryption iv periodically
+    static const int PERIODIC_ENCRYPTION_IV_CHANGE_VERSION;
 
   /// Both version, magic number and command byte
   enum CMD_MAGIC {

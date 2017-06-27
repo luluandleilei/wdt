@@ -116,9 +116,11 @@ const WdtTransferRequest &Receiver::init() {
         return transferRequest_;
     }
 
+    //创建TransferLogManager对象
     transferLogManager_ = std::make_unique<TransferLogManager>(options_, getDirectory());
 
     checkAndUpdateBufferSize();
+    
     backlog_ = options_.backlog;
 
     if (getTransferId().empty()) {
@@ -260,90 +262,94 @@ Receiver::AcceptMode Receiver::getAcceptMode() {
 }
 
 Receiver::~Receiver() {
-  TransferStatus status = getTransferStatus();
-  if (status == ONGOING) {
-    WLOG(WARNING) << "There is an ongoing transfer and the destructor"
-                  << " is being called. Trying to finish the transfer";
-    abort(ABORTED_BY_APPLICATION);
-  }
-  finish();
+    TransferStatus status = getTransferStatus();
+    if (status == ONGOING) {
+        WLOG(WARNING) << "There is an ongoing transfer and the destructor" << " is being called. Trying to finish the transfer";
+        abort(ABORTED_BY_APPLICATION);
+    }
+    finish();
 }
 
 const std::vector<FileChunksInfo> &Receiver::getFileChunksInfo() const {
-  return fileChunksInfo_;
+    return fileChunksInfo_;
 }
 
 int64_t Receiver::getTransferConfig() const {
-  int64_t config = 0;
-  if (options_.shouldPreallocateFiles()) {
-    config = 1;
-  }
-  if (options_.resume_using_dir_tree) {
-    config |= (1 << 1);
-  }
-  return config;
+    int64_t config = 0;
+    if (options_.shouldPreallocateFiles()) {
+        config = 1;
+    }
+    if (options_.resume_using_dir_tree) {
+        config |= (1 << 1);
+    }
+    return config;
 }
 
 std::unique_ptr<TransferReport> Receiver::finish() {
-  std::unique_lock<std::mutex> instanceLock(instanceManagementMutex_);
-  TransferStatus status = getTransferStatus();
-  if (status == NOT_STARTED) {
-    WLOG(WARNING) << "Even though transfer has not started, finish is called";
-    // getTransferReport will set the error code to ERROR
-    return getTransferReport();
-  }
-  if (status == THREADS_JOINED) {
-    WLOG(WARNING) << "Threads have already been joined. Returning the "
-                  << "transfer report";
-    return getTransferReport();
-  }
-  if (!isJoinable_) {
-    // TODO: don't complain about this when coming from runForever()
-    WLOG(WARNING) << "The receiver is not joinable. The threads will never"
-                  << " finish and this method will never return";
-  }
-  for (auto &receiverThread : receiverThreads_) {
-    receiverThread->finish();
-  }
+    std::unique_lock<std::mutex> instanceLock(instanceManagementMutex_);
+    TransferStatus status = getTransferStatus();
 
-  setTransferStatus(THREADS_JOINED);
+    if (status == NOT_STARTED) {
+        WLOG(WARNING) << "Even though transfer has not started, finish is called";
+        // getTransferReport will set the error code to ERROR
+        return getTransferReport();
+    }
 
-  if (isJoinable_) {
-    // Make sure to join the progress thread.
-    progressTrackerThread_.join();
-  }
-  std::unique_ptr<TransferReport> report = getTransferReport();
-  auto &summary = report->getSummary();
-  bool transferSuccess = (report->getSummary().getErrorCode() == OK);
-  fixAndCloseTransferLog(transferSuccess);
-  auto totalSenderBytes = summary.getTotalSenderBytes();
-  if (progressReporter_ && totalSenderBytes >= 0) {
-    report->setTotalFileSize(totalSenderBytes);
-    report->setTotalTime(durationSeconds(Clock::now() - startTime_));
-    progressReporter_->end(report);
-  }
-  logPerfStats();
+    if (status == THREADS_JOINED) {
+        WLOG(WARNING) << "Threads have already been joined. Returning the transfer report";
+        return getTransferReport();
+    }
 
-  WLOG(WARNING) << "WDT receiver's transfer has been finished";
-  WLOG(INFO) << *report;
-  return report;
+    if (!isJoinable_) {
+        // TODO: don't complain about this when coming from runForever()
+        WLOG(WARNING) << "The receiver is not joinable. The threads will never" << " finish and this method will never return";
+    }
+
+    for (auto &receiverThread : receiverThreads_) {
+        receiverThread->finish();
+    }
+
+    setTransferStatus(THREADS_JOINED);
+
+    if (isJoinable_) {
+        // Make sure to join the progress thread.
+        progressTrackerThread_.join();
+    }
+
+    std::unique_ptr<TransferReport> report = getTransferReport();
+    auto &summary = report->getSummary();
+    bool transferSuccess = (report->getSummary().getErrorCode() == OK);
+    fixAndCloseTransferLog(transferSuccess);
+    auto totalSenderBytes = summary.getTotalSenderBytes();
+    if (progressReporter_ && totalSenderBytes >= 0) {
+        report->setTotalFileSize(totalSenderBytes);
+        report->setTotalTime(durationSeconds(Clock::now() - startTime_));
+        progressReporter_->end(report);
+    }
+    logPerfStats();
+
+    WLOG(WARNING) << "WDT receiver's transfer has been finished";
+    WLOG(INFO) << *report;
+    return report;
 }
 
 std::unique_ptr<TransferReport> Receiver::getTransferReport() {
-  TransferStats globalStats;
-  for (const auto &receiverThread : receiverThreads_) {
-    globalStats += receiverThread->getTransferStats();
-  }
-  std::unique_ptr<TransferReport> transferReport =
-      std::make_unique<TransferReport>(std::move(globalStats));
-  TransferStatus status = getTransferStatus();
-  ErrorCode errCode = transferReport->getSummary().getErrorCode();
-  if (status == NOT_STARTED && errCode == OK) {
-    WLOG(INFO) << "Transfer not started, setting the error code to ERROR";
-    transferReport->setErrorCode(ERROR);
-  }
-  WVLOG(1) << "Summary code " << errCode;
-  return transferReport;
+    TransferStats globalStats;
+
+    for (const auto &receiverThread : receiverThreads_) {
+        globalStats += receiverThread->getTransferStats();
+    }
+
+    std::unique_ptr<TransferReport> transferReport = std::make_unique<TransferReport>(std::move(globalStats));
+
+    TransferStatus status = getTransferStatus();
+    ErrorCode errCode = transferReport->getSummary().getErrorCode();
+    if (status == NOT_STARTED && errCode == OK) {
+        WLOG(INFO) << "Transfer not started, setting the error code to ERROR";
+        transferReport->setErrorCode(ERROR);
+    }
+    WVLOG(1) << "Summary code " << errCode;
+    return transferReport;
 }
 
 ErrorCode Receiver::transferAsync() {
@@ -357,95 +363,92 @@ ErrorCode Receiver::transferAsync() {
 }
 
 ErrorCode Receiver::runForever() {
-  WDT_CHECK(!options_.enable_download_resumption)
-      << "Transfer resumption not supported in long running mode";
+    WDT_CHECK(!options_.enable_download_resumption) << "Transfer resumption not supported in long running mode";
 
-  // Enforce the full reporting to be false in the daemon mode.
-  // These statistics are expensive, and useless as they will never
-  // be received/reviewed in a forever running process.
-  ErrorCode errCode = start();
-  if (errCode != OK) {
-    return errCode;
-  }
-  finish();
-  // This method should never finish
-  return ERROR;
+    // Enforce the full reporting to be false in the daemon mode.
+    // These statistics are expensive, and useless as they will never
+    // be received/reviewed in a forever running process.
+    ErrorCode errCode = start();
+    if (errCode != OK) {
+        return errCode;
+    }
+    finish();
+    // This method should never finish
+    return ERROR;
 }
 
 void Receiver::progressTracker() {
-  // Progress tracker will check for progress after the time specified
-  // in milliseconds.
-  int progressReportIntervalMillis = options_.progress_report_interval_millis;
-  int throughputUpdateIntervalMillis =
-      options_.throughput_update_interval_millis;
-  if (progressReportIntervalMillis <= 0 || throughputUpdateIntervalMillis < 0 ||
-      !isJoinable_) {
-    return;
-  }
-  int throughputUpdateInterval =
-      throughputUpdateIntervalMillis / progressReportIntervalMillis;
+    // Progress tracker will check for progress after the time specified in milliseconds.
+    int progressReportIntervalMillis = options_.progress_report_interval_millis;
+    int throughputUpdateIntervalMillis = options_.throughput_update_interval_millis;
+    if (progressReportIntervalMillis <= 0 || throughputUpdateIntervalMillis < 0 || !isJoinable_) {
+        return;
+    }
+    int throughputUpdateInterval = throughputUpdateIntervalMillis / progressReportIntervalMillis;
 
-  int64_t lastEffectiveBytes = 0;
-  std::chrono::time_point<Clock> lastUpdateTime = Clock::now();
-  int intervalsSinceLastUpdate = 0;
-  double currentThroughput = 0;
-  WLOG(INFO) << "Progress reporter updating every "
-             << progressReportIntervalMillis << " ms";
-  auto waitingTime = std::chrono::milliseconds(progressReportIntervalMillis);
-  int64_t totalSenderBytes = -1;
-  while (true) {
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      conditionFinished_.wait_for(lock, waitingTime);
-      if (transferStatus_ == THREADS_JOINED) {
-        break;
-      }
-    }
-    double totalTime = durationSeconds(Clock::now() - startTime_);
-    TransferStats globalStats;
-    for (const auto &receiverThread : receiverThreads_) {
-      globalStats += receiverThread->getTransferStats();
-    }
-    totalSenderBytes = globalStats.getTotalSenderBytes();
-    // Note: totalSenderBytes may not be valid yet if sender has not
-    // completed file discovery.  But that's ok, report whatever progress
-    // we can.
-    auto transferReport = std::make_unique<TransferReport>(
-        std::move(globalStats), totalTime, totalSenderBytes, 0, true);
-    intervalsSinceLastUpdate++;
-    if (intervalsSinceLastUpdate >= throughputUpdateInterval) {
-      auto curTime = Clock::now();
-      int64_t curEffectiveBytes =
-          transferReport->getSummary().getEffectiveDataBytes();
-      double time = durationSeconds(curTime - lastUpdateTime);
-      currentThroughput = (curEffectiveBytes - lastEffectiveBytes) / time;
-      lastEffectiveBytes = curEffectiveBytes;
-      lastUpdateTime = curTime;
-      intervalsSinceLastUpdate = 0;
-    }
-    transferReport->setCurrentThroughput(currentThroughput);
+    int64_t lastEffectiveBytes = 0;
+    std::chrono::time_point<Clock> lastUpdateTime = Clock::now();
+    int intervalsSinceLastUpdate = 0;
+    double currentThroughput = 0;
+    WLOG(INFO) << "Progress reporter updating every " << progressReportIntervalMillis << " ms";
+    auto waitingTime = std::chrono::milliseconds(progressReportIntervalMillis);
+    int64_t totalSenderBytes = -1;
 
-    progressReporter_->progress(transferReport);
-    if (reportPerfSignal_.notified()) {
-      logPerfStats();
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            conditionFinished_.wait_for(lock, waitingTime);
+            if (transferStatus_ == THREADS_JOINED) {
+                break;
+            }
+        }
+
+        double totalTime = durationSeconds(Clock::now() - startTime_);
+
+        TransferStats globalStats;
+        for (const auto &receiverThread : receiverThreads_) {
+            globalStats += receiverThread->getTransferStats();
+        }
+
+        totalSenderBytes = globalStats.getTotalSenderBytes();
+        // Note: totalSenderBytes may not be valid yet if sender has not
+        // completed file discovery.  But that's ok, report whatever progress we can.
+        auto transferReport = std::make_unique<TransferReport>( std::move(globalStats), totalTime, totalSenderBytes, 0, true);
+
+        intervalsSinceLastUpdate++;
+        if (intervalsSinceLastUpdate >= throughputUpdateInterval) {
+            auto curTime = Clock::now();
+            int64_t curEffectiveBytes = transferReport->getSummary().getEffectiveDataBytes();
+            double time = durationSeconds(curTime - lastUpdateTime);
+            currentThroughput = (curEffectiveBytes - lastEffectiveBytes) / time;
+            lastEffectiveBytes = curEffectiveBytes;
+            lastUpdateTime = curTime;
+            intervalsSinceLastUpdate = 0;
+        }
+        transferReport->setCurrentThroughput(currentThroughput);
+
+        progressReporter_->progress(transferReport);
+        if (reportPerfSignal_.notified()) {
+            logPerfStats();
+        }
     }
-  }
 }
 
 void Receiver::logPerfStats() const {
-  if (!options_.enable_perf_stat_collection) {
-    return;
-  }
+    if (!options_.enable_perf_stat_collection) {
+        return;
+    }
 
-  PerfStatReport globalPerfReport(options_);
-  for (auto &receiverThread : receiverThreads_) {
-    globalPerfReport += receiverThread->getPerfReport();
-  }
-  WLOG(INFO) << globalPerfReport;
+    PerfStatReport globalPerfReport(options_);
+    for (auto &receiverThread : receiverThreads_) {
+        globalPerfReport += receiverThread->getPerfReport();
+    }
+    WLOG(INFO) << globalPerfReport;
 }
 
 ErrorCode Receiver::start() {
     WDT_CHECK_EQ(getTransferStatus(), NOT_STARTED) << "There is already a transfer running on this instance of receiver";
+
     startTime_ = Clock::now();
 
     WLOG(INFO) << "Starting (receiving) server on ports [ " << transferRequest_.ports << "] Target dir : " << getDirectory();
@@ -474,6 +477,7 @@ ErrorCode Receiver::start() {
             receiverThread->finish();
             receiverThread->reset();
         }
+
         threadsController_->reset();
         // reset transfer status
         setTransferStatus(NOT_STARTED);

@@ -28,6 +28,12 @@ WdtBase::~WdtBase() {
     delete threadsController_;
 }
 
+
+
+/// Transfer can be marked to abort and threads will eventually
+/// get aborted after this method has been called based on
+/// whether they are doing read/write on the socket and the timeout for the
+/// socket. Push mode for abort.
 void WdtBase::abort(const ErrorCode abortCode) {
     folly::RWSpinLock::WriteHolder guard(abortCodeLock_);
     if (abortCode == VERSION_MISMATCH && abortCode_ != OK) {

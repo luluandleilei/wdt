@@ -38,6 +38,7 @@ void WdtThread::startThread() {
     threadPtr_.reset(new std::thread(&WdtThread::start, this));
 }
 
+/// Conclude the thread transfer
 ErrorCode WdtThread::finish() {
     if (!threadPtr_) {
         WLOG(ERROR) << "Finish called on an instance while no thread has been " << " created to do any work";

@@ -286,7 +286,7 @@ ReceiverState ReceiverThread::processSettingsCmd() {
     }
     if (senderProtocolVersion != threadProtocolVersion_) {
         WTLOG(WARNING) << "Receiver and sender protocol version mismatch " << senderProtocolVersion << " " << threadProtocolVersion_;
-        int negotiatedProtocol = Protocol::negotiateProtocol( senderProtocolVersion, threadProtocolVersion_);
+        int negotiatedProtocol = Protocol::negotiateProtocol(senderProtocolVersion, threadProtocolVersion_);
         if (negotiatedProtocol == 0) {
             WTLOG(WARNING) << "Can not support sender with version " << senderProtocolVersion << ", aborting!";
             threadStats_.setLocalErrorCode(VERSION_INCOMPATIBLE);
@@ -305,7 +305,7 @@ ReceiverState ReceiverThread::processSettingsCmd() {
         socket_->disableIvChange();
     }
 
-    success = Protocol::decodeSettings( threadProtocolVersion_, buf_, off_, oldOffset_ + Protocol::kMaxVersion + Protocol::kMaxSettings, settings);
+    success = Protocol::decodeSettings(threadProtocolVersion_, buf_, off_, oldOffset_ + Protocol::kMaxVersion + Protocol::kMaxSettings, settings);
     if (!success) {
         WTLOG(ERROR) << "Unable to decode settings cmd ";
         threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
@@ -650,32 +650,29 @@ void ReceiverThread::markReceivedBlocksVerified() {
 }
 
 ReceiverState ReceiverThread::processDoneCmd() {
-  WTVLOG(1) << "entered PROCESS_DONE_CMD state";
-  if (numRead_ != Protocol::kMinBufLength) {
-    WTLOG(ERROR) << "Unexpected state for done command"
-                 << " off_: " << off_ << " numRead_: " << numRead_;
-    threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
-    return FINISH_WITH_ERROR;
-  }
+    WTVLOG(1) << "entered PROCESS_DONE_CMD state";
+    if (numRead_ != Protocol::kMinBufLength) {
+        WTLOG(ERROR) << "Unexpected state for done command" << " off_: " << off_ << " numRead_: " << numRead_;
+        threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
+        return FINISH_WITH_ERROR;
+    }
 
-  ErrorCode senderStatus = (ErrorCode)buf_[off_++];
-  int64_t numBlocksSend = -1;
-  int64_t totalSenderBytes = -1;
-  bool success = Protocol::decodeDone(threadProtocolVersion_, buf_, off_,
-                                      oldOffset_ + Protocol::kMaxDone,
-                                      numBlocksSend, totalSenderBytes);
-  if (!success) {
-    WTLOG(ERROR) << "Unable to decode done cmd";
-    threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
-    return FINISH_WITH_ERROR;
-  }
-  threadStats_.setNumBlocksSend(numBlocksSend);
-  threadStats_.setTotalSenderBytes(totalSenderBytes);
-  threadStats_.setRemoteErrorCode(senderStatus);
+    ErrorCode senderStatus = (ErrorCode)buf_[off_++];
+    int64_t numBlocksSend = -1;
+    int64_t totalSenderBytes = -1;
+    bool success = Protocol::decodeDone(threadProtocolVersion_, buf_, off_, oldOffset_ + Protocol::kMaxDone, numBlocksSend, totalSenderBytes);
+    if (!success) {
+        WTLOG(ERROR) << "Unable to decode done cmd";
+        threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
+        return FINISH_WITH_ERROR;
+    }
+    threadStats_.setNumBlocksSend(numBlocksSend);
+    threadStats_.setTotalSenderBytes(totalSenderBytes);
+    threadStats_.setRemoteErrorCode(senderStatus);
 
-  // received a valid command, applying pending checkpoint write update
-  checkpointIndex_ = pendingCheckpointIndex_;
-  return WAIT_FOR_FINISH_OR_NEW_CHECKPOINT;
+    // received a valid command, applying pending checkpoint write update
+    checkpointIndex_ = pendingCheckpointIndex_;
+    return WAIT_FOR_FINISH_OR_NEW_CHECKPOINT;
 }
 
 ReceiverState ReceiverThread::processSizeCmd() {
@@ -705,7 +702,7 @@ ReceiverState ReceiverThread::sendFileChunks() {
     while (true) {
         auto status = execFunnel->getStatus();
         switch (status) {
-            case FUNNEL_END: 
+            case FUNNEL_END: { 
                 buf_[0] = Protocol::ACK_CMD;
                 int toWrite = 1;
                 int written = socket_->write(buf_, toWrite);
@@ -716,8 +713,9 @@ ReceiverState ReceiverThread::sendFileChunks() {
                 }
                 threadStats_.addHeaderBytes(toWrite);
                 return READ_NEXT_CMD;
+                             }
 
-            case FUNNEL_PROGRESS: 
+            case FUNNEL_PROGRESS: { 
                 buf_[0] = Protocol::WAIT_CMD;
                 int toWrite = 1;
                 int written = socket_->write(buf_, toWrite);
@@ -729,8 +727,9 @@ ReceiverState ReceiverThread::sendFileChunks() {
                 threadStats_.addHeaderBytes(toWrite);
                 execFunnel->wait(waitingTimeMillis, *threadCtx_);
                 break;
+                                  }
 
-            case FUNNEL_START: 
+            case FUNNEL_START: { 
                 int64_t off = 0;
                 buf_[off++] = Protocol::CHUNKS_CMD;
                 const auto &fileChunksInfo = wdtParent_->getFileChunksInfo();
@@ -787,6 +786,7 @@ ReceiverState ReceiverThread::sendFileChunks() {
                 wdtParent_->addTransferLogHeader(isBlockMode_, /* sender resuming */ true);
                 execFunnel->notifySuccess();
                 return READ_NEXT_CMD;
+                               }
         }
     }
 }
@@ -886,18 +886,18 @@ ReceiverState ReceiverThread::finishWithError() {
 }
 
 ReceiverState ReceiverThread::checkForFinishOrNewCheckpoints() {
-  auto checkpoints = wdtParent_->getNewCheckpoints(checkpointIndex_);
-  if (!checkpoints.empty()) {
-    newCheckpoints_ = std::move(checkpoints);
-    controller_->markState(threadIndex_, RUNNING);
-    return SEND_GLOBAL_CHECKPOINTS;
-  }
-  bool existActiveThreads = controller_->hasThreads(threadIndex_, RUNNING);
-  if (!existActiveThreads) {
-    controller_->markState(threadIndex_, FINISHED);
-    return SEND_DONE_CMD;
-  }
-  return WAIT_FOR_FINISH_OR_NEW_CHECKPOINT;
+    auto checkpoints = wdtParent_->getNewCheckpoints(checkpointIndex_);
+    if (!checkpoints.empty()) {
+        newCheckpoints_ = std::move(checkpoints);
+        controller_->markState(threadIndex_, RUNNING);
+        return SEND_GLOBAL_CHECKPOINTS;
+    }
+    bool existActiveThreads = controller_->hasThreads(threadIndex_, RUNNING);
+    if (!existActiveThreads) {
+        controller_->markState(threadIndex_, FINISHED);
+        return SEND_DONE_CMD;
+    }
+    return WAIT_FOR_FINISH_OR_NEW_CHECKPOINT;
 }
 
 ReceiverState ReceiverThread::waitForFinishOrNewCheckpoint() {
@@ -981,6 +981,7 @@ ErrorCode ReceiverThread::init() {
         this->markReceivedBlocksVerified();
     };
 
+    //创建ServerSocket
     socket_ = std::make_unique<ServerSocket>(*threadCtx_, port_, wdtParent_->backlog_, encryptionData, wdtParent_->transferRequest_.ivChangeInterval, std::move(tagVerificationSuccessCallback));
 
     int max_retries = options_.max_retries;
