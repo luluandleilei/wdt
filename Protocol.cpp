@@ -138,33 +138,31 @@ int Protocol::getMaxLocalCheckpointLength(int protocolVersion) {
   return length;
 }
 
-bool Protocol::encodeHeader(int senderProtocolVersion, char *dest, int64_t &off,
-                            const int64_t max,
-                            const BlockDetails &blockDetails) {
-  WDT_CHECK_GE(max, 0);
-  const size_t umax = static_cast<size_t>(max);  // we made sure it's not < 0
-  bool ok = encodeString(dest, max, off, blockDetails.fileName) &&
+bool Protocol::encodeHeader(int senderProtocolVersion, char *dest, int64_t &off, const int64_t max, const BlockDetails &blockDetails) {
+    WDT_CHECK_GE(max, 0);
+    const size_t umax = static_cast<size_t>(max);  // we made sure it's not < 0
+    bool ok = encodeString(dest, max, off, blockDetails.fileName) &&
             encodeVarI64C(dest, umax, off, blockDetails.seqId) &&
             encodeVarI64C(dest, umax, off, blockDetails.dataSize) &&
             encodeVarI64C(dest, umax, off, blockDetails.offset) &&
             encodeVarI64C(dest, umax, off, blockDetails.fileSize);
-  if (ok && senderProtocolVersion >= HEADER_FLAG_AND_PREV_SEQ_ID_VERSION) {
-    uint8_t flags = blockDetails.allocationStatus;
-    if (off >= max) {
-      ok = false;
-    } else {
-      dest[off++] = static_cast<char>(flags);
-      if (flags == EXISTS_TOO_SMALL || flags == EXISTS_TOO_LARGE) {
-        // prev seq-id is only used in case the size is less on the sender side
-        ok = encodeVarI64C(dest, umax, off, blockDetails.prevSeqId);
-      }
+
+    if (ok && senderProtocolVersion >= HEADER_FLAG_AND_PREV_SEQ_ID_VERSION) {
+        uint8_t flags = blockDetails.allocationStatus;
+        if (off >= max) {
+            ok = false;
+        } else {
+            dest[off++] = static_cast<char>(flags);
+            if (flags == EXISTS_TOO_SMALL || flags == EXISTS_TOO_LARGE) {
+                // prev seq-id is only used in case the size is less on the sender side
+                ok = encodeVarI64C(dest, umax, off, blockDetails.prevSeqId);
+            }
+        }
     }
-  }
-  if (!ok) {
-    WLOG(ERROR) << "Failed to encode header, ran out of space, " << off << " "
-                << max;
-  }
-  return ok;
+    if (!ok) {
+        WLOG(ERROR) << "Failed to encode header, ran out of space, " << off << " " << max;
+    }
+    return ok;
 }
 
 bool Protocol::decodeHeader(int receiverProtocolVersion, char *src,
@@ -288,9 +286,8 @@ bool Protocol::decodeDone(int protocolVersion, char *src, int64_t &off,
   return ok;
 }
 
-bool Protocol::encodeSize(char *dest, int64_t &off, int64_t max,
-                          int64_t totalNumBytes) {
-  return encodeVarI64C(dest, max, off, totalNumBytes);
+bool Protocol::encodeSize(char *dest, int64_t &off, int64_t max, int64_t totalNumBytes) {
+    return encodeVarI64C(dest, max, off, totalNumBytes);
 }
 
 bool Protocol::decodeSize(char *src, int64_t &off, int64_t max,
@@ -302,20 +299,18 @@ bool Protocol::decodeSize(char *src, int64_t &off, int64_t max,
   return ok;
 }
 
-bool Protocol::encodeAbort(char *dest, int64_t &off, const int64_t max,
-                           int32_t protocolVersion, ErrorCode errCode,
-                           int64_t checkpoint) {
-  if (off + kAbortLength > max) {
-    WLOG(ERROR) << "Trying to encode abort in too small of a buffer sz " << max
-                << " off " << off;
-    return false;
-  }
-  bool ok = encodeInt32FixedLength(dest, max, off, protocolVersion);
-  if (!ok) {
-    return false;
-  }
-  dest[off++] = errCode;
-  return encodeInt64FixedLength(dest, max, off, checkpoint);
+bool Protocol::encodeAbort(char *dest, int64_t &off, const int64_t max, int32_t protocolVersion, ErrorCode errCode, int64_t checkpoint) {
+    if (off + kAbortLength > max) {
+        WLOG(ERROR) << "Trying to encode abort in too small of a buffer sz " << max << " off " << off;
+        return false;
+    }
+
+    bool ok = encodeInt32FixedLength(dest, max, off, protocolVersion);
+    if (!ok) {
+        return false;
+    }
+    dest[off++] = errCode;
+    return encodeInt64FixedLength(dest, max, off, checkpoint);
 }
 
 bool Protocol::decodeAbort(char *src, int64_t &off, int64_t max,

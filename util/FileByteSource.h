@@ -112,6 +112,7 @@ private:
     /// clears page cache
     void clearPageCache();
 
+    /// 传送该ByteSource的SenderThread的ThreadCtx
     ThreadCtx *threadCtx_{nullptr};
 
     /// shared file information 

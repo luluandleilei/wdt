@@ -21,11 +21,13 @@ std::string ThreadTransferHistory::getSourceId(int64_t index) {
     std::lock_guard<std::mutex> lock(mutex_);
     std::string sourceId;
     const int64_t historySize = history_.size();
+
     if (index >= 0 && index < historySize) {
         sourceId = history_[index]->getIdentifier();
     } else {
         WLOG(WARNING) << "Trying to read out of bounds data " << index << " " << history_.size();
     }
+
     return sourceId;
 }
 
@@ -43,7 +45,7 @@ bool ThreadTransferHistory::addSource(std::unique_ptr<ByteSource> &source) {
     return true;
 }
 
-ErrorCode ThreadTransferHistory::setLocalCheckpoint( const Checkpoint &checkpoint) {
+ErrorCode ThreadTransferHistory::setLocalCheckpoint(const Checkpoint &checkpoint) {
     std::lock_guard<std::mutex> lock(mutex_);
     return setCheckpointAndReturnToQueue(checkpoint, false);
 }
@@ -61,13 +63,11 @@ ErrorCode ThreadTransferHistory::setGlobalCheckpoint(
   return status;
 }
 
-ErrorCode ThreadTransferHistory::setCheckpointAndReturnToQueue(
-    const Checkpoint &checkpoint, bool globalCheckpoint) {
-  const int64_t historySize = history_.size();
-  int64_t numReceivedSources = checkpoint.numBlocks;
-  int64_t lastBlockReceivedBytes = checkpoint.lastBlockReceivedBytes;
-  if (numReceivedSources > historySize) {
-    WLOG(ERROR)
+ErrorCode ThreadTransferHistory::setCheckpointAndReturnToQueue( const Checkpoint &checkpoint, bool globalCheckpoint) {
+    const int64_t historySize = history_.size();
+    int64_t numReceivedSources = checkpoint.numBlocks;
+    int64_t lastBlockReceivedBytes = checkpoint.lastBlockReceivedBytes;
+  if (numReceivedSources > historySize) { WLOG(ERROR)
         << "checkpoint is greater than total number of sources transferred "
         << history_.size() << " " << numReceivedSources;
     return INVALID_CHECKPOINT;
@@ -124,10 +124,10 @@ void ThreadTransferHistory::markAllAcknowledged() {
 }
 
 void ThreadTransferHistory::returnUnackedSourcesToQueue() {
-  std::unique_lock<std::mutex> lock(mutex_);
-  Checkpoint checkpoint;
-  checkpoint.numBlocks = numAcknowledged_;
-  setCheckpointAndReturnToQueue(checkpoint, false);
+    std::unique_lock<std::mutex> lock(mutex_);
+    Checkpoint checkpoint;
+    checkpoint.numBlocks = numAcknowledged_;
+    setCheckpointAndReturnToQueue(checkpoint, false);
 }
 
 ErrorCode ThreadTransferHistory::validateCheckpoint(
@@ -252,9 +252,7 @@ ErrorCode TransferHistoryController::handleVersionMismatch() {
     for (auto &historyPair : threadHistoriesMap_) {
         auto &history = historyPair.second;
         if (history->getNumAcked() > 0) {
-            WLOG(ERROR)
-                << "Even though the transfer aborted due to VERSION_MISMATCH, "
-                "some blocks got acked by the receiver, port "
+            WLOG(ERROR) << "Even though the transfer aborted due to VERSION_MISMATCH, some blocks got acked by the receiver, port "
                 << historyPair.first << " numAcked " << history->getNumAcked();
             return ERROR;
         }

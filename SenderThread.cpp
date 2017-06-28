@@ -136,8 +136,10 @@ SenderState SenderThread::connect() {
     if (threadStats_.getLocalErrorCode() != OK) {
         nextState = READ_LOCAL_CHECKPOINT;
     }
+
     // resetting the status of thread
     reset();
+
     return nextState;
 }
 
@@ -242,46 +244,48 @@ SenderState SenderThread::sendSettings() {
 const int kHeartBeatReadTimeFactor = 10;
 
 ErrorCode SenderThread::readHeartBeats() {
-  if (!enableHeartBeat_) {
-    return OK;
-  }
-  const auto now = Clock::now();
-  const int timeSinceLastHeartBeatMs = durationMillis(now - lastHeartBeatTime_);
-  const int heartBeatIntervalMs =
-      (options_.read_timeout_millis * kHeartBeatReadTimeFactor);
-  if (timeSinceLastHeartBeatMs <= heartBeatIntervalMs) {
-    return OK;
-  }
-  lastHeartBeatTime_ = now;
-  // time to read heart-beats
-  const int numRead = socket_->read(buf_, bufSize_,
-                                    /* don't try to read all the data */ false);
-  if (numRead <= 0) {
-    WTLOG(ERROR) << "Failed to read heart-beat " << numRead;
-    return SOCKET_READ_ERROR;
-  }
-  for (int i = 0; i < numRead; i++) {
-    const char receivedCmd = buf_[i];
-    if (receivedCmd != Protocol::HEART_BEAT_CMD) {
-      WTLOG(ERROR) << "Received " << receivedCmd
-                   << " instead of heart-beat cmd";
-      return PROTOCOL_ERROR;
+    if (!enableHeartBeat_) {
+        return OK;
     }
-  }
-  if (!isTty_) {
-    WTLOG(INFO) << "Received " << numRead << " heart-beats";
-  }
-  return OK;
+
+    const auto now = Clock::now();
+    const int timeSinceLastHeartBeatMs = durationMillis(now - lastHeartBeatTime_);
+    const int heartBeatIntervalMs = (options_.read_timeout_millis * kHeartBeatReadTimeFactor);
+    if (timeSinceLastHeartBeatMs <= heartBeatIntervalMs) {
+        return OK;
+    }
+
+    lastHeartBeatTime_ = now;
+    // time to read heart-beats
+    const int numRead = socket_->read(buf_, bufSize_, /* don't try to read all the data */ false);
+    if (numRead <= 0) {
+        WTLOG(ERROR) << "Failed to read heart-beat " << numRead;
+        return SOCKET_READ_ERROR;
+    }
+
+    for (int i = 0; i < numRead; i++) {
+        const char receivedCmd = buf_[i];
+        if (receivedCmd != Protocol::HEART_BEAT_CMD) {
+            WTLOG(ERROR) << "Received " << receivedCmd << " instead of heart-beat cmd";
+            return PROTOCOL_ERROR;
+        }
+    }
+
+    if (!isTty_) {
+        WTLOG(INFO) << "Received " << numRead << " heart-beats";
+    }
+
+    return OK;
 }
 
 SenderState SenderThread::sendBlocks() {
     WTVLOG(1) << "entered SEND_BLOCKS state";
 
     ThreadTransferHistory &transferHistory = getTransferHistory();
-    if (threadProtocolVersion_ >= Protocol::RECEIVER_PROGRESS_REPORT_VERSION &&
-            !totalSizeSent_ && dirQueue_->fileDiscoveryFinished()) {
+    if (threadProtocolVersion_ >= Protocol::RECEIVER_PROGRESS_REPORT_VERSION && !totalSizeSent_ && dirQueue_->fileDiscoveryFinished()) {
         return SEND_SIZE_CMD;
     }
+
     ErrorCode transferStatus;
     std::unique_ptr<ByteSource> source = dirQueue_->getNextSource(threadCtx_.get(), transferStatus);
     if (!source) {
@@ -307,136 +311,134 @@ SenderState SenderThread::sendBlocks() {
   return SEND_BLOCKS;
 }
 
-TransferStats SenderThread::sendOneByteSource(
-    const std::unique_ptr<ByteSource> &source, ErrorCode transferStatus) {
-  TransferStats stats;
-  char headerBuf[Protocol::kMaxHeader];
-  int64_t off = 0;
-  headerBuf[off++] = Protocol::FILE_CMD;
-  headerBuf[off++] = transferStatus;
-  char *headerLenPtr = headerBuf + off;
-  off += sizeof(int16_t);
-  const int64_t expectedSize = source->getSize();
-  int64_t actualSize = 0;
-  const SourceMetaData &metadata = source->getMetaData();
-  BlockDetails blockDetails;
-  blockDetails.fileName = metadata.relPath;
-  blockDetails.seqId = metadata.seqId;
-  blockDetails.fileSize = metadata.size;
-  blockDetails.offset = source->getOffset();
-  blockDetails.dataSize = expectedSize;
-  blockDetails.allocationStatus = metadata.allocationStatus;
-  blockDetails.prevSeqId = metadata.prevSeqId;
-  Protocol::encodeHeader(wdtParent_->getProtocolVersion(), headerBuf, off,
-                         Protocol::kMaxHeader, blockDetails);
-  int16_t littleEndianOff = folly::Endian::little((int16_t)off);
-  folly::storeUnaligned<int16_t>(headerLenPtr, littleEndianOff);
-  int64_t written = socket_->write(headerBuf, off);
-  if (written != off) {
-    WTPLOG(ERROR) << "Write error/mismatch " << written << " " << off
-                  << ". fd = " << socket_->getFd()
-                  << ". file = " << metadata.relPath
-                  << ". port = " << socket_->getPort();
-    stats.setLocalErrorCode(SOCKET_WRITE_ERROR);
-    stats.incrFailedAttempts();
-    return stats;
-  }
+TransferStats SenderThread::sendOneByteSource(const std::unique_ptr<ByteSource> &source, ErrorCode transferStatus) {
+    TransferStats stats;
+    char headerBuf[Protocol::kMaxHeader];
+    int64_t off = 0;
+    headerBuf[off++] = Protocol::FILE_CMD;
+    headerBuf[off++] = transferStatus;
+    char *headerLenPtr = headerBuf + off;
+    off += sizeof(int16_t);
+    const int64_t expectedSize = source->getSize();
+    int64_t actualSize = 0;
+    const SourceMetaData &metadata = source->getMetaData();
+    BlockDetails blockDetails;
+    blockDetails.fileName = metadata.relPath;
+    blockDetails.seqId = metadata.seqId;
+    blockDetails.fileSize = metadata.size;
+    blockDetails.offset = source->getOffset();
+    blockDetails.dataSize = expectedSize;
+    blockDetails.allocationStatus = metadata.allocationStatus;
+    blockDetails.prevSeqId = metadata.prevSeqId;
+    Protocol::encodeHeader(wdtParent_->getProtocolVersion(), headerBuf, off, Protocol::kMaxHeader, blockDetails);
+    int16_t littleEndianOff = folly::Endian::little((int16_t)off);
+    folly::storeUnaligned<int16_t>(headerLenPtr, littleEndianOff);
+    int64_t written = socket_->write(headerBuf, off);
+    if (written != off) {
+        WTPLOG(ERROR) << "Write error/mismatch " << written << " " << off
+            << ". fd = " << socket_->getFd() << ". file = " << metadata.relPath << ". port = " << socket_->getPort();
+        stats.setLocalErrorCode(SOCKET_WRITE_ERROR);
+        stats.incrFailedAttempts();
+        return stats;
+    }
 
-  stats.addHeaderBytes(written);
-  int64_t byteSourceHeaderBytes = written;
-  int64_t throttlerInstanceBytes = byteSourceHeaderBytes;
-  int64_t totalThrottlerBytes = 0;
-  WTVLOG(3) << "Sent " << written << " on " << socket_->getFd() << " : "
-            << folly::humanify(std::string(headerBuf, off));
-  int32_t checksum = 0;
-  while (!source->finished()) {
-    // TODO: handle protocol errors from readHeartBeats
-    readHeartBeats();
+    stats.addHeaderBytes(written);
+    int64_t byteSourceHeaderBytes = written;
+    int64_t throttlerInstanceBytes = byteSourceHeaderBytes;
+    int64_t totalThrottlerBytes = 0;
+    WTVLOG(3) << "Sent " << written << " on " << socket_->getFd() << " : " << folly::humanify(std::string(headerBuf, off));
+    int32_t checksum = 0;
+    while (!source->finished()) {
+        // TODO: handle protocol errors from readHeartBeats
+        readHeartBeats();
 
-    int64_t size;
-    char *buffer = source->read(size);
-    if (source->hasError()) {
-      WTLOG(ERROR) << "Failed reading file " << source->getIdentifier()
-                   << " for fd " << socket_->getFd();
-      break;
+        int64_t size;
+        char *buffer = source->read(size);
+        if (source->hasError()) {
+            WTLOG(ERROR) << "Failed reading file " << source->getIdentifier() << " for fd " << socket_->getFd();
+            break;
+        }
+
+        WDT_CHECK(buffer && size > 0);
+        if (footerType_ == CHECKSUM_FOOTER) {
+            checksum = folly::crc32c((const uint8_t *)buffer, size, checksum);
+        }
+
+        if (wdtParent_->getThrottler()) {
+            /**
+             * If throttling is enabled we call limit(deltaBytes) which
+             * used both the methods of throttling peak and average.
+             * Always call it with bytes being written to the wire, throttler
+             * will do the rest.
+             * The first time throttle is called with the header bytes
+             * included. In the next iterations throttler is only called
+             * with the bytes being written.
+             */
+            throttlerInstanceBytes += size;
+            wdtParent_->getThrottler()->limit(*threadCtx_, throttlerInstanceBytes);
+            totalThrottlerBytes += throttlerInstanceBytes;
+            throttlerInstanceBytes = 0;
+        }
+
+        written = socket_->write(buffer, size, /* retry writes */ true);
+
+        if (getThreadAbortCode() != OK) {
+            WTLOG(ERROR) << "Transfer aborted during block transfer " << socket_->getPort() << " " << source->getIdentifier();
+            stats.setLocalErrorCode(ABORT);
+            stats.incrFailedAttempts();
+            return stats;
+        }
+
+        if (written != size) {
+            WTLOG(ERROR) << "Write error " << written << " (" << size << ")"
+                << ". fd = " << socket_->getFd()
+                << ". file = " << metadata.relPath
+                << ". port = " << socket_->getPort();
+            stats.setLocalErrorCode(SOCKET_WRITE_ERROR);
+            stats.incrFailedAttempts();
+            return stats;
+        }
+
+        stats.addDataBytes(written);
+        actualSize += written;
     }
-    WDT_CHECK(buffer && size > 0);
-    if (footerType_ == CHECKSUM_FOOTER) {
-      checksum = folly::crc32c((const uint8_t *)buffer, size, checksum);
+
+    if (actualSize != expectedSize) {
+        // Can only happen if sender thread can not read complete source byte stream
+        WTLOG(ERROR) << "UGH " << source->getIdentifier() << " " << expectedSize << " " << actualSize;
+        struct stat fileStat;
+        if (stat(metadata.fullPath.c_str(), &fileStat) != 0) {
+            WTPLOG(ERROR) << "stat failed on path " << metadata.fullPath;
+        } else {
+            WTLOG(WARNING) << "file " << source->getIdentifier() << " previous size " << metadata.size << " current size " << fileStat.st_size;
+        }
+        stats.setLocalErrorCode(BYTE_SOURCE_READ_ERROR);
+        stats.incrFailedAttempts();
+        return stats;
     }
-    if (wdtParent_->getThrottler()) {
-      /**
-       * If throttling is enabled we call limit(deltaBytes) which
-       * used both the methods of throttling peak and average.
-       * Always call it with bytes being written to the wire, throttler
-       * will do the rest.
-       * The first time throttle is called with the header bytes
-       * included. In the next iterations throttler is only called
-       * with the bytes being written.
-       */
-      throttlerInstanceBytes += size;
-      wdtParent_->getThrottler()->limit(*threadCtx_, throttlerInstanceBytes);
-      totalThrottlerBytes += throttlerInstanceBytes;
-      throttlerInstanceBytes = 0;
+
+    if (wdtParent_->getThrottler() && actualSize > 0) {
+        WDT_CHECK(totalThrottlerBytes == actualSize + byteSourceHeaderBytes) << totalThrottlerBytes << " " << (actualSize + totalThrottlerBytes);
     }
-    written = socket_->write(buffer, size, /* retry writes */ true);
-    if (getThreadAbortCode() != OK) {
-      WTLOG(ERROR) << "Transfer aborted during block transfer "
-                   << socket_->getPort() << " " << source->getIdentifier();
-      stats.setLocalErrorCode(ABORT);
-      stats.incrFailedAttempts();
-      return stats;
+
+    if (footerType_ != NO_FOOTER) {
+        off = 0;
+        headerBuf[off++] = Protocol::FOOTER_CMD;
+        Protocol::encodeFooter(headerBuf, off, Protocol::kMaxFooter, checksum);
+        int toWrite = off;
+        written = socket_->write(headerBuf, toWrite);
+        if (written != toWrite) {
+            WTLOG(ERROR) << "Write mismatch " << written << " " << toWrite;
+            stats.setLocalErrorCode(SOCKET_WRITE_ERROR);
+            stats.incrFailedAttempts();
+            return stats;
+        }
+        stats.addHeaderBytes(toWrite);
     }
-    if (written != size) {
-      WTLOG(ERROR) << "Write error " << written << " (" << size << ")"
-                   << ". fd = " << socket_->getFd()
-                   << ". file = " << metadata.relPath
-                   << ". port = " << socket_->getPort();
-      stats.setLocalErrorCode(SOCKET_WRITE_ERROR);
-      stats.incrFailedAttempts();
-      return stats;
-    }
-    stats.addDataBytes(written);
-    actualSize += written;
-  }
-  if (actualSize != expectedSize) {
-    // Can only happen if sender thread can not read complete source byte
-    // stream
-    WTLOG(ERROR) << "UGH " << source->getIdentifier() << " " << expectedSize
-                 << " " << actualSize;
-    struct stat fileStat;
-    if (stat(metadata.fullPath.c_str(), &fileStat) != 0) {
-      WTPLOG(ERROR) << "stat failed on path " << metadata.fullPath;
-    } else {
-      WTLOG(WARNING) << "file " << source->getIdentifier() << " previous size "
-                     << metadata.size << " current size " << fileStat.st_size;
-    }
-    stats.setLocalErrorCode(BYTE_SOURCE_READ_ERROR);
-    stats.incrFailedAttempts();
+    stats.setLocalErrorCode(OK);
+    stats.incrNumBlocks();
+    stats.addEffectiveBytes(stats.getHeaderBytes(), stats.getDataBytes());
     return stats;
-  }
-  if (wdtParent_->getThrottler() && actualSize > 0) {
-    WDT_CHECK(totalThrottlerBytes == actualSize + byteSourceHeaderBytes)
-        << totalThrottlerBytes << " " << (actualSize + totalThrottlerBytes);
-  }
-  if (footerType_ != NO_FOOTER) {
-    off = 0;
-    headerBuf[off++] = Protocol::FOOTER_CMD;
-    Protocol::encodeFooter(headerBuf, off, Protocol::kMaxFooter, checksum);
-    int toWrite = off;
-    written = socket_->write(headerBuf, toWrite);
-    if (written != toWrite) {
-      WTLOG(ERROR) << "Write mismatch " << written << " " << toWrite;
-      stats.setLocalErrorCode(SOCKET_WRITE_ERROR);
-      stats.incrFailedAttempts();
-      return stats;
-    }
-    stats.addHeaderBytes(toWrite);
-  }
-  stats.setLocalErrorCode(OK);
-  stats.incrNumBlocks();
-  stats.addEffectiveBytes(stats.getHeaderBytes(), stats.getDataBytes());
-  return stats;
 }
 
 SenderState SenderThread::sendSizeCmd() {
@@ -444,8 +446,7 @@ SenderState SenderThread::sendSizeCmd() {
     int64_t off = 0;
     buf_[off++] = Protocol::SIZE_CMD;
 
-    Protocol::encodeSize(buf_, off, Protocol::kMaxSize,
-            dirQueue_->getTotalSize());
+    Protocol::encodeSize(buf_, off, Protocol::kMaxSize, dirQueue_->getTotalSize());
     int64_t written = socket_->write(buf_, off);
     if (written != off) {
         WTLOG(ERROR) << "Socket write error " << off << " " << written;
@@ -482,19 +483,21 @@ SenderState SenderThread::sendDoneCmd() {
 }
 
 SenderState SenderThread::checkForAbort() {
-  WTLOG(INFO) << "entered CHECK_FOR_ABORT state";
-  auto numRead = socket_->read(buf_, 1);
-  if (numRead != 1) {
-    WTVLOG(1) << "No abort cmd found";
-    return CONNECT;
-  }
-  Protocol::CMD_MAGIC cmd = (Protocol::CMD_MAGIC)buf_[0];
-  if (cmd != Protocol::ABORT_CMD) {
-    WTVLOG(1) << "Unexpected result found while reading for abort " << buf_[0];
-    return CONNECT;
-  }
-  threadStats_.addHeaderBytes(1);
-  return PROCESS_ABORT_CMD;
+    WTLOG(INFO) << "entered CHECK_FOR_ABORT state";
+
+    auto numRead = socket_->read(buf_, 1);
+    if (numRead != 1) {
+        WTVLOG(1) << "No abort cmd found";
+        return CONNECT;
+    }
+
+    Protocol::CMD_MAGIC cmd = (Protocol::CMD_MAGIC)buf_[0];
+    if (cmd != Protocol::ABORT_CMD) {
+        WTVLOG(1) << "Unexpected result found while reading for abort " << buf_[0];
+        return CONNECT;
+    }
+    threadStats_.addHeaderBytes(1);
+    return PROCESS_ABORT_CMD;
 }
 
 SenderState SenderThread::readFileChunks() {
@@ -823,8 +826,11 @@ SenderState SenderThread::processErrCmd() {
 
 SenderState SenderThread::processAbortCmd() {
     WTLOG(INFO) << "entered PROCESS_ABORT_CMD state ";
+    
     ThreadTransferHistory &transferHistory = getTransferHistory();
     threadStats_.setLocalErrorCode(ABORT);
+
+    //读取AbortCmd
     int toRead = Protocol::kAbortLength;
     auto numRead = socket_->read(buf_, toRead);
     if (numRead != toRead) {
@@ -832,24 +838,27 @@ SenderState SenderThread::processAbortCmd() {
         WTLOG(ERROR) << "Error while trying to read ABORT cmd " << numRead << " " << toRead;
         return END;
     }
+
+    //解码AbortCmd信息
     int64_t offset = 0;
     int32_t negotiatedProtocol;
     ErrorCode remoteError;
     int64_t checkpoint;
     Protocol::decodeAbort(buf_, offset, bufSize_, negotiatedProtocol, remoteError, checkpoint);
+
     threadStats_.setRemoteErrorCode(remoteError);
     std::string failedFileName = transferHistory.getSourceId(checkpoint);
     WTLOG(WARNING) << "Received abort on " << " remote protocol version " << negotiatedProtocol 
         << " remote error code " << errorCodeToStr(remoteError) << " file " << failedFileName << " checkpoint " << checkpoint;
     wdtParent_->abort(remoteError);
+
     if (remoteError == VERSION_MISMATCH) {
-        if (Protocol::negotiateProtocol( negotiatedProtocol, threadProtocolVersion_) == negotiatedProtocol) {
+        if (Protocol::negotiateProtocol(negotiatedProtocol, threadProtocolVersion_) == negotiatedProtocol) {
             // sender can support this negotiated version
             negotiatedProtocol_ = negotiatedProtocol;
             return PROCESS_VERSION_MISMATCH;
         } else {
-            WTLOG(ERROR) << "Sender can not support receiver version "
-                << negotiatedProtocol;
+            WTLOG(ERROR) << "Sender can not support receiver version " << negotiatedProtocol;
             threadStats_.setRemoteErrorCode(VERSION_INCOMPATIBLE);
         }
     }
@@ -867,8 +876,7 @@ SenderState SenderThread::processVersionMismatch() {
         return END;
     }
     WDT_CHECK_EQ(negotiationStatus, V_MISMATCH_WAIT);
-    // Need a barrier here to make sure all the negotiated protocol versions
-    // have been collected
+    // Need a barrier here to make sure all the negotiated protocol versions have been collected
     auto barrier = controller_->getBarrier(VERSION_MISMATCH_BARRIER);
     barrier->execute();
     WTVLOG(1) << "cleared the protocol version barrier";
@@ -877,38 +885,36 @@ SenderState SenderThread::processVersionMismatch() {
         auto status = execFunnel->getStatus();
         switch (status) {
             case FUNNEL_START: {
-                                   WTLOG(INFO) << "started the funnel for version mismatch";
-                                   wdtParent_->setProtoNegotiationStatus(V_MISMATCH_FAILED);
-                                   if (transferHistoryController_->handleVersionMismatch() != OK) {
-                                       execFunnel->notifySuccess();
-                                       return END;
-                                   }
-                                   int negotiatedProtocol = 0;
-                                   for (int threadProtocolVersion : wdtParent_->getNegotiatedProtocols()) {
-                                       if (threadProtocolVersion > 0) {
-                                           if (negotiatedProtocol > 0 &&
-                                                   negotiatedProtocol != threadProtocolVersion) {
-                                               WTLOG(ERROR)
-                                                   << "Different threads negotiated different protocols "
-                                                   << negotiatedProtocol << " " << threadProtocolVersion;
-                                               execFunnel->notifySuccess();
-                                               return END;
-                                           }
-                                           negotiatedProtocol = threadProtocolVersion;
-                                       }
-                                   }
-                                   WDT_CHECK_GT(negotiatedProtocol, 0);
-                                   WLOG_IF(INFO, negotiatedProtocol != threadProtocolVersion_)
-                                       << *this << " Changing protocol version to " << negotiatedProtocol
-                                       << ", previous version " << threadProtocolVersion_;
-                                   wdtParent_->setProtocolVersion(negotiatedProtocol);
-                                   threadProtocolVersion_ = wdtParent_->getProtocolVersion();
-                                   setFooterType();
-                                   threadStats_.setRemoteErrorCode(OK);
-                                   wdtParent_->setProtoNegotiationStatus(V_MISMATCH_RESOLVED);
-                                   wdtParent_->clearAbort();
-                                   execFunnel->notifySuccess();
-                                   return CONNECT;
+               WTLOG(INFO) << "started the funnel for version mismatch";
+               wdtParent_->setProtoNegotiationStatus(V_MISMATCH_FAILED);
+               if (transferHistoryController_->handleVersionMismatch() != OK) {
+                   execFunnel->notifySuccess();
+                   return END;
+               }
+
+               int negotiatedProtocol = 0;
+               for (int threadProtocolVersion : wdtParent_->getNegotiatedProtocols()) {
+                   if (threadProtocolVersion > 0) {
+                       if (negotiatedProtocol > 0 && negotiatedProtocol != threadProtocolVersion) {
+                           WTLOG(ERROR) << "Different threads negotiated different protocols " << negotiatedProtocol << " " << threadProtocolVersion;
+                           execFunnel->notifySuccess();
+                           return END;
+                       }
+                       negotiatedProtocol = threadProtocolVersion;
+                   }
+               }
+               WDT_CHECK_GT(negotiatedProtocol, 0);
+               WLOG_IF(INFO, negotiatedProtocol != threadProtocolVersion_)
+                   << *this << " Changing protocol version to " << negotiatedProtocol
+                   << ", previous version " << threadProtocolVersion_;
+               wdtParent_->setProtocolVersion(negotiatedProtocol);
+               threadProtocolVersion_ = wdtParent_->getProtocolVersion();
+               setFooterType();
+               threadStats_.setRemoteErrorCode(OK);
+               wdtParent_->setProtoNegotiationStatus(V_MISMATCH_RESOLVED);
+               wdtParent_->clearAbort();
+               execFunnel->notifySuccess();
+               return CONNECT;
                                }
             case FUNNEL_PROGRESS: {
                                       execFunnel->wait();

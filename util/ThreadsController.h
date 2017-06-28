@@ -84,36 +84,35 @@ private:
  * wait, notify etc using this primitive
  */
 class ConditionGuardImpl {
- public:
-  /// Release the lock and wait for the timeout
-  /// After the wait is over, lock is reacquired
-  void wait(int timeoutMillis, const ThreadCtx &threadCtx);
-  /// Notify all the threads waiting on the lock
-  void notifyAll();
-  /// Notify one thread waiting on the lock
-  void notifyOne();
-  /// Delete the copy constructor
-  ConditionGuardImpl(const ConditionGuardImpl &that) = delete;
-  /// Delete the copy assignment operator
-  ConditionGuardImpl &operator=(const ConditionGuardImpl &that) = delete;
-  /// Move constructor for the guard
-  ConditionGuardImpl(ConditionGuardImpl &&that) noexcept;
-  /// Move assignment operator deleted
-  ConditionGuardImpl &operator=(ConditionGuardImpl &&that) = delete;
-  /// Destructor that releases the lock, you would explicitly
-  /// need to notify any other threads waiting in the wait()
-  ~ConditionGuardImpl();
+public:
+    /// Release the lock and wait for the timeout
+    /// After the wait is over, lock is reacquired
+    void wait(int timeoutMillis, const ThreadCtx &threadCtx);
+    /// Notify all the threads waiting on the lock
+    void notifyAll();
+    /// Notify one thread waiting on the lock
+    void notifyOne();
+    /// Delete the copy constructor
+    ConditionGuardImpl(const ConditionGuardImpl &that) = delete;
+    /// Delete the copy assignment operator
+    ConditionGuardImpl &operator=(const ConditionGuardImpl &that) = delete;
+    /// Move constructor for the guard
+    ConditionGuardImpl(ConditionGuardImpl &&that) noexcept;
+    /// Move assignment operator deleted
+    ConditionGuardImpl &operator=(ConditionGuardImpl &&that) = delete;
+    /// Destructor that releases the lock, you would explicitly
+    /// need to notify any other threads waiting in the wait()
+    ~ConditionGuardImpl();
 
  protected:
-  friend class ConditionGuard;
-  friend class Funnel;
-  /// Constructor that takes the shared mutex and condition
-  /// variable
-  ConditionGuardImpl(std::mutex &mutex, std::condition_variable &cv);
-  /// Instance of lock is made on construction with the specified mutex
-  std::unique_lock<std::mutex> *lock_{nullptr};
-  /// Shared condition variable
-  std::condition_variable &cv_;
+    friend class ConditionGuard;
+    friend class Funnel;
+    /// Constructor that takes the shared mutex and condition variable
+    ConditionGuardImpl(std::mutex &mutex, std::condition_variable &cv);
+    /// Instance of lock is made on construction with the specified mutex
+    std::unique_lock<std::mutex> *lock_{nullptr};
+    /// Shared condition variable
+    std::condition_variable &cv_;
 };
 
 /**
@@ -186,8 +185,7 @@ private:
     /// Number of threads entered the execute
     int64_t numHits_{0};
 
-    /// Total number of threads that are supposed
-    /// to hit the barrier
+    /// Total number of threads that are supposed to hit the barrier
     int numThreads_{0};
 
     /// Thread synchronization mutex
@@ -212,48 +210,48 @@ enum FunnelStatus { FUNNEL_START, FUNNEL_PROGRESS, FUNNEL_END };
  * while other entering threads wait (while executing a function)
  */
 class Funnel {
- public:
-  /// Deleted copy constructor
-  Funnel(const Funnel &that) = delete;
+public:
+    /// Deleted copy constructor
+    Funnel(const Funnel &that) = delete;
 
-  /// Default constructor for funnel
-  Funnel() {
-    status_ = FUNNEL_START;
-  }
+    /// Default constructor for funnel
+    Funnel() {
+        status_ = FUNNEL_START;
+    }
 
-  /// Deleted assignment operator
-  Funnel &operator=(const Funnel &that) = delete;
+    /// Deleted assignment operator
+    Funnel &operator=(const Funnel &that) = delete;
 
-  /**
-   * Get the current status of funnel.
-   * If the status is FUNNEL_START it gets set
-   * to FUNNEL_PROGRESS else it is just a get
-   */
-  FunnelStatus getStatus();
+    /**
+     * Get the current status of funnel.
+     * If the status is FUNNEL_START it gets set
+     * to FUNNEL_PROGRESS else it is just a get
+     */
+    FunnelStatus getStatus();
 
-  /// Threads in progress can wait indefinitely
-  void wait();
+    /// Threads in progress can wait indefinitely
+    void wait();
 
-  /// Threads that get status as progress execute this function
-  void wait(int32_t waitingTime, const ThreadCtx &threadCtx);
+    /// Threads that get status as progress execute this function
+    void wait(int32_t waitingTime, const ThreadCtx &threadCtx);
 
-  /**
-   * The first thread that was able to start the funnel
-   * calls this method on successful execution
-   */
-  void notifySuccess();
+    /**
+     * The first thread that was able to start the funnel
+     * calls this method on successful execution
+     */
+    void notifySuccess();
 
-  /// The first thread that was able to start the funnel
-  /// calls this method on failure in execution
-  void notifyFail();
+    /// The first thread that was able to start the funnel
+    /// calls this method on failure in execution
+    void notifyFail();
 
- private:
-  /// Status of the funnel
-  FunnelStatus status_;
-  /// Mutex for the simple funnel executor
-  std::mutex mutex_;
-  /// Condition variable on which progressing threads wait
-  std::condition_variable cv_;
+private:
+    /// Status of the funnel
+    FunnelStatus status_;
+    /// Mutex for the simple funnel executor
+    std::mutex mutex_;
+    /// Condition variable on which progressing threads wait
+    std::condition_variable cv_;
 };
 
 /**

@@ -95,64 +95,69 @@ void FileByteSource::advanceOffset(int64_t numBytes) {
 }
 
 char *FileByteSource::read(int64_t &size) {
-  size = 0;
-  if (hasError() || finished()) {
-    return nullptr;
-  }
-  const Buffer *buffer = threadCtx_->getBuffer();
-  int64_t offsetRemainder = 0;
-  if (alignedReadNeeded_) {
-    offsetRemainder = (offset_ + bytesRead_) % kDiskBlockSize;
-  }
-  int64_t logicalRead = (int64_t)std::min<int64_t>(
-      buffer->getSize() - offsetRemainder, size_ - bytesRead_);
-  int64_t physicalRead = logicalRead;
-  if (alignedReadNeeded_) {
-    physicalRead = ((logicalRead + offsetRemainder + kDiskBlockSize - 1) /
-                    kDiskBlockSize) *
-                   kDiskBlockSize;
-  }
-  const int64_t seekPos = (offset_ + bytesRead_) - offsetRemainder;
-  int numRead;
-  {
-    PerfStatCollector statCollector(*threadCtx_, PerfStatReport::FILE_READ);
-    numRead = ::pread(fd_, buffer->getData(), physicalRead, seekPos);
-  }
-  if (numRead < 0) {
-    WPLOG(ERROR) << "Failure while reading file " << metadata_->fullPath
-                 << " need align " << alignedReadNeeded_ << " physicalRead "
-                 << physicalRead << " offset " << offset_ << " seepPos "
-                 << seekPos << " offsetRemainder " << offsetRemainder
-                 << " bytesRead " << bytesRead_;
-    this->close();
-    transferStats_.setLocalErrorCode(BYTE_SOURCE_READ_ERROR);
-    return nullptr;
-  }
-  if (numRead == 0) {
-    WLOG(ERROR) << "Unexpected EOF on " << metadata_->fullPath << " need align "
-                << alignedReadNeeded_ << " physicalRead " << physicalRead
-                << " offset " << offset_ << " seepPos " << seekPos
-                << " offsetRemainder " << offsetRemainder << " bytesRead "
-                << bytesRead_;
-    this->close();
-    return nullptr;
-  }
-  // Can only happen in case of O_DIRECT and when
-  // we are trying to read the last chunk of file
-  // or we are reading in multiples of disk block size
-  // from a sub block of the file smaller than disk block
-  // size
-  size = numRead - offsetRemainder;
-  if (size > logicalRead) {
-    WDT_CHECK(alignedReadNeeded_);
-    size = logicalRead;
-  }
-  bytesRead_ += size;
-  WVLOG(1) << "Size " << size << " need align " << alignedReadNeeded_
-           << " physicalRead " << physicalRead << " offset " << offset_
-           << " seepPos " << seekPos << " offsetRemainder " << offsetRemainder
-           << " bytesRead " << bytesRead_;
-  return buffer->getData() + offsetRemainder;
+    size = 0;
+    if (hasError() || finished()) {
+        return nullptr;
+    }
+
+    const Buffer *buffer = threadCtx_->getBuffer();
+    int64_t offsetRemainder = 0;
+    if (alignedReadNeeded_) {
+        offsetRemainder = (offset_ + bytesRead_) % kDiskBlockSize;
+    }
+
+    int64_t logicalRead = (int64_t)std::min<int64_t>( buffer->getSize() - offsetRemainder, size_ - bytesRead_);
+    int64_t physicalRead = logicalRead;
+
+    if (alignedReadNeeded_) {
+        physicalRead = ((logicalRead + offsetRemainder + kDiskBlockSize - 1) / kDiskBlockSize) * kDiskBlockSize;
+    }
+
+    const int64_t seekPos = (offset_ + bytesRead_) - offsetRemainder;
+    int numRead;
+
+    {
+        PerfStatCollector statCollector(*threadCtx_, PerfStatReport::FILE_READ);
+        numRead = ::pread(fd_, buffer->getData(), physicalRead, seekPos);
+    }
+
+    if (numRead < 0) {
+        WPLOG(ERROR) << "Failure while reading file " << metadata_->fullPath
+            << " need align " << alignedReadNeeded_ << " physicalRead "
+            << physicalRead << " offset " << offset_ << " seepPos "
+            << seekPos << " offsetRemainder " << offsetRemainder
+            << " bytesRead " << bytesRead_;
+        this->close();
+        transferStats_.setLocalErrorCode(BYTE_SOURCE_READ_ERROR);
+        return nullptr;
+    }
+
+    if (numRead == 0) {
+        WLOG(ERROR) << "Unexpected EOF on " << metadata_->fullPath << " need align "
+            << alignedReadNeeded_ << " physicalRead " << physicalRead
+            << " offset " << offset_ << " seepPos " << seekPos
+            << " offsetRemainder " << offsetRemainder << " bytesRead "
+            << bytesRead_;
+        this->close();
+        return nullptr;
+    }
+
+    // Can only happen in case of O_DIRECT and when
+    // we are trying to read the last chunk of file
+    // or we are reading in multiples of disk block size
+    // from a sub block of the file smaller than disk block
+    // size
+    size = numRead - offsetRemainder;
+    if (size > logicalRead) {
+        WDT_CHECK(alignedReadNeeded_);
+        size = logicalRead;
+    }
+    bytesRead_ += size;
+    WVLOG(1) << "Size " << size << " need align " << alignedReadNeeded_
+        << " physicalRead " << physicalRead << " offset " << offset_
+        << " seepPos " << seekPos << " offsetRemainder " << offsetRemainder
+        << " bytesRead " << bytesRead_;
+    return buffer->getData() + offsetRemainder;
 }
 
 void FileByteSource::clearPageCache() {
@@ -175,16 +180,16 @@ void FileByteSource::clearPageCache() {
 }
 
 void FileByteSource::close() {
-  clearPageCache();
-  if (metadata_->fd >= 0) {
-    // if the fd is not opened by this source, no need to close it
-    WVLOG(1) << "No need to close " << getIdentifier() << ", this was not opened by FileByteSource";
-  } else if (fd_ >= 0) {
-    PerfStatCollector statCollector(*threadCtx_, PerfStatReport::FILE_CLOSE);
-    ::close(fd_);
-  }
-  fd_ = -1;
-  threadCtx_ = nullptr;
+    clearPageCache();
+    if (metadata_->fd >= 0) {
+        // if the fd is not opened by this source, no need to close it
+        WVLOG(1) << "No need to close " << getIdentifier() << ", this was not opened by FileByteSource";
+    } else if (fd_ >= 0) {
+        PerfStatCollector statCollector(*threadCtx_, PerfStatReport::FILE_CLOSE);
+        ::close(fd_);
+    }
+    fd_ = -1;
+    threadCtx_ = nullptr;
 }
 }
 }

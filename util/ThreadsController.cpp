@@ -15,125 +15,126 @@ namespace facebook {
 namespace wdt {
 
 void ConditionGuardImpl::wait(int timeoutMillis, const ThreadCtx &threadCtx) {
-  const WdtOptions &options = threadCtx.getOptions();
-  const bool checkAbort = (options.abort_check_interval_millis > 0);
-  int remainingTime = timeoutMillis;
+    const WdtOptions &options = threadCtx.getOptions();
+    const bool checkAbort = (options.abort_check_interval_millis > 0);
+    int remainingTime = timeoutMillis;
 
-  while (remainingTime > 0) {
-    int waitTime = remainingTime;
-    if (checkAbort) {
-      waitTime = std::min(waitTime, options.abort_check_interval_millis);
+    while (remainingTime > 0) {
+        int waitTime = remainingTime;
+        if (checkAbort) {
+            waitTime = std::min(waitTime, options.abort_check_interval_millis);
+        }
+        auto waitingTime = chrono::milliseconds(waitTime);
+        auto status = cv_.wait_for(*lock_, waitingTime);
+        if (status == std::cv_status::no_timeout) {
+            return;
+        }
+        // check for abort
+        if (threadCtx.getAbortChecker()->shouldAbort()) {
+            WLOG(ERROR) << "Transfer aborted during condition guard wait " << threadCtx.getThreadIndex();
+            return;
+        }
+        remainingTime -= waitTime;
     }
-    auto waitingTime = chrono::milliseconds(waitTime);
-    auto status = cv_.wait_for(*lock_, waitingTime);
-    if (status == std::cv_status::no_timeout) {
-      return;
-    }
-    // check for abort
-    if (threadCtx.getAbortChecker()->shouldAbort()) {
-      WLOG(ERROR) << "Transfer aborted during condition guard wait "
-                  << threadCtx.getThreadIndex();
-      return;
-    }
-    remainingTime -= waitTime;
-  }
 }
 
 void ConditionGuardImpl::notifyAll() {
-  cv_.notify_all();
+    cv_.notify_all();
 }
 
 void ConditionGuardImpl::notifyOne() {
-  cv_.notify_one();
+    cv_.notify_one();
 }
 
 ConditionGuardImpl::~ConditionGuardImpl() {
-  if (lock_ != nullptr) {
-    delete lock_;
-  }
+    if (lock_ != nullptr) {
+        delete lock_;
+    }
 }
 
-ConditionGuardImpl::ConditionGuardImpl(mutex &guardMutex,
-                                       condition_variable &cv)
+ConditionGuardImpl::ConditionGuardImpl(mutex &guardMutex, condition_variable &cv)
     : cv_(cv) {
-  lock_ = new unique_lock<mutex>(guardMutex);
+    lock_ = new unique_lock<mutex>(guardMutex);
 }
 
 ConditionGuardImpl::ConditionGuardImpl(ConditionGuardImpl &&that) noexcept
     : cv_(that.cv_) {
-  swap(lock_, that.lock_);
+    swap(lock_, that.lock_);
 }
 
 ConditionGuardImpl ConditionGuard::acquire() {
-  return ConditionGuardImpl(mutex_, cv_);
+    return ConditionGuardImpl(mutex_, cv_);
 }
 
 FunnelStatus Funnel::getStatus() {
-  unique_lock<mutex> lock(mutex_);
-  if (status_ == FUNNEL_START) {
-    status_ = FUNNEL_PROGRESS;
-    return FUNNEL_START;
-  }
-  return status_;
+    unique_lock<mutex> lock(mutex_);
+    if (status_ == FUNNEL_START) {
+        status_ = FUNNEL_PROGRESS;
+        return FUNNEL_START;
+    }
+    return status_;
 }
 
 void Funnel::wait() {
-  unique_lock<mutex> lock(mutex_);
-  if (status_ != FUNNEL_PROGRESS) {
-    return;
-  }
-  cv_.wait(lock);
+    unique_lock<mutex> lock(mutex_);
+    if (status_ != FUNNEL_PROGRESS) {
+        return;
+    }
+    cv_.wait(lock);
 }
 
 void Funnel::wait(int32_t waitingTime, const ThreadCtx &threadCtx) {
-  ConditionGuardImpl guard(mutex_, cv_);
-  if (status_ != FUNNEL_PROGRESS) {
-    return;
-  }
-  guard.wait(waitingTime, threadCtx);
+    ConditionGuardImpl guard(mutex_, cv_);
+    if (status_ != FUNNEL_PROGRESS) {
+        return;
+    }
+    guard.wait(waitingTime, threadCtx);
 }
 
 void Funnel::notifySuccess() {
-  unique_lock<mutex> lock(mutex_);
-  status_ = FUNNEL_END;
-  cv_.notify_all();
+    unique_lock<mutex> lock(mutex_);
+    status_ = FUNNEL_END;
+    cv_.notify_all();
 }
 
 void Funnel::notifyFail() {
-  unique_lock<mutex> lock(mutex_);
-  status_ = FUNNEL_START;
-  cv_.notify_one();
+    unique_lock<mutex> lock(mutex_);
+    status_ = FUNNEL_START;
+    cv_.notify_one();
 }
 
 bool Barrier::checkForFinish() {
-  // lock should be held while calling this method
-  WDT_CHECK_GE(numThreads_, numHits_);
-  if (numHits_ == numThreads_) {
-    isComplete_ = true;
-    cv_.notify_all();
-  }
-  return isComplete_;
+    // lock should be held while calling this method
+    WDT_CHECK_GE(numThreads_, numHits_);
+
+    if (numHits_ == numThreads_) {
+        isComplete_ = true;
+        cv_.notify_all();
+    }
+    return isComplete_;
 }
 
 void Barrier::execute() {
-  unique_lock<mutex> lock(mutex_);
-  WDT_CHECK(!isComplete_) << "Hitting the barrier after completion";
-  ++numHits_;
-  if (checkForFinish()) {
-    return;
-  }
-  while (!isComplete_) {
-    cv_.wait(lock);
-  }
+    unique_lock<mutex> lock(mutex_);
+    WDT_CHECK(!isComplete_) << "Hitting the barrier after completion";
+    ++numHits_;
+
+    if (checkForFinish()) {
+        return;
+    }
+
+    while (!isComplete_) {
+        cv_.wait(lock);
+    }
 }
 
 void Barrier::deRegister() {
-  unique_lock<mutex> lock(mutex_);
-  if (isComplete_) {
-    return;
-  }
-  --numThreads_;
-  checkForFinish();
+    unique_lock<mutex> lock(mutex_);
+    if (isComplete_) {
+        return;
+    }
+    --numThreads_;
+    checkForFinish();
 }
 
 ThreadsController::ThreadsController(int totalThreads) {
@@ -155,15 +156,15 @@ void ThreadsController::registerThread(int threadIndex) {
 }
 
 void ThreadsController::deRegisterThread(int threadIndex) {
-  GuardLock lock(controllerMutex_);
-  auto it = threadStateMap_.find(threadIndex);
-  WDT_CHECK(it != threadStateMap_.end());
-  threadStateMap_[threadIndex] = FINISHED;
-  // Notify all the barriers
-  for (auto barrier : barriers_) {
-    WDT_CHECK(barrier != nullptr);
-    barrier->deRegister();
-  }
+    GuardLock lock(controllerMutex_);
+    auto it = threadStateMap_.find(threadIndex);
+    WDT_CHECK(it != threadStateMap_.end());
+    threadStateMap_[threadIndex] = FINISHED;
+    // Notify all the barriers
+    for (auto barrier : barriers_) {
+        WDT_CHECK(barrier != nullptr);
+        barrier->deRegister();
+    }
 }
 
 ThreadStatus ThreadsController::getState(int threadIndex) {
@@ -215,10 +216,8 @@ shared_ptr<ConditionGuard> ThreadsController::getCondition( const uint64_t condi
 }
 
 shared_ptr<Barrier> ThreadsController::getBarrier(const uint64_t barrierIndex) {
-  bool isExists =
-      (barriers_.size() > barrierIndex) && (barriers_[barrierIndex] != nullptr);
-  WDT_CHECK(isExists)
-      << "Requesting for a barrier that doesn't exist. Request index : "
+  bool isExists = (barriers_.size() > barrierIndex) && (barriers_[barrierIndex] != nullptr);
+  WDT_CHECK(isExists) << "Requesting for a barrier that doesn't exist. Request index : " 
       << barrierIndex << ", num barriers " << barriers_.size();
   return barriers_[barrierIndex];
 }
@@ -255,10 +254,10 @@ void ThreadsController::setNumBarriers(int numBarriers) {
 }
 
 void ThreadsController::setNumConditions(int numConditions) {
-  conditionGuards_.clear();
-  for (int i = 0; i < numConditions; i++) {
-    conditionGuards_.push_back(make_shared<ConditionGuard>());
-  }
+    conditionGuards_.clear();
+    for (int i = 0; i < numConditions; i++) {
+        conditionGuards_.push_back(make_shared<ConditionGuard>());
+    }
 }
 
 void ThreadsController::setNumFunnels(int numFunnels) {

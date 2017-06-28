@@ -146,7 +146,7 @@ bool encodeInt16FixedLength(char *dest, int64_t sz, int64_t &off, int16_t val) {
 }
 
 bool encodeInt32FixedLength(char *dest, int64_t sz, int64_t &off, int32_t val) {
-  return encodeIntFixedLength<int32_t>(dest, sz, off, val);
+    return encodeIntFixedLength<int32_t>(dest, sz, off, val);
 }
 
 bool encodeInt64FixedLength(char *dest, int64_t sz, int64_t &off, int64_t val) {

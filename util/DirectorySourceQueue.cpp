@@ -196,8 +196,8 @@ bool DirectorySourceQueue::buildQueueSynchronously() {
     }
 
     bool res = false;
-    // either traverse directory or we already have a fixed set of candidate
-    // files
+
+    // either traverse directory or we already have a fixed set of candidate files
     if (exploreDirectory_) {
         res = explore();
     } else {
@@ -597,6 +597,7 @@ const PerfStatReport &DirectorySourceQueue::getPerfReport() const {
     return threadCtx_->getPerfReport();
 }
 
+// total number of blocks and status of the transfer
 std::pair<int64_t, ErrorCode> DirectorySourceQueue::getNumBlocksAndStatus() const {
     std::lock_guard<std::mutex> lock(mutex_);
     ErrorCode status = OK;
@@ -668,6 +669,7 @@ void DirectorySourceQueue::enqueueFilesToBeDeleted() {
 
 std::unique_ptr<ByteSource> DirectorySourceQueue::getNextSource(ThreadCtx *callerThreadCtx, ErrorCode &status) {
     std::unique_ptr<ByteSource> source;
+
     while (true) {
         std::unique_lock<std::mutex> lock(mutex_);
         while (sourceQueue_.empty() && !initFinished_) {
@@ -703,8 +705,7 @@ std::unique_ptr<ByteSource> DirectorySourceQueue::getNextSource(ThreadCtx *calle
         }
 
         source->close();
-        // we need to lock again as we will be adding element to failedSourceStats
-        // vector
+        // we need to lock again as we will be adding element to failedSourceStats vector
         lock.lock();
         failedSourceStats_.emplace_back(std::move(source->getTransferStats()));
     }

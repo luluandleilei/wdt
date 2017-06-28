@@ -228,8 +228,7 @@ ReceiverState ReceiverThread::sendLocalCheckpoint() {
   int64_t off = 0;
   const int checkpointLen =
       Protocol::getMaxLocalCheckpointLength(threadProtocolVersion_);
-  Protocol::encodeCheckpoints(threadProtocolVersion_, buf_, off, checkpointLen,
-                              checkpoints);
+  Protocol::encodeCheckpoints(threadProtocolVersion_, buf_, off, checkpointLen, checkpoints);
   int written = socket_->write(buf_, checkpointLen);
   if (written != checkpointLen) {
     WTLOG(ERROR) << "unable to write local checkpoint. write mismatch "
@@ -278,6 +277,7 @@ ReceiverState ReceiverThread::processSettingsCmd() {
     Settings settings;
     int senderProtocolVersion;
 
+    //获取sender协议版本号
     bool success = Protocol::decodeVersion(buf_, off_, oldOffset_ + Protocol::kMaxVersion, senderProtocolVersion);
     if (!success) {
         WTLOG(ERROR) << "Unable to decode version " << threadIndex_;
@@ -285,6 +285,7 @@ ReceiverState ReceiverThread::processSettingsCmd() {
         return FINISH_WITH_ERROR;
     }
 
+    //版本号协商
     if (senderProtocolVersion != threadProtocolVersion_) {
         WTLOG(WARNING) << "Receiver and sender protocol version mismatch " << senderProtocolVersion << " " << threadProtocolVersion_;
         int negotiatedProtocol = Protocol::negotiateProtocol(senderProtocolVersion, threadProtocolVersion_);
@@ -306,6 +307,7 @@ ReceiverState ReceiverThread::processSettingsCmd() {
         socket_->disableIvChange();
     }
 
+    //获取Sender配置
     success = Protocol::decodeSettings(threadProtocolVersion_, buf_, off_, oldOffset_ + Protocol::kMaxVersion + Protocol::kMaxSettings, settings);
     if (!success) {
         WTLOG(ERROR) << "Unable to decode settings cmd ";
@@ -654,6 +656,7 @@ void ReceiverThread::markReceivedBlocksVerified() {
 
 ReceiverState ReceiverThread::processDoneCmd() {
     WTVLOG(1) << "entered PROCESS_DONE_CMD state";
+
     if (numRead_ != Protocol::kMinBufLength) {
         WTLOG(ERROR) << "Unexpected state for done command" << " off_: " << off_ << " numRead_: " << numRead_;
         threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
@@ -917,12 +920,11 @@ ReceiverState ReceiverThread::waitForFinishOrNewCheckpoint() {
       auto guard = cv->acquire();
       auto state = checkForFinishOrNewCheckpoints();
       if (state != WAIT_FOR_FINISH_OR_NEW_CHECKPOINT) {
-        guard.notifyOne();
-        return state;
+          guard.notifyOne();
+          return state;
       }
       {
-        PerfStatCollector statCollector(*threadCtx_,
-                                        PerfStatReport::RECEIVER_WAIT_SLEEP);
+        PerfStatCollector statCollector(*threadCtx_, PerfStatReport::RECEIVER_WAIT_SLEEP);
         guard.wait(timeoutMillis, *threadCtx_);
       }
       state = checkForFinishOrNewCheckpoints();
