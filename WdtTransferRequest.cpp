@@ -418,37 +418,35 @@ string WdtTransferRequest::getLogSafeString() const {
   return generateUrlInternal(true, true);
 }
 
-string WdtTransferRequest::generateUrlInternal(bool genFull,
-                                               bool forLogging) const {
-  if (errorCode != OK) {
-    const string msg = errorCodeToStr(errorCode);
-    WLOG(ERROR) << "Transfer request has " << msg;
-    return msg;
-  }
-  WdtUri wdtUri;
-  wdtUri.setHostName(hostName);
-  wdtUri.setQueryParam(TRANSFER_ID_PARAM, transferId);
-  wdtUri.setQueryParam(NAMESPACE_PARAM, wdtNamespace);
-  wdtUri.setQueryParam(DEST_IDENTIFIER_PARAM, destIdentifier);
-  wdtUri.setQueryParam(RECEIVER_PROTOCOL_VERSION_PARAM,
-                       folly::to<string>(protocolVersion));
-  wdtUri.setQueryParam(IV_CHANGE_INTERVAL_PARAM,
-                       folly::to<string>(ivChangeInterval));
-  if (downloadResumptionEnabled) {
-    wdtUri.setQueryParam(DOWNLOAD_RESUMPTION_PARAM,
-                         folly::to<string>(downloadResumptionEnabled));
-  }
-  serializePorts(wdtUri);
-  if (genFull) {
-    wdtUri.setQueryParam(DIRECTORY_PARAM, directory);
-  }
-  if (encryptionData.isSet()) {
-    WVLOG(1) << "Encryption data is set " << encryptionData.getLogSafeString();
-    wdtUri.setQueryParam(ENCRYPTION_PARAM,
-                         forLogging ? encryptionData.getLogSafeString()
-                                    : encryptionData.getUrlSafeString());
-  }
-  return wdtUri.generateUrl();
+string WdtTransferRequest::generateUrlInternal(bool genFull, bool forLogging) const {
+    if (errorCode != OK) {
+        const string msg = errorCodeToStr(errorCode);
+        WLOG(ERROR) << "Transfer request has " << msg;
+        return msg;
+    }
+
+    WdtUri wdtUri;
+    wdtUri.setHostName(hostName);
+    wdtUri.setQueryParam(TRANSFER_ID_PARAM, transferId);
+    wdtUri.setQueryParam(NAMESPACE_PARAM, wdtNamespace);
+    wdtUri.setQueryParam(DEST_IDENTIFIER_PARAM, destIdentifier);
+    wdtUri.setQueryParam(RECEIVER_PROTOCOL_VERSION_PARAM, folly::to<string>(protocolVersion));
+    wdtUri.setQueryParam(IV_CHANGE_INTERVAL_PARAM, folly::to<string>(ivChangeInterval));
+
+    if (downloadResumptionEnabled) {
+        wdtUri.setQueryParam(DOWNLOAD_RESUMPTION_PARAM, folly::to<string>(downloadResumptionEnabled));
+    }
+
+    serializePorts(wdtUri);
+    if (genFull) {
+        wdtUri.setQueryParam(DIRECTORY_PARAM, directory);
+    }
+
+    if (encryptionData.isSet()) {
+        WVLOG(1) << "Encryption data is set " << encryptionData.getLogSafeString();
+        wdtUri.setQueryParam(ENCRYPTION_PARAM, forLogging ? encryptionData.getLogSafeString() : encryptionData.getUrlSafeString());
+    }
+    return wdtUri.generateUrl();
 }
 
 void WdtTransferRequest::serializePorts(WdtUri& wdtUri) const {
@@ -487,16 +485,16 @@ string WdtTransferRequest::getSerializedPortsList() const {
 }
 
 bool WdtTransferRequest::operator==(const WdtTransferRequest& that) const {
-  bool result = (transferId == that.transferId) &&
-                (protocolVersion == that.protocolVersion) &&
-                (directory == that.directory) && (hostName == that.hostName) &&
-                (ports == that.ports) &&
-                (encryptionData == that.encryptionData) &&
-                (destIdentifier == that.destIdentifier) &&
-                (wdtNamespace == that.wdtNamespace);
-  // No need to check the file info, simply checking whether two objects
-  // are same with respect to the wdt settings
-  return result;
+    bool result = (transferId == that.transferId) &&
+        (protocolVersion == that.protocolVersion) &&
+        (directory == that.directory) && (hostName == that.hostName) &&
+        (ports == that.ports) &&
+        (encryptionData == that.encryptionData) &&
+        (destIdentifier == that.destIdentifier) &&
+        (wdtNamespace == that.wdtNamespace);
+    // No need to check the file info, simply checking whether two objects
+    // are same with respect to the wdt settings
+    return result;
 }
 
 std::ostream& operator<<(std::ostream& os, const WdtTransferRequest& req) {

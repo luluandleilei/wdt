@@ -53,8 +53,7 @@ class WdtOptions {
    * @param userSpecifiedOptions options specified by user, this options are not
    *                             changed
    */
-  void modifyOptions(const std::string& optionType,
-                     const std::set<std::string>& userSpecifiedOptions);
+  void modifyOptions(const std::string& optionType, const std::set<std::string>& userSpecifiedOptions);
 
   /**
    * Use ipv6 while establishing connection.

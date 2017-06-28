@@ -227,12 +227,15 @@ EncryptionParams EncryptionParams::generateEncryptionParams(EncryptionType type)
     if (type == ENC_NONE) {
         return EncryptionParams();
     }
+
     WDT_CHECK(type > ENC_NONE && type < NUM_ENC_TYPES);
+
     uint8_t key[kAESBlockSize];
     if (RAND_bytes(key, kAESBlockSize) != 1) {
         WLOG(ERROR) << "RAND_bytes failed, unable to generate symmetric key";
         return EncryptionParams();
     }
+
     return EncryptionParams(type, std::string(key, key + kAESBlockSize));
 }
 

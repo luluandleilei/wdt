@@ -153,48 +153,48 @@ private:
  * call execute()
  */
 class Barrier {
- public:
-  /// Deleted copy constructor
-  Barrier(const Barrier &that) = delete;
+public:
+    /// Deleted copy constructor
+    Barrier(const Barrier &that) = delete;
 
-  /// Deleted assignment operator
-  Barrier &operator=(const Barrier &that) = delete;
+    /// Deleted assignment operator
+    Barrier &operator=(const Barrier &that) = delete;
 
-  /// Constructor which takes total number of threads
-  /// to be hit in order for the barrier to clear
-  explicit Barrier(int numThreads) {
-    numThreads_ = numThreads;
-    WVLOG(1) << "making barrier with " << numThreads;
-  }
+    /// Constructor which takes total number of threads
+    /// to be hit in order for the barrier to clear
+    explicit Barrier(int numThreads) {
+        numThreads_ = numThreads;
+        WVLOG(1) << "making barrier with " << numThreads;
+    }
 
-  /// Executes the main functionality of the barrier
-  void execute();
+    /// Executes the main functionality of the barrier
+    void execute();
 
-  /**
-   * Thread controller should call this method when one thread
-   * has been finished, since that thread will no longer be
-   * participating in the barrier
-   */
-  void deRegister();
+    /**
+     * Thread controller should call this method when one thread
+     * has been finished, since that thread will no longer be
+     * participating in the barrier
+     */
+    void deRegister();
 
- private:
-  /// Checks for finish, need to hold a lock to call this method
-  bool checkForFinish();
-  /// Condition variable that threads wait on
-  std::condition_variable cv_;
+private:
+    /// Checks for finish, need to hold a lock to call this method
+    bool checkForFinish();
+    /// Condition variable that threads wait on
+    std::condition_variable cv_;
 
-  /// Number of threads entered the execute
-  int64_t numHits_{0};
+    /// Number of threads entered the execute
+    int64_t numHits_{0};
 
-  /// Total number of threads that are supposed
-  /// to hit the barrier
-  int numThreads_{0};
+    /// Total number of threads that are supposed
+    /// to hit the barrier
+    int numThreads_{0};
 
-  /// Thread synchronization mutex
-  std::mutex mutex_;
+    /// Thread synchronization mutex
+    std::mutex mutex_;
 
-  /// Represents the completion of barrier
-  bool isComplete_{false};
+    /// Represents the completion of barrier
+    bool isComplete_{false};
 };
 
 /**

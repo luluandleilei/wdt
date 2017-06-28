@@ -284,6 +284,7 @@ ReceiverState ReceiverThread::processSettingsCmd() {
         threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
         return FINISH_WITH_ERROR;
     }
+
     if (senderProtocolVersion != threadProtocolVersion_) {
         WTLOG(WARNING) << "Receiver and sender protocol version mismatch " << senderProtocolVersion << " " << threadProtocolVersion_;
         int negotiatedProtocol = Protocol::negotiateProtocol(senderProtocolVersion, threadProtocolVersion_);
@@ -311,6 +312,7 @@ ReceiverState ReceiverThread::processSettingsCmd() {
         threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
         return FINISH_WITH_ERROR;
     }
+
     auto senderId = settings.transferId;
     auto transferId = wdtParent_->getTransferId();
     if (transferId != senderId) {
@@ -318,6 +320,7 @@ ReceiverState ReceiverThread::processSettingsCmd() {
         threadStats_.setLocalErrorCode(ID_MISMATCH);
         return SEND_ABORT_CMD;
     }
+
     senderReadTimeout_ = settings.readTimeoutMillis;
     senderWriteTimeout_ = settings.writeTimeoutMillis;
     isBlockMode_ = !settings.blockModeDisabled;
@@ -335,11 +338,11 @@ ReceiverState ReceiverThread::processSettingsCmd() {
     }
 
     if (settings.sendFileChunks) {
-        // We only move to SEND_FILE_CHUNKS state, if download resumption is enabled
-        // in the sender side
+        // We only move to SEND_FILE_CHUNKS state, if download resumption is enabled in the sender side
         numRead_ = off_ = 0;
         return SEND_FILE_CHUNKS;
     }
+
     auto msgLen = off_ - oldOffset_;
     numRead_ -= msgLen;
     return READ_NEXT_CMD;
@@ -877,6 +880,7 @@ ReceiverState ReceiverThread::finishWithError() {
     } else {
         socket_->closeNoCheck();
     }
+
     auto cv = controller_->getCondition(WAIT_FOR_FINISH_OR_CHECKPOINT_CV);
     auto guard = cv->acquire();
     wdtParent_->addCheckpoint(checkpoint_);

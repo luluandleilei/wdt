@@ -56,5 +56,6 @@ WdtThread::~WdtThread() {
         finish();
     }
 }
+
 }
 }

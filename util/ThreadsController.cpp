@@ -138,6 +138,7 @@ void Barrier::deRegister() {
 
 ThreadsController::ThreadsController(int totalThreads) {
     totalThreads_ = totalThreads;
+
     for (int threadNum = 0; threadNum < totalThreads; ++threadNum) {
         threadStateMap_[threadNum] = INIT;
     }
@@ -204,15 +205,13 @@ bool ThreadsController::hasThreads(int threadIndex, ThreadStatus threadState) {
   return false;
 }
 
-shared_ptr<ConditionGuard> ThreadsController::getCondition(
-    const uint64_t conditionIndex) {
-  bool isExists = (conditionGuards_.size() > conditionIndex) &&
-                  (conditionGuards_[conditionIndex] != nullptr);
-  WDT_CHECK(isExists)
-      << "Requesting for a condition wrapper that doesn't exist."
-      << " Request Index : " << conditionIndex
-      << ", num condition wrappers : " << conditionGuards_.size();
-  return conditionGuards_[conditionIndex];
+shared_ptr<ConditionGuard> ThreadsController::getCondition( const uint64_t conditionIndex) {
+    bool isExists = (conditionGuards_.size() > conditionIndex) && (conditionGuards_[conditionIndex] != nullptr);
+    WDT_CHECK(isExists)
+        << "Requesting for a condition wrapper that doesn't exist."
+        << " Request Index : " << conditionIndex
+        << ", num condition wrappers : " << conditionGuards_.size();
+    return conditionGuards_[conditionIndex];
 }
 
 shared_ptr<Barrier> ThreadsController::getBarrier(const uint64_t barrierIndex) {
@@ -234,25 +233,25 @@ shared_ptr<Funnel> ThreadsController::getFunnel(const uint64_t funnelIndex) {
 }
 
 void ThreadsController::reset() {
-  // Only used in the case of long running mode
-  setNumBarriers(barriers_.size());
-  setNumConditions(conditionGuards_.size());
-  setNumFunnels(funnelExecutors_.size());
-  execAtStart_->reset();
-  execAtEnd_->reset();
-  GuardLock lock(controllerMutex_);
-  // Restore threads back to initial state
-  for (auto &threadPair : threadStateMap_) {
-    threadPair.second = RUNNING;
-  }
+    // Only used in the case of long running mode
+    setNumBarriers(barriers_.size());
+    setNumConditions(conditionGuards_.size());
+    setNumFunnels(funnelExecutors_.size());
+    execAtStart_->reset();
+    execAtEnd_->reset();
+    GuardLock lock(controllerMutex_);
+    // Restore threads back to initial state
+    for (auto &threadPair : threadStateMap_) {
+        threadPair.second = RUNNING;
+    }
 }
 
 void ThreadsController::setNumBarriers(int numBarriers) {
-  // Meant to be called outside of threads
-  barriers_.clear();
-  for (int i = 0; i < numBarriers; i++) {
-    barriers_.push_back(make_shared<Barrier>(getTotalThreads()));
-  }
+    // Meant to be called outside of threads
+    barriers_.clear();
+    for (int i = 0; i < numBarriers; i++) {
+        barriers_.push_back(make_shared<Barrier>(getTotalThreads()));
+    }
 }
 
 void ThreadsController::setNumConditions(int numConditions) {

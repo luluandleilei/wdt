@@ -783,157 +783,151 @@ SenderState SenderThread::processWaitCmd() {
 }
 
 SenderState SenderThread::processErrCmd() {
-  WTLOG(INFO) << "entered PROCESS_ERR_CMD state";
-  // similar to DONE, global checkpoint cmd also verifies all the blocks
-  ThreadTransferHistory &transferHistory = getTransferHistory();
-  transferHistory.markAllAcknowledged();
-  int64_t toRead = sizeof(int16_t);
-  int64_t numRead = socket_->read(buf_, toRead);
-  if (numRead != toRead) {
-    WTLOG(ERROR) << "read unexpected " << toRead << " " << numRead;
-    threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
-    return CONNECT;
-  }
+    WTLOG(INFO) << "entered PROCESS_ERR_CMD state";
+    // similar to DONE, global checkpoint cmd also verifies all the blocks
+    ThreadTransferHistory &transferHistory = getTransferHistory();
+    transferHistory.markAllAcknowledged();
+    int64_t toRead = sizeof(int16_t);
+    int64_t numRead = socket_->read(buf_, toRead);
+    if (numRead != toRead) {
+        WTLOG(ERROR) << "read unexpected " << toRead << " " << numRead;
+        threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
+        return CONNECT;
+    }
 
-  int16_t checkpointsLen = folly::loadUnaligned<int16_t>(buf_);
-  checkpointsLen = folly::Endian::little(checkpointsLen);
-  char checkpointBuf[checkpointsLen];
-  numRead = socket_->read(checkpointBuf, checkpointsLen);
-  if (numRead != checkpointsLen) {
-    WTLOG(ERROR) << "read unexpected " << checkpointsLen << " " << numRead;
-    threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
-    return CONNECT;
-  }
+    int16_t checkpointsLen = folly::loadUnaligned<int16_t>(buf_);
+    checkpointsLen = folly::Endian::little(checkpointsLen);
+    char checkpointBuf[checkpointsLen];
+    numRead = socket_->read(checkpointBuf, checkpointsLen);
+    if (numRead != checkpointsLen) {
+        WTLOG(ERROR) << "read unexpected " << checkpointsLen << " " << numRead;
+        threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
+        return CONNECT;
+    }
 
-  std::vector<Checkpoint> checkpoints;
-  int64_t decodeOffset = 0;
-  if (!Protocol::decodeCheckpoints(threadProtocolVersion_, checkpointBuf,
-                                   decodeOffset, checkpointsLen, checkpoints)) {
-    WTLOG(ERROR) << "checkpoint decode failure "
-                 << folly::humanify(std::string(checkpointBuf, checkpointsLen));
-    threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
-    return END;
-  }
-  for (auto &checkpoint : checkpoints) {
-    WTLOG(INFO) << "Received global checkpoint " << checkpoint;
-    transferHistoryController_->handleGlobalCheckpoint(checkpoint);
-  }
-  return SEND_BLOCKS;
+    std::vector<Checkpoint> checkpoints;
+    int64_t decodeOffset = 0;
+    if (!Protocol::decodeCheckpoints(threadProtocolVersion_, checkpointBuf,
+                decodeOffset, checkpointsLen, checkpoints)) {
+        WTLOG(ERROR) << "checkpoint decode failure "
+            << folly::humanify(std::string(checkpointBuf, checkpointsLen));
+        threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
+        return END;
+    }
+    for (auto &checkpoint : checkpoints) {
+        WTLOG(INFO) << "Received global checkpoint " << checkpoint;
+        transferHistoryController_->handleGlobalCheckpoint(checkpoint);
+    }
+    return SEND_BLOCKS;
 }
 
 SenderState SenderThread::processAbortCmd() {
-  WTLOG(INFO) << "entered PROCESS_ABORT_CMD state ";
-  ThreadTransferHistory &transferHistory = getTransferHistory();
-  threadStats_.setLocalErrorCode(ABORT);
-  int toRead = Protocol::kAbortLength;
-  auto numRead = socket_->read(buf_, toRead);
-  if (numRead != toRead) {
-    // can not read checkpoint, but still must exit because of ABORT
-    WTLOG(ERROR) << "Error while trying to read ABORT cmd " << numRead << " "
-                 << toRead;
-    return END;
-  }
-  int64_t offset = 0;
-  int32_t negotiatedProtocol;
-  ErrorCode remoteError;
-  int64_t checkpoint;
-  Protocol::decodeAbort(buf_, offset, bufSize_, negotiatedProtocol, remoteError,
-                        checkpoint);
-  threadStats_.setRemoteErrorCode(remoteError);
-  std::string failedFileName = transferHistory.getSourceId(checkpoint);
-  WTLOG(WARNING) << "Received abort on "
-                 << " remote protocol version " << negotiatedProtocol
-                 << " remote error code " << errorCodeToStr(remoteError)
-                 << " file " << failedFileName << " checkpoint " << checkpoint;
-  wdtParent_->abort(remoteError);
-  if (remoteError == VERSION_MISMATCH) {
-    if (Protocol::negotiateProtocol(
-            negotiatedProtocol, threadProtocolVersion_) == negotiatedProtocol) {
-      // sender can support this negotiated version
-      negotiatedProtocol_ = negotiatedProtocol;
-      return PROCESS_VERSION_MISMATCH;
-    } else {
-      WTLOG(ERROR) << "Sender can not support receiver version "
-                   << negotiatedProtocol;
-      threadStats_.setRemoteErrorCode(VERSION_INCOMPATIBLE);
+    WTLOG(INFO) << "entered PROCESS_ABORT_CMD state ";
+    ThreadTransferHistory &transferHistory = getTransferHistory();
+    threadStats_.setLocalErrorCode(ABORT);
+    int toRead = Protocol::kAbortLength;
+    auto numRead = socket_->read(buf_, toRead);
+    if (numRead != toRead) {
+        // can not read checkpoint, but still must exit because of ABORT
+        WTLOG(ERROR) << "Error while trying to read ABORT cmd " << numRead << " " << toRead;
+        return END;
     }
-  }
-  return END;
+    int64_t offset = 0;
+    int32_t negotiatedProtocol;
+    ErrorCode remoteError;
+    int64_t checkpoint;
+    Protocol::decodeAbort(buf_, offset, bufSize_, negotiatedProtocol, remoteError, checkpoint);
+    threadStats_.setRemoteErrorCode(remoteError);
+    std::string failedFileName = transferHistory.getSourceId(checkpoint);
+    WTLOG(WARNING) << "Received abort on " << " remote protocol version " << negotiatedProtocol 
+        << " remote error code " << errorCodeToStr(remoteError) << " file " << failedFileName << " checkpoint " << checkpoint;
+    wdtParent_->abort(remoteError);
+    if (remoteError == VERSION_MISMATCH) {
+        if (Protocol::negotiateProtocol( negotiatedProtocol, threadProtocolVersion_) == negotiatedProtocol) {
+            // sender can support this negotiated version
+            negotiatedProtocol_ = negotiatedProtocol;
+            return PROCESS_VERSION_MISMATCH;
+        } else {
+            WTLOG(ERROR) << "Sender can not support receiver version "
+                << negotiatedProtocol;
+            threadStats_.setRemoteErrorCode(VERSION_INCOMPATIBLE);
+        }
+    }
+    return END;
 }
 
 SenderState SenderThread::processVersionMismatch() {
-  WTLOG(INFO) << "entered PROCESS_VERSION_MISMATCH state ";
-  WDT_CHECK(threadStats_.getLocalErrorCode() == ABORT);
-  auto negotiationStatus = wdtParent_->getNegotiationStatus();
-  WDT_CHECK_NE(negotiationStatus, V_MISMATCH_FAILED)
-      << "Thread should have ended in case of version mismatch";
-  if (negotiationStatus == V_MISMATCH_RESOLVED) {
-    WTLOG(WARNING) << "Protocol version already negotiated, but "
-                      "transfer still aborted due to version mismatch";
-    return END;
-  }
-  WDT_CHECK_EQ(negotiationStatus, V_MISMATCH_WAIT);
-  // Need a barrier here to make sure all the negotiated protocol versions
-  // have been collected
-  auto barrier = controller_->getBarrier(VERSION_MISMATCH_BARRIER);
-  barrier->execute();
-  WTVLOG(1) << "cleared the protocol version barrier";
-  auto execFunnel = controller_->getFunnel(VERSION_MISMATCH_FUNNEL);
-  while (true) {
-    auto status = execFunnel->getStatus();
-    switch (status) {
-      case FUNNEL_START: {
-        WTLOG(INFO) << "started the funnel for version mismatch";
-        wdtParent_->setProtoNegotiationStatus(V_MISMATCH_FAILED);
-        if (transferHistoryController_->handleVersionMismatch() != OK) {
-          execFunnel->notifySuccess();
-          return END;
-        }
-        int negotiatedProtocol = 0;
-        for (int threadProtocolVersion : wdtParent_->getNegotiatedProtocols()) {
-          if (threadProtocolVersion > 0) {
-            if (negotiatedProtocol > 0 &&
-                negotiatedProtocol != threadProtocolVersion) {
-              WTLOG(ERROR)
-                  << "Different threads negotiated different protocols "
-                  << negotiatedProtocol << " " << threadProtocolVersion;
-              execFunnel->notifySuccess();
-              return END;
-            }
-            negotiatedProtocol = threadProtocolVersion;
-          }
-        }
-        WDT_CHECK_GT(negotiatedProtocol, 0);
-        WLOG_IF(INFO, negotiatedProtocol != threadProtocolVersion_)
-            << *this << " Changing protocol version to " << negotiatedProtocol
-            << ", previous version " << threadProtocolVersion_;
-        wdtParent_->setProtocolVersion(negotiatedProtocol);
-        threadProtocolVersion_ = wdtParent_->getProtocolVersion();
-        setFooterType();
-        threadStats_.setRemoteErrorCode(OK);
-        wdtParent_->setProtoNegotiationStatus(V_MISMATCH_RESOLVED);
-        wdtParent_->clearAbort();
-        execFunnel->notifySuccess();
-        return CONNECT;
-      }
-      case FUNNEL_PROGRESS: {
-        execFunnel->wait();
-        break;
-      }
-      case FUNNEL_END: {
-        negotiationStatus = wdtParent_->getNegotiationStatus();
-        WDT_CHECK_NE(negotiationStatus, V_MISMATCH_WAIT);
-        if (negotiationStatus == V_MISMATCH_FAILED) {
-          return END;
-        }
-        if (negotiationStatus == V_MISMATCH_RESOLVED) {
-          threadProtocolVersion_ = wdtParent_->getProtocolVersion();
-          threadStats_.setRemoteErrorCode(OK);
-          return CONNECT;
-        }
-      }
+    WTLOG(INFO) << "entered PROCESS_VERSION_MISMATCH state ";
+    WDT_CHECK(threadStats_.getLocalErrorCode() == ABORT);
+
+    auto negotiationStatus = wdtParent_->getNegotiationStatus();
+    WDT_CHECK_NE(negotiationStatus, V_MISMATCH_FAILED) << "Thread should have ended in case of version mismatch";
+    if (negotiationStatus == V_MISMATCH_RESOLVED) {
+        WTLOG(WARNING) << "Protocol version already negotiated, but transfer still aborted due to version mismatch";
+        return END;
     }
-  }
+    WDT_CHECK_EQ(negotiationStatus, V_MISMATCH_WAIT);
+    // Need a barrier here to make sure all the negotiated protocol versions
+    // have been collected
+    auto barrier = controller_->getBarrier(VERSION_MISMATCH_BARRIER);
+    barrier->execute();
+    WTVLOG(1) << "cleared the protocol version barrier";
+    auto execFunnel = controller_->getFunnel(VERSION_MISMATCH_FUNNEL);
+    while (true) {
+        auto status = execFunnel->getStatus();
+        switch (status) {
+            case FUNNEL_START: {
+                                   WTLOG(INFO) << "started the funnel for version mismatch";
+                                   wdtParent_->setProtoNegotiationStatus(V_MISMATCH_FAILED);
+                                   if (transferHistoryController_->handleVersionMismatch() != OK) {
+                                       execFunnel->notifySuccess();
+                                       return END;
+                                   }
+                                   int negotiatedProtocol = 0;
+                                   for (int threadProtocolVersion : wdtParent_->getNegotiatedProtocols()) {
+                                       if (threadProtocolVersion > 0) {
+                                           if (negotiatedProtocol > 0 &&
+                                                   negotiatedProtocol != threadProtocolVersion) {
+                                               WTLOG(ERROR)
+                                                   << "Different threads negotiated different protocols "
+                                                   << negotiatedProtocol << " " << threadProtocolVersion;
+                                               execFunnel->notifySuccess();
+                                               return END;
+                                           }
+                                           negotiatedProtocol = threadProtocolVersion;
+                                       }
+                                   }
+                                   WDT_CHECK_GT(negotiatedProtocol, 0);
+                                   WLOG_IF(INFO, negotiatedProtocol != threadProtocolVersion_)
+                                       << *this << " Changing protocol version to " << negotiatedProtocol
+                                       << ", previous version " << threadProtocolVersion_;
+                                   wdtParent_->setProtocolVersion(negotiatedProtocol);
+                                   threadProtocolVersion_ = wdtParent_->getProtocolVersion();
+                                   setFooterType();
+                                   threadStats_.setRemoteErrorCode(OK);
+                                   wdtParent_->setProtoNegotiationStatus(V_MISMATCH_RESOLVED);
+                                   wdtParent_->clearAbort();
+                                   execFunnel->notifySuccess();
+                                   return CONNECT;
+                               }
+            case FUNNEL_PROGRESS: {
+                                      execFunnel->wait();
+                                      break;
+                                  }
+            case FUNNEL_END: {
+                                 negotiationStatus = wdtParent_->getNegotiationStatus();
+                                 WDT_CHECK_NE(negotiationStatus, V_MISMATCH_WAIT);
+                                 if (negotiationStatus == V_MISMATCH_FAILED) {
+                                     return END;
+                                 }
+                                 if (negotiationStatus == V_MISMATCH_RESOLVED) {
+                                     threadProtocolVersion_ = wdtParent_->getProtocolVersion();
+                                     threadStats_.setRemoteErrorCode(OK);
+                                     return CONNECT;
+                                 }
+                             }
+        }
+    }
 }
 
 void SenderThread::setFooterType() {
@@ -995,7 +989,7 @@ int SenderThread::getPort() const {
 }
 
 int SenderThread::getNegotiatedProtocol() const {
-  return negotiatedProtocol_;
+    return negotiatedProtocol_;
 }
 
 ErrorCode SenderThread::init() {

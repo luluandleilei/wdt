@@ -51,6 +51,7 @@ void WdtBase::clearAbort() {
         // We do no clear abort code unless it is VERSION_MISMATCH
         return;
     }
+
     WLOG(WARNING) << "Clearing the abort code";
     abortCode_ = OK;
 }
@@ -88,6 +89,7 @@ void WdtBase::setTransferId(const std::string& transferId) {
     WLOG(INFO) << "Setting transfer id " << transferId;
 }
 
+//获取用户设定的协议版本与软件本身的协议版本的较小值
 void WdtBase::negotiateProtocol() {
     int protocol = transferRequest_.protocolVersion;
     WDT_CHECK(protocol > 0) << "Protocol version can't be <= 0 " << protocol;

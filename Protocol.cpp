@@ -486,35 +486,36 @@ bool Protocol::decodeVersion(char *src, int64_t &off, int64_t max, int &senderPr
     return ok;
 }
 
-bool Protocol::decodeSettings(int protocolVersion, char *src, int64_t &off,
-                              int64_t max, Settings &settings) {
-  settings.enableChecksum = settings.sendFileChunks = false;
-  if (off < 0) {
-    WLOG(ERROR) << "Invalid negative start offset for decodeSettings " << off;
-    return false;
-  }
-  if (off >= max) {
-    WLOG(ERROR) << "Invalid start offset at the end for decodeSettings " << off;
-    return false;
-  }
-  ByteRange br = makeByteRange(src, max, off);
-  const ByteRange obr = br;
-  bool ok = decodeInt32C(br, settings.readTimeoutMillis) &&
-            decodeInt32C(br, settings.writeTimeoutMillis) &&
-            decodeString(br, settings.transferId);
-  if (ok && protocolVersion >= SETTINGS_FLAG_VERSION) {
-    if (br.empty()) {
-      return false;
+bool Protocol::decodeSettings(int protocolVersion, char *src, int64_t &off, int64_t max, Settings &settings) {
+    settings.enableChecksum = settings.sendFileChunks = false;
+
+    if (off < 0) {
+        WLOG(ERROR) << "Invalid negative start offset for decodeSettings " << off;
+        return false;
     }
-    uint8_t flags = br.front();
-    settings.enableChecksum = flags & 1;
-    settings.sendFileChunks = flags & (1 << 1);
-    settings.blockModeDisabled = flags & (1 << 2);
-    settings.enableHeartBeat = flags & (1 << 3);
-    br.pop_front();
-  }
-  off += offset(br, obr);
-  return ok;
+    if (off >= max) {
+        WLOG(ERROR) << "Invalid start offset at the end for decodeSettings " << off;
+        return false;
+    }
+
+    ByteRange br = makeByteRange(src, max, off);
+    const ByteRange obr = br;
+    bool ok = decodeInt32C(br, settings.readTimeoutMillis) &&
+        decodeInt32C(br, settings.writeTimeoutMillis) &&
+        decodeString(br, settings.transferId);
+    if (ok && protocolVersion >= SETTINGS_FLAG_VERSION) {
+        if (br.empty()) {
+            return false;
+        }
+        uint8_t flags = br.front();
+        settings.enableChecksum = flags & 1;
+        settings.sendFileChunks = flags & (1 << 1);
+        settings.blockModeDisabled = flags & (1 << 2);
+        settings.enableHeartBeat = flags & (1 << 3);
+        br.pop_front();
+    }
+    off += offset(br, obr);
+    return ok;
 }
 
 /* static */

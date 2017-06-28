@@ -24,14 +24,13 @@ namespace facebook {
 namespace wdt {
 
 void Sender::endCurTransfer() {
-  endTime_ = Clock::now();
-  WLOG(INFO) << "Last thread finished "
-             << durationSeconds(endTime_ - startTime_) << " for transfer id "
-             << getTransferId();
-  setTransferStatus(FINISHED);
-  if (throttler_) {
-    throttler_->endTransfer();
-  }
+    endTime_ = Clock::now();
+    WLOG(INFO) << "Last thread finished " << durationSeconds(endTime_ - startTime_) << " for transfer id " << getTransferId();
+
+    setTransferStatus(FINISHED);
+    if (throttler_) {
+        throttler_->endTransfer();
+    }
 }
 
 void Sender::startNewTransfer() {
@@ -56,8 +55,8 @@ Sender::Sender(const WdtTransferRequest &transferRequest)
 
 ErrorCode Sender::validateTransferRequest() {
     ErrorCode code = WdtBase::validateTransferRequest();
-    // If the request is still valid check for other
-    // sender specific validations
+
+    // If the request is still valid check for other sender specific validations
     if (code == OK && transferRequest_.hostName.empty()) {
         WLOG(ERROR) << "Transfer request validation failed for wdt sender " << transferRequest_.getLogSafeString();
         code = INVALID_REQUEST;
@@ -67,11 +66,14 @@ ErrorCode Sender::validateTransferRequest() {
     return code;
 }
 
+//设置TransferRequest部分字段，及验证TransferRequest对象的合法性
+//调用者通过返回的TransferRequest对象的引用的errorCode值判断初始化是否完成
 const WdtTransferRequest &Sender::init() {
     WVLOG(1) << "Sender Init() with encryption set = " << transferRequest_.encryptionData.isSet();
 
     negotiateProtocol();
 
+    //TransferRequest合法性验证
     if (validateTransferRequest() != OK) {
         WLOG(ERROR) << "Couldn't validate the transfer request " << transferRequest_.getLogSafeString();
         return transferRequest_;
@@ -83,6 +85,7 @@ const WdtTransferRequest &Sender::init() {
 
     bool encrypt = transferRequest_.encryptionData.isSet();
     WLOG_IF(INFO, encrypt) << "Encryption is enabled for this transfer";
+
     return transferRequest_;
 }
 
@@ -105,6 +108,7 @@ ProtoNegotiationStatus Sender::getNegotiationStatus() {
 
 std::vector<int> Sender::getNegotiatedProtocols() const {
     std::vector<int> ret;
+
     for (const auto &senderThread : senderThreads_) {
         ret.push_back(senderThread->getNegotiatedProtocol());
     }
@@ -125,7 +129,7 @@ bool Sender::isFileChunksReceived() {
     return fileChunksReceived_;
 }
 
-void Sender::setFileChunksInfo( std::vector<FileChunksInfo> &fileChunksInfoList) {
+void Sender::setFileChunksInfo(std::vector<FileChunksInfo> &fileChunksInfoList) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (fileChunksReceived_) {
         WLOG(WARNING) << "File chunks list received multiple times";
@@ -140,27 +144,27 @@ const std::string &Sender::getDestination() const {
 }
 
 std::unique_ptr<TransferReport> Sender::getTransferReport() {
-  int64_t totalFileSize = 0;
-  int64_t fileCount = 0;
-  bool fileDiscoveryFinished = false;
-  if (dirQueue_ != nullptr) {
-    totalFileSize = dirQueue_->getTotalSize();
-    fileCount = dirQueue_->getCount();
-    fileDiscoveryFinished = dirQueue_->fileDiscoveryFinished();
-  }
-  double totalTime = durationSeconds(Clock::now() - startTime_);
-  auto globalStats = getGlobalTransferStats();
-  std::unique_ptr<TransferReport> transferReport =
-      std::make_unique<TransferReport>(std::move(globalStats), totalTime,
-                                       totalFileSize, fileCount,
-                                       fileDiscoveryFinished);
-  TransferStatus status = getTransferStatus();
-  ErrorCode errCode = transferReport->getSummary().getErrorCode();
-  if (status == NOT_STARTED && errCode == OK) {
-    WLOG(INFO) << "Transfer not started, setting the error code to ERROR";
-    transferReport->setErrorCode(ERROR);
-  }
-  return transferReport;
+    int64_t totalFileSize = 0;
+    int64_t fileCount = 0;
+    bool fileDiscoveryFinished = false;
+    if (dirQueue_ != nullptr) {
+        totalFileSize = dirQueue_->getTotalSize();
+        fileCount = dirQueue_->getCount();
+        fileDiscoveryFinished = dirQueue_->fileDiscoveryFinished();
+    }
+
+    double totalTime = durationSeconds(Clock::now() - startTime_);
+    auto globalStats = getGlobalTransferStats();
+    std::unique_ptr<TransferReport> transferReport = std::make_unique<TransferReport>(std::move(globalStats), totalTime,
+                totalFileSize, fileCount, fileDiscoveryFinished);
+    TransferStatus status = getTransferStatus();
+    ErrorCode errCode = transferReport->getSummary().getErrorCode();
+    if (status == NOT_STARTED && errCode == OK) {
+        WLOG(INFO) << "Transfer not started, setting the error code to ERROR";
+        transferReport->setErrorCode(ERROR);
+    }
+
+    return transferReport;
 }
 
 Clock::time_point Sender::getEndTime() {
@@ -168,40 +172,47 @@ Clock::time_point Sender::getEndTime() {
 }
 
 TransferStats Sender::getGlobalTransferStats() const {
-  TransferStats globalStats;
-  for (const auto &thread : senderThreads_) {
-    globalStats += thread->getTransferStats();
-  }
-  return globalStats;
+    TransferStats globalStats;
+    for (const auto &thread : senderThreads_) {
+        globalStats += thread->getTransferStats();
+    }
+    return globalStats;
 }
 
 std::unique_ptr<TransferReport> Sender::finish() {
     std::unique_lock<std::mutex> instanceLock(instanceManagementMutex_);
+
     WVLOG(1) << "Sender::finish()";
+
     TransferStatus status = getTransferStatus();
     if (status == NOT_STARTED) {
         WLOG(WARNING) << "Even though transfer has not started, finish is called";
         // getTransferReport will set the error code to ERROR
         return getTransferReport();
     }
+
     if (status == THREADS_JOINED) {
-        WVLOG(1) << "Threads have already been joined. Returning the"
-            << " existing transfer report";
+        WVLOG(1) << "Threads have already been joined. Returning the existing transfer report";
         return getTransferReport();
     }
+
     const bool twoPhases = options_.two_phases;
     bool progressReportEnabled = progressReporter_ && progressReportIntervalMillis_ > 0;
+
     for (auto &senderThread : senderThreads_) {
         senderThread->finish();
     }
+
     if (!twoPhases) {
         dirThread_.join();
     }
+
     WDT_CHECK(numActiveThreads_ == 0);
     setTransferStatus(THREADS_JOINED);
     if (progressReportEnabled) {
         progressReporterThread_.join();
     }
+
     std::vector<TransferStats> threadStats;
     for (auto &senderThread : senderThreads_) {
         threadStats.push_back(senderThread->moveStats());
@@ -271,22 +282,25 @@ ErrorCode Sender::transferAsync() {
 }
 
 std::unique_ptr<TransferReport> Sender::transfer() {
-  start();
-  return finish();
+    start();
+    return finish();
 }
 
 ErrorCode Sender::start() {
+    //设置tansferStatus为ONGOING
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (transferStatus_ != NOT_STARTED) {
             WLOG(ERROR) << "duplicate start() call detected " << transferStatus_;
             return ALREADY_EXISTS;
         }
+
         transferStatus_ = ONGOING;
     }
 
-    // set up directory queue
+    //设置directory queue
     dirQueue_.reset(new DirectorySourceQueue(options_, transferRequest_.directory, &queueAbortChecker_));
+
     WVLOG(3) << "Configuring the  directory queue";
     dirQueue_->setIncludePattern(options_.include_regex);
     dirQueue_->setExcludePattern(options_.exclude_regex);
@@ -296,14 +310,15 @@ ErrorCode Sender::start() {
     dirQueue_->setNumClientThreads(transferRequest_.ports.size());
     dirQueue_->setOpenFilesDuringDiscovery(options_.open_files_during_discovery);
     dirQueue_->setDirectReads(options_.odirect_reads);
+
     if (!transferRequest_.fileInfo.empty() || transferRequest_.disableDirectoryTraversal) {
         dirQueue_->setFileInfo(transferRequest_.fileInfo);
     }
 
-    //set up transfer history controller
+    //设置transfer history controller
     transferHistoryController_= std::make_unique<TransferHistoryController>(*dirQueue_);
 
-    //set up the sender thread buffer
+    //设置the sender thread buffer size
     checkAndUpdateBufferSize();
 
     const bool twoPhases = options_.two_phases;
@@ -311,14 +326,12 @@ ErrorCode Sender::start() {
 
     startTime_ = Clock::now();
     
-    downloadResumptionEnabled_ = (transferRequest_.downloadResumptionEnabled || options_.enable_download_resumption);
-    bool deleteExtraFiles = (transferRequest_.downloadResumptionEnabled || options_.delete_extra_files);
-    
+   
+    //检查是否使能进程报告功能
     if (!progressReporter_) {
         WVLOG(1) << "No progress reporter provided, making a default one";
         progressReporter_ = std::make_unique<ProgressReporter>(transferRequest_);
     }
-
     bool progressReportEnabled = progressReporter_ && progressReportIntervalMillis_ > 0;
 
     if (throttler_) {
@@ -327,15 +340,19 @@ ErrorCode Sender::start() {
         configureThrottler();
     }
 
-    //set up threads controller
+    //创建threads controller
     threadsController_ = new ThreadsController(transferRequest_.ports.size());
     threadsController_->setNumBarriers(SenderThread::NUM_BARRIERS);
     threadsController_->setNumFunnels(SenderThread::NUM_FUNNELS);
     threadsController_->setNumConditions(SenderThread::NUM_CONDITIONS);
 
-    //set up sender threads
+    //创建sender threads
     // TODO: fix this ! use transferRequest! (and dup from Receiver)
     senderThreads_ = threadsController_->makeThreads<Sender, SenderThread>( this, transferRequest_.ports.size(), transferRequest_.ports);
+
+    //检查是否使能删除receiver端目的文件下的多出的文件的功能 
+    downloadResumptionEnabled_ = (transferRequest_.downloadResumptionEnabled || options_.enable_download_resumption);
+    bool deleteExtraFiles = (transferRequest_.downloadResumptionEnabled || options_.delete_extra_files);
 
     if (downloadResumptionEnabled_ && deleteExtraFiles) {
         if (getProtocolVersion() >= Protocol::DELETE_CMD_VERSION) {
@@ -345,11 +362,13 @@ ErrorCode Sender::start() {
         }
     }
 
+    //构造文件分片队列
     dirThread_ = dirQueue_->buildQueueAsynchronously();
     if (twoPhases) {
         dirThread_.join();
     }
 
+    //启动文件分片分发线程
     for (auto &senderThread : senderThreads_) {
         senderThread->startThread();
     }
@@ -362,47 +381,47 @@ ErrorCode Sender::start() {
     return OK;
 }
 
-void Sender::validateTransferStats(
-    const std::vector<TransferStats> &transferredSourceStats,
-    const std::vector<TransferStats> &failedSourceStats) {
-  int64_t sourceFailedAttempts = 0;
-  int64_t sourceDataBytes = 0;
-  int64_t sourceEffectiveDataBytes = 0;
-  int64_t sourceNumBlocks = 0;
+void Sender::validateTransferStats( const std::vector<TransferStats> &transferredSourceStats, const std::vector<TransferStats> &failedSourceStats) {
+    int64_t sourceFailedAttempts = 0;
+    int64_t sourceDataBytes = 0;
+    int64_t sourceEffectiveDataBytes = 0;
+    int64_t sourceNumBlocks = 0;
 
-  int64_t threadFailedAttempts = 0;
-  int64_t threadDataBytes = 0;
-  int64_t threadEffectiveDataBytes = 0;
-  int64_t threadNumBlocks = 0;
+    int64_t threadFailedAttempts = 0;
+    int64_t threadDataBytes = 0;
+    int64_t threadEffectiveDataBytes = 0;
+    int64_t threadNumBlocks = 0;
 
-  for (const auto &stat : transferredSourceStats) {
-    sourceFailedAttempts += stat.getFailedAttempts();
-    sourceDataBytes += stat.getDataBytes();
-    sourceEffectiveDataBytes += stat.getEffectiveDataBytes();
-    sourceNumBlocks += stat.getNumBlocks();
-  }
-  for (const auto &stat : failedSourceStats) {
-    sourceFailedAttempts += stat.getFailedAttempts();
-    sourceDataBytes += stat.getDataBytes();
-    sourceEffectiveDataBytes += stat.getEffectiveDataBytes();
-    sourceNumBlocks += stat.getNumBlocks();
-  }
-  for (const auto &senderThread : senderThreads_) {
-    const auto &stat = senderThread->getTransferStats();
-    threadFailedAttempts += stat.getFailedAttempts();
-    threadDataBytes += stat.getDataBytes();
-    threadEffectiveDataBytes += stat.getEffectiveDataBytes();
-    threadNumBlocks += stat.getNumBlocks();
-  }
+    for (const auto &stat : transferredSourceStats) {
+        sourceFailedAttempts += stat.getFailedAttempts();
+        sourceDataBytes += stat.getDataBytes();
+        sourceEffectiveDataBytes += stat.getEffectiveDataBytes();
+        sourceNumBlocks += stat.getNumBlocks();
+    }
 
-  WDT_CHECK(sourceFailedAttempts == threadFailedAttempts);
-  WDT_CHECK(sourceDataBytes == threadDataBytes);
-  WDT_CHECK(sourceEffectiveDataBytes == threadEffectiveDataBytes);
-  WDT_CHECK(sourceNumBlocks == threadNumBlocks);
+    for (const auto &stat : failedSourceStats) {
+        sourceFailedAttempts += stat.getFailedAttempts();
+        sourceDataBytes += stat.getDataBytes();
+        sourceEffectiveDataBytes += stat.getEffectiveDataBytes();
+        sourceNumBlocks += stat.getNumBlocks();
+    }
+
+    for (const auto &senderThread : senderThreads_) {
+        const auto &stat = senderThread->getTransferStats();
+        threadFailedAttempts += stat.getFailedAttempts();
+        threadDataBytes += stat.getDataBytes();
+        threadEffectiveDataBytes += stat.getEffectiveDataBytes();
+        threadNumBlocks += stat.getNumBlocks();
+    }
+
+    WDT_CHECK(sourceFailedAttempts == threadFailedAttempts);
+    WDT_CHECK(sourceDataBytes == threadDataBytes);
+    WDT_CHECK(sourceEffectiveDataBytes == threadEffectiveDataBytes);
+    WDT_CHECK(sourceNumBlocks == threadNumBlocks);
 }
 
 void Sender::setSocketCreator(Sender::ISocketCreator *socketCreator) {
-  socketCreator_ = socketCreator;
+    socketCreator_ = socketCreator;
 }
 
 void Sender::reportProgress() {
@@ -419,8 +438,7 @@ void Sender::reportProgress() {
   double currentThroughput = 0;
 
   auto waitingTime = std::chrono::milliseconds(progressReportIntervalMillis_);
-  WLOG(INFO) << "Progress reporter tracking every "
-             << progressReportIntervalMillis_ << " ms";
+  WLOG(INFO) << "Progress reporter tracking every " << progressReportIntervalMillis_ << " ms";
   while (true) {
     {
       std::unique_lock<std::mutex> lock(mutex_);

@@ -105,42 +105,42 @@ std::mutex abortMutex;
 std::condition_variable abortCondVar;
 bool isAbortCancelled = false;
 std::shared_ptr<WdtAbortChecker> setupAbortChecker() {
-  int abortSeconds = FLAGS_abort_after_seconds;
-  if (abortSeconds <= 0) {
-    return nullptr;
-  }
-  WLOG(INFO) << "Setting up abort " << abortSeconds << " seconds.";
-  static std::atomic<bool> abortTrigger{false};
-  auto res = std::make_shared<WdtAbortChecker>(abortTrigger);
-  auto lambda = [=] {
-    WLOG(INFO) << "Will abort in " << abortSeconds << " seconds.";
-    std::unique_lock<std::mutex> lk(abortMutex);
-    bool isNotAbort =
-        abortCondVar.wait_for(lk, std::chrono::seconds(abortSeconds),
-                              [&]() -> bool { return isAbortCancelled; });
-    if (isNotAbort) {
-      WLOG(INFO) << "Already finished normally, no abort.";
-    } else {
-      WLOG(INFO) << "Requesting abort.";
-      abortTrigger.store(true);
+    int abortSeconds = FLAGS_abort_after_seconds;
+    if (abortSeconds <= 0) {
+        return nullptr;
     }
-  };
-  // Run this in a separate thread concurrently with sender/receiver
-  static auto f = std::async(std::launch::async, lambda);
-  return res;
+
+    WLOG(INFO) << "Setting up abort " << abortSeconds << " seconds.";
+    static std::atomic<bool> abortTrigger{false};
+    auto res = std::make_shared<WdtAbortChecker>(abortTrigger);
+    auto lambda = [=] {
+        WLOG(INFO) << "Will abort in " << abortSeconds << " seconds.";
+        std::unique_lock<std::mutex> lk(abortMutex);
+        bool isNotAbort = abortCondVar.wait_for(lk, std::chrono::seconds(abortSeconds), [&]() -> bool { return isAbortCancelled; });
+        if (isNotAbort) {
+            WLOG(INFO) << "Already finished normally, no abort.";
+        } else {
+            WLOG(INFO) << "Requesting abort.";
+            abortTrigger.store(true);
+        }
+    };
+
+    // Run this in a separate thread concurrently with sender/receiver
+    static auto f = std::async(std::launch::async, lambda);
+    return res;
 }
 
 void setAbortChecker(WdtBase &senderOrReceiver) {
-  senderOrReceiver.setAbortChecker(setupAbortChecker());
+    senderOrReceiver.setAbortChecker(setupAbortChecker());
 }
 
 void cancelAbort() {
-  {
-    std::unique_lock<std::mutex> lk(abortMutex);
-    isAbortCancelled = true;
-    abortCondVar.notify_one();
-  }
-  std::this_thread::yield();
+    {
+        std::unique_lock<std::mutex> lk(abortMutex);
+        isAbortCancelled = true;
+        abortCondVar.notify_one();
+    }
+    std::this_thread::yield();
 }
 
 void readManifest(std::istream &fin, WdtTransferRequest &req, bool dfltDirect) {
