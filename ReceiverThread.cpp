@@ -208,7 +208,7 @@ ReceiverState ReceiverThread::acceptWithTimeout() {
         return FINISH_WITH_ERROR;
     }
 
-    numRead_ = off_ = 0;
+    numRead_ = off_ = 0; //初始化读缓冲区
     pendingCheckpointIndex_ = checkpointIndex_;
     ReceiverState nextState = READ_NEXT_CMD;
 
@@ -222,23 +222,22 @@ ReceiverState ReceiverThread::acceptWithTimeout() {
 
 /***SEND_LOCAL_CHECKPOINT STATE***/
 ReceiverState ReceiverThread::sendLocalCheckpoint() {
-  WTLOG(INFO) << "entered SEND_LOCAL_CHECKPOINT state " << checkpoint_;
-  std::vector<Checkpoint> checkpoints;
-  checkpoints.emplace_back(checkpoint_);
+    WTLOG(INFO) << "entered SEND_LOCAL_CHECKPOINT state " << checkpoint_;
+    std::vector<Checkpoint> checkpoints;
+    checkpoints.emplace_back(checkpoint_);
 
-  int64_t off = 0;
-  const int checkpointLen =
-      Protocol::getMaxLocalCheckpointLength(threadProtocolVersion_);
-  Protocol::encodeCheckpoints(threadProtocolVersion_, buf_, off, checkpointLen, checkpoints);
-  int written = socket_->write(buf_, checkpointLen);
-  if (written != checkpointLen) {
-    WTLOG(ERROR) << "unable to write local checkpoint. write mismatch "
-                 << checkpointLen << " " << written;
-    threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
-    return ACCEPT_WITH_TIMEOUT;
-  }
-  threadStats_.addHeaderBytes(checkpointLen);
-  return READ_NEXT_CMD;
+    int64_t off = 0;
+    const int checkpointLen = Protocol::getMaxLocalCheckpointLength(threadProtocolVersion_);
+    Protocol::encodeCheckpoints(threadProtocolVersion_, buf_, off, checkpointLen, checkpoints);
+    int written = socket_->write(buf_, checkpointLen);
+    if (written != checkpointLen) {
+        WTLOG(ERROR) << "unable to write local checkpoint. write mismatch "
+            << checkpointLen << " " << written;
+        threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
+        return ACCEPT_WITH_TIMEOUT;
+    }
+    threadStats_.addHeaderBytes(checkpointLen);
+    return READ_NEXT_CMD;
 }
 
 /***READ_NEXT_CMD***/
@@ -392,6 +391,7 @@ ReceiverState ReceiverThread::processFileCmd() {
 
     checkpoint_.resetLastBlockDetails();
     BlockDetails blockDetails;
+
     auto guard = folly::makeGuard([&] {
             if (threadStats_.getLocalErrorCode() != OK) {
                 threadStats_.incrFailedAttempts();
@@ -464,12 +464,12 @@ ReceiverState ReceiverThread::processFileCmd() {
     FileWriter writer(*threadCtx_, &blockDetails, fileCreator.get());
     const auto encryptionType = socket_->getEncryptionType();
     auto writtenGuard = folly::makeGuard([&] {
-        if (!encryptionTypeToTagLen(encryptionType) && footerType_ == NO_FOOTER) {
-        // if encryption doesn't have tag verification and checksum verification
-        // is disabled, we can consider bytes received before connection break as
-        // valid
-        checkpoint_.setLastBlockDetails(blockDetails.seqId, blockDetails.offset, writer.getTotalWritten());
-        threadStats_.addEffectiveBytes(headerBytes, writer.getTotalWritten());
+            if (!encryptionTypeToTagLen(encryptionType) && footerType_ == NO_FOOTER) {
+            // if encryption doesn't have tag verification and checksum verification
+            // is disabled, we can consider bytes received before connection break as
+            // valid
+            checkpoint_.setLastBlockDetails(blockDetails.seqId, blockDetails.offset, writer.getTotalWritten());
+            threadStats_.addEffectiveBytes(headerBytes, writer.getTotalWritten());
         }
         });
 
@@ -486,16 +486,23 @@ ReceiverState ReceiverThread::processFileCmd() {
     }
 
     int32_t checksum = 0;
+
+    //计算将要写的数据的长度
     int64_t remainingData = numRead_ + oldOffset_ - off_;
     int64_t toWrite = remainingData;
     WDT_CHECK(remainingData >= 0);
     if (remainingData >= blockDetails.dataSize) {
         toWrite = blockDetails.dataSize;
     }
+
     threadStats_.addDataBytes(toWrite);
+
+    //计算数据的crc32
     if (footerType_ == CHECKSUM_FOOTER) {
         checksum = folly::crc32c((const uint8_t *)(buf_ + off_), toWrite, checksum);
     }
+
+
     auto throttler = wdtParent_->getThrottler();
     if (throttler) {
         // We might be reading more than we require for this file but
@@ -506,6 +513,7 @@ ReceiverState ReceiverThread::processFileCmd() {
 
     sendHeartBeat();
 
+    //写数据到文件
     ErrorCode code = ERROR;
     if (toWrite > 0) {
         code = writer.write(buf_ + off_, toWrite);
@@ -516,29 +524,32 @@ ReceiverState ReceiverThread::processFileCmd() {
     }
     off_ += toWrite;
     remainingData -= toWrite;
+
     // also means no leftOver so it's ok we use buf_ from start
+    //写的数据不足分片大小，继续冲网络中读数据写入
     while (writer.getTotalWritten() < blockDetails.dataSize) {
         if (wdtParent_->getCurAbortCode() != OK) {
-            WTLOG(ERROR) << "Thread marked for abort while processing "
-                << blockDetails.fileName << " " << blockDetails.seqId
-                << " port : " << socket_->getPort();
+            WTLOG(ERROR) << "Thread marked for abort while processing " << blockDetails.fileName 
+                << " " << blockDetails.seqId << " port : " << socket_->getPort();
             threadStats_.setLocalErrorCode(ABORT);
             return FINISH_WITH_ERROR;
         }
 
         sendHeartBeat();
-
-        int64_t nres = readAtMost(*socket_, buf_, bufSize_,
-                blockDetails.dataSize - writer.getTotalWritten());
+        
+        int64_t nres = readAtMost(*socket_, buf_, bufSize_, blockDetails.dataSize - writer.getTotalWritten());
         if (nres <= 0) {
             break;
         }
+
         if (throttler) {
             // We only know how much we have read after we are done calling
             // readAtMost. Call throttler with the bytes read off_ the wire.
             throttler->limit(*threadCtx_, nres);
         }
+
         threadStats_.addDataBytes(nres);
+
         if (footerType_ == CHECKSUM_FOOTER) {
             checksum = folly::crc32c((const uint8_t *)buf_, nres, checksum);
         }
@@ -551,17 +562,17 @@ ReceiverState ReceiverThread::processFileCmd() {
             return SEND_ABORT_CMD;
         }
     }
+
     if (writer.getTotalWritten() != blockDetails.dataSize) {
         // This can only happen if there are transmission errors
         // Write errors to disk are already taken care of above
-        WTLOG(ERROR) << "could not read entire content for "
-            << blockDetails.fileName << " port " << socket_->getPort();
+        WTLOG(ERROR) << "could not read entire content for " << blockDetails.fileName << " port " << socket_->getPort();
         threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
         return ACCEPT_WITH_TIMEOUT;
     }
+
     writtenGuard.dismiss();
-    WVLOG(2) << "completed " << blockDetails.fileName << " off: " << off_
-        << " numRead: " << numRead_;
+    WVLOG(2) << "completed " << blockDetails.fileName << " off: " << off_ << " numRead: " << numRead_;
     // Transfer of the file is complete here, mark the bytes effective
     WDT_CHECK(remainingData >= 0) << "Negative remainingData " << remainingData;
     if (remainingData > 0) {
@@ -569,53 +580,51 @@ ReceiverState ReceiverThread::processFileCmd() {
         numRead_ = remainingData;
         if ((remainingData < Protocol::kMaxHeader) && (off_ > (bufSize_ / 2))) {
             // rare so inefficient is ok
-            WVLOG(3) << "copying extra " << remainingData << " leftover bytes @ "
-                << off_;
-            memmove(/* dst      */ buf_,
-                    /* from     */ buf_ + off_,
-                    /* how much */ remainingData);
+            WVLOG(3) << "copying extra " << remainingData << " leftover bytes @ " << off_;
+            memmove(/* dst      */ buf_, /* from     */ buf_ + off_, /* how much */ remainingData); 
             off_ = 0;
         } else {
             // otherwise just continue from the offset
-            WVLOG(3) << "Using remaining extra " << remainingData
-                << " leftover bytes starting @ " << off_;
+            WVLOG(3) << "Using remaining extra " << remainingData << " leftover bytes starting @ " << off_;
         }
     } else {
         numRead_ = off_ = 0;
     }
+
     if (footerType_ == CHECKSUM_FOOTER) {
         sendHeartBeat();
         // have to read footer cmd
         oldOffset_ = off_;
-        numRead_ = readAtLeast(*socket_, buf_ + off_, bufSize_ - off_,
-                Protocol::kMinBufLength, numRead_);
+        numRead_ = readAtLeast(*socket_, buf_ + off_, bufSize_ - off_, Protocol::kMinBufLength, numRead_);
         if (numRead_ < Protocol::kMinBufLength) {
-            WTLOG(ERROR) << "socket read failure " << Protocol::kMinBufLength << " "
-                << numRead_;
+            WTLOG(ERROR) << "socket read failure " << Protocol::kMinBufLength << " " << numRead_;
             threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
             return ACCEPT_WITH_TIMEOUT;
         }
+
         Protocol::CMD_MAGIC cmd = (Protocol::CMD_MAGIC)buf_[off_++];
         if (cmd != Protocol::FOOTER_CMD) {
             WTLOG(ERROR) << "Expecting footer cmd, but received " << cmd;
             threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
             return FINISH_WITH_ERROR;
         }
+
         int32_t receivedChecksum;
-        bool ok = Protocol::decodeFooter(
-                buf_, off_, oldOffset_ + Protocol::kMaxFooter, receivedChecksum);
+        bool ok = Protocol::decodeFooter( buf_, off_, oldOffset_ + Protocol::kMaxFooter, receivedChecksum);
         if (!ok) {
             WTLOG(ERROR) << "Unable to decode footer cmd";
             threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
             return FINISH_WITH_ERROR;
         }
+
         if (checksum != receivedChecksum) {
-            WTLOG(ERROR) << "Checksum mismatch " << checksum << " "
-                << receivedChecksum << " port " << socket_->getPort()
-                << " file " << blockDetails.fileName;
+            WTLOG(ERROR) << "Checksum mismatch " << checksum << " " << receivedChecksum 
+                << " port " << socket_->getPort() << " file " << blockDetails.fileName;
+
             threadStats_.setLocalErrorCode(CHECKSUM_MISMATCH);
             return ACCEPT_WITH_TIMEOUT;
         }
+
         markBlockVerified(blockDetails);
         int64_t msgLen = off_ - oldOffset_;
         numRead_ -= msgLen;
@@ -631,25 +640,28 @@ ReceiverState ReceiverThread::processFileCmd() {
 }
 
 void ReceiverThread::markBlockVerified(const BlockDetails &blockDetails) {
-  threadStats_.addEffectiveBytes(0, blockDetails.dataSize);
-  threadStats_.incrNumBlocks();
-  checkpoint_.incrNumBlocks();
-  if (!options_.isLogBasedResumption()) {
-    return;
-  }
-  TransferLogManager &transferLogManager = wdtParent_->getTransferLogManager();
-  if (blockDetails.allocationStatus == TO_BE_DELETED) {
-    transferLogManager.addFileInvalidationEntry(blockDetails.seqId);
-    return;
-  }
-  transferLogManager.addBlockWriteEntry(blockDetails.seqId, blockDetails.offset,
-                                        blockDetails.dataSize);
+    threadStats_.addEffectiveBytes(0, blockDetails.dataSize);
+    threadStats_.incrNumBlocks();
+    checkpoint_.incrNumBlocks();
+
+    //基于日志的断点重传日志记录
+    if (!options_.isLogBasedResumption()) {
+        return;
+    }
+
+    TransferLogManager &transferLogManager = wdtParent_->getTransferLogManager();
+    if (blockDetails.allocationStatus == TO_BE_DELETED) {
+        transferLogManager.addFileInvalidationEntry(blockDetails.seqId);
+        return;
+    }
+    transferLogManager.addBlockWriteEntry(blockDetails.seqId, blockDetails.offset, blockDetails.dataSize);
 }
 
 void ReceiverThread::markReceivedBlocksVerified() {
     for (const BlockDetails &blockDetails : blocksWaitingVerification_) {
         markBlockVerified(blockDetails);
     }
+
     blocksWaitingVerification_.clear();
 }
 
@@ -738,9 +750,7 @@ ReceiverState ReceiverThread::sendFileChunks() {
                 buf_[off++] = Protocol::CHUNKS_CMD;
                 const auto &fileChunksInfo = wdtParent_->getFileChunksInfo();
                 const int64_t numParsedChunksInfo = fileChunksInfo.size();
-                Protocol::encodeChunksCmd(buf_, off, /* size of buf_ */ bufSize_,
-                        /* param to send */ bufSize_,
-                        numParsedChunksInfo);
+                Protocol::encodeChunksCmd(buf_, off, /* size of buf_ */ bufSize_, /* param to send */ bufSize_, numParsedChunksInfo);
                 int written = socket_->write(buf_, off);
                 if (written > 0) {
                     threadStats_.addHeaderBytes(written);
@@ -771,9 +781,9 @@ ReceiverState ReceiverThread::sendFileChunks() {
                     }
                     numEntriesWritten += numEntriesEncoded;
                 }
+
                 if (numEntriesWritten != numParsedChunksInfo) {
-                    WTLOG(ERROR) << "Could not write all the file chunks "
-                        << numParsedChunksInfo << " " << numEntriesWritten;
+                    WTLOG(ERROR) << "Could not write all the file chunks " << numParsedChunksInfo << " " << numEntriesWritten;
                     threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
                     execFunnel->notifyFail();
                     return ACCEPT_WITH_TIMEOUT;
@@ -787,6 +797,7 @@ ReceiverState ReceiverThread::sendFileChunks() {
                     execFunnel->notifyFail();
                     return ACCEPT_WITH_TIMEOUT;
                 }
+
                 wdtParent_->addTransferLogHeader(isBlockMode_, /* sender resuming */ true);
                 execFunnel->notifySuccess();
                 return READ_NEXT_CMD;
@@ -802,8 +813,7 @@ ReceiverState ReceiverThread::sendGlobalCheckpoint() {
     // leave space for length
     off_ += sizeof(int16_t);
     auto oldOffset = off_;
-    Protocol::encodeCheckpoints(threadProtocolVersion_, buf_, off_, bufSize_,
-            newCheckpoints_);
+    Protocol::encodeCheckpoints(threadProtocolVersion_, buf_, off_, bufSize_, newCheckpoints_);
     int16_t length = off_ - oldOffset;
     folly::storeUnaligned<int16_t>(buf_ + 1, folly::Endian::little(length));
 
@@ -906,41 +916,41 @@ ReceiverState ReceiverThread::checkForFinishOrNewCheckpoints() {
 }
 
 ReceiverState ReceiverThread::waitForFinishOrNewCheckpoint() {
-  WTLOG(INFO) << "entered WAIT_FOR_FINISH_OR_NEW_CHECKPOINT state";
-  // should only be called if the are no errors
-  WDT_CHECK(threadStats_.getLocalErrorCode() == OK);
-  auto cv = controller_->getCondition(WAIT_FOR_FINISH_OR_CHECKPOINT_CV);
-  int timeoutMillis = senderReadTimeout_ / kWaitTimeoutFactor;
-  controller_->markState(threadIndex_, WAITING);
-  while (true) {
-    WDT_CHECK(senderReadTimeout_ > 0);  // must have received settings
-    {
-      auto guard = cv->acquire();
-      auto state = checkForFinishOrNewCheckpoints();
-      if (state != WAIT_FOR_FINISH_OR_NEW_CHECKPOINT) {
-          guard.notifyOne();
-          return state;
-      }
-      {
-        PerfStatCollector statCollector(*threadCtx_, PerfStatReport::RECEIVER_WAIT_SLEEP);
-        guard.wait(timeoutMillis, *threadCtx_);
-      }
-      state = checkForFinishOrNewCheckpoints();
-      if (state != WAIT_FOR_FINISH_OR_NEW_CHECKPOINT) {
-        guard.notifyOne();
-        return state;
-      }
+    WTLOG(INFO) << "entered WAIT_FOR_FINISH_OR_NEW_CHECKPOINT state";
+    // should only be called if the are no errors
+    WDT_CHECK(threadStats_.getLocalErrorCode() == OK);
+    auto cv = controller_->getCondition(WAIT_FOR_FINISH_OR_CHECKPOINT_CV);
+    int timeoutMillis = senderReadTimeout_ / kWaitTimeoutFactor;
+    controller_->markState(threadIndex_, WAITING);
+    while (true) {
+        WDT_CHECK(senderReadTimeout_ > 0);  // must have received settings
+        {
+            auto guard = cv->acquire();
+            auto state = checkForFinishOrNewCheckpoints();
+            if (state != WAIT_FOR_FINISH_OR_NEW_CHECKPOINT) {
+                guard.notifyOne();
+                return state;
+            }
+            {
+                PerfStatCollector statCollector(*threadCtx_, PerfStatReport::RECEIVER_WAIT_SLEEP);
+                guard.wait(timeoutMillis, *threadCtx_);
+            }
+            state = checkForFinishOrNewCheckpoints();
+            if (state != WAIT_FOR_FINISH_OR_NEW_CHECKPOINT) {
+                guard.notifyOne();
+                return state;
+            }
+        }
+        // send WAIT cmd to keep sender thread alive
+        buf_[0] = Protocol::WAIT_CMD;
+        if (socket_->write(buf_, 1) != 1) {
+            WTPLOG(ERROR) << "unable to write WAIT";
+            threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
+            controller_->markState(threadIndex_, RUNNING);
+            return ACCEPT_WITH_TIMEOUT;
+        }
+        threadStats_.addHeaderBytes(1);
     }
-    // send WAIT cmd to keep sender thread alive
-    buf_[0] = Protocol::WAIT_CMD;
-    if (socket_->write(buf_, 1) != 1) {
-      WTPLOG(ERROR) << "unable to write WAIT";
-      threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
-      controller_->markState(threadIndex_, RUNNING);
-      return ACCEPT_WITH_TIMEOUT;
-    }
-    threadStats_.addHeaderBytes(1);
-  }
 }
 
 void ReceiverThread::start() {
@@ -969,6 +979,7 @@ void ReceiverThread::start() {
 
     controller_->deRegisterThread(threadIndex_);
     controller_->executeAtEnd([&]() { wdtParent_->endCurGlobalSession(); });
+
     WDT_CHECK(socket_.get());
     threadStats_.setEncryptionType(socket_->getEncryptionType());
     WTLOG(INFO) << threadStats_;

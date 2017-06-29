@@ -334,10 +334,9 @@ bool Protocol::decodeAbort(char *src, int64_t &off, int64_t max,
   return ok;
 }
 
-bool Protocol::encodeChunksCmd(char *dest, int64_t &off, int64_t max,
-                               int64_t bufSize, int64_t numFiles) {
-  return encodeInt64FixedLength(dest, max, off, bufSize) &&
-         encodeInt64FixedLength(dest, max, off, numFiles);
+bool Protocol::encodeChunksCmd(char *dest, int64_t &off, int64_t max, int64_t bufSize, int64_t numFiles) {
+    return encodeInt64FixedLength(dest, max, off, bufSize) &&
+        encodeInt64FixedLength(dest, max, off, numFiles);
 }
 
 bool Protocol::decodeChunksCmd(char *src, int64_t &off, int64_t max, int64_t &bufSize, int64_t &numFiles) {
@@ -358,21 +357,20 @@ bool Protocol::decodeChunkInfo(ByteRange &br, Interval &chunk) {
   return decodeInt64C(br, chunk.start_) && decodeInt64C(br, chunk.end_);
 }
 
-bool Protocol::encodeFileChunksInfo(char *dest, int64_t &off, int64_t max,
-                                    const FileChunksInfo &fileChunksInfo) {
-  bool ok = encodeVarI64C(dest, max, off, fileChunksInfo.getSeqId()) &&
-            encodeString(dest, max, off, fileChunksInfo.getFileName()) &&
-            encodeVarI64C(dest, max, off, fileChunksInfo.getFileSize()) &&
-            encodeVarI64C(dest, max, off, fileChunksInfo.getChunks().size());
-  if (!ok) {
-    return false;
-  }
-  for (const auto &chunk : fileChunksInfo.getChunks()) {
-    if (!encodeChunkInfo(dest, off, max, chunk)) {
-      return false;
+bool Protocol::encodeFileChunksInfo(char *dest, int64_t &off, int64_t max, const FileChunksInfo &fileChunksInfo) {
+    bool ok = encodeVarI64C(dest, max, off, fileChunksInfo.getSeqId()) &&
+        encodeString(dest, max, off, fileChunksInfo.getFileName()) &&
+        encodeVarI64C(dest, max, off, fileChunksInfo.getFileSize()) &&
+        encodeVarI64C(dest, max, off, fileChunksInfo.getChunks().size());
+    if (!ok) {
+        return false;
     }
-  }
-  return true;
+    for (const auto &chunk : fileChunksInfo.getChunks()) {
+        if (!encodeChunkInfo(dest, off, max, chunk)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Protocol::decodeFileChunksInfo(ByteRange &br,
@@ -406,28 +404,26 @@ int64_t Protocol::maxEncodeLen(const FileChunksInfo &fileChunkInfo) {
          fileChunkInfo.getChunks().size() * kMaxChunkEncodeLen;
 }
 
-int64_t Protocol::encodeFileChunksInfoList(
-    char *dest, int64_t &off, int64_t bufSize, int64_t startIndex,
-    const std::vector<FileChunksInfo> &fileChunksInfoList) {
-  int64_t oldOffset = off;
-  int64_t numEncoded = 0;
-  const int64_t numFileChunks = fileChunksInfoList.size();
-  for (int64_t i = startIndex; i < numFileChunks; i++) {
-    const FileChunksInfo &fileChunksInfo = fileChunksInfoList[i];
-    int64_t maxLength = maxEncodeLen(fileChunksInfo);
-    if (maxLength + oldOffset > bufSize) {
-      WLOG(WARNING) << "Chunk info for " << fileChunksInfo.getFileName()
-                    << " can not be encoded in a buffer of size " << bufSize
-                    << ", Ignoring.";
-      continue;
+int64_t Protocol::encodeFileChunksInfoList( char *dest, int64_t &off, int64_t bufSize, int64_t startIndex, const std::vector<FileChunksInfo> &fileChunksInfoList) {
+    int64_t oldOffset = off;
+    int64_t numEncoded = 0;
+    const int64_t numFileChunks = fileChunksInfoList.size();
+
+    for (int64_t i = startIndex; i < numFileChunks; i++) {
+        const FileChunksInfo &fileChunksInfo = fileChunksInfoList[i];
+        int64_t maxLength = maxEncodeLen(fileChunksInfo);
+        if (maxLength + oldOffset > bufSize) {
+            WLOG(WARNING) << "Chunk info for " << fileChunksInfo.getFileName()
+                << " can not be encoded in a buffer of size " << bufSize << ", Ignoring.";
+            continue;
+        }
+        if (maxLength + off >= bufSize) {
+            break;
+        }
+        encodeFileChunksInfo(dest, off, bufSize, fileChunksInfo);
+        numEncoded++;
     }
-    if (maxLength + off >= bufSize) {
-      break;
-    }
-    encodeFileChunksInfo(dest, off, bufSize, fileChunksInfo);
-    numEncoded++;
-  }
-  return numEncoded;
+    return numEncoded;
 }
 
 bool Protocol::decodeFileChunksInfoList(

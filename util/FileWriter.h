@@ -17,63 +17,61 @@ namespace facebook {
 namespace wdt {
 
 class FileWriter : public Writer {
- public:
-  FileWriter(ThreadCtx &threadCtx, BlockDetails const *blockDetails,
-             FileCreator *fileCreator)
-      : threadCtx_(threadCtx),
-        blockDetails_(blockDetails),
+public:
+    FileWriter(ThreadCtx &threadCtx, BlockDetails const *blockDetails, FileCreator *fileCreator)
+        : threadCtx_(threadCtx), blockDetails_(blockDetails),
 #ifdef HAS_SYNC_FILE_RANGE
         nextSyncOffset_(blockDetails->offset),
 #endif
         fileCreator_(fileCreator) {
-  }
+    }
 
-  ~FileWriter() override {
-    close();
-  }
+    ~FileWriter() override {
+        close();
+    }
 
-  /// @see Writer.h
-  ErrorCode open() override;
+    /// @see Writer.h
+    ErrorCode open() override;
 
-  /// @see Writer.h
-  ErrorCode write(char *buf, int64_t size) override;
+    /// @see Writer.h
+    ErrorCode write(char *buf, int64_t size) override;
 
-  /// @see Writer.h
-  int64_t getTotalWritten() override {
-    return totalWritten_;
-  }
+    /// @see Writer.h
+    int64_t getTotalWritten() override {
+        return totalWritten_;
+    }
 
-  /// @see Writer.h
-  void close() override;
+    /// @see Writer.h
+    void close() override;
 
- private:
-  /**
-   * calls sync_file_range at disk_sync_interval_mb intervals.
-   *
-   * @param written   number of bytes last written
-   * @param forced    whether to force syncing or not
-   */
-  void syncFileRange(int64_t written, bool forced);
+private:
+    /**
+     * calls sync_file_range at disk_sync_interval_mb intervals.
+     *
+     * @param written   number of bytes last written
+     * @param forced    whether to force syncing or not
+     */
+    void syncFileRange(int64_t written, bool forced);
 
-  ThreadCtx &threadCtx_;
+    ThreadCtx &threadCtx_;
 
-  /// file handler
-  int fd_{-1};
+    /// file handler
+    int fd_{-1};
 
-  /// details of the block
-  BlockDetails const *blockDetails_;
+    /// details of the block
+    BlockDetails const *blockDetails_;
 
-  /// number of bytes written
-  int64_t totalWritten_{0};
+    /// number of bytes written
+    int64_t totalWritten_{0};
 
 #ifdef HAS_SYNC_FILE_RANGE
-  /// offset to use for next sync
-  int64_t nextSyncOffset_;
-  /// number of bytes written since last sync
-  int64_t writtenSinceLastSync_{0};
+    /// offset to use for next sync
+    int64_t nextSyncOffset_;
+    /// number of bytes written since last sync
+    int64_t writtenSinceLastSync_{0};
 #endif
-  /// reference to file creator
-  FileCreator *fileCreator_;
+    /// reference to file creator
+    FileCreator *fileCreator_;
 };
 }
 }

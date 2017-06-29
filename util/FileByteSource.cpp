@@ -106,7 +106,7 @@ char *FileByteSource::read(int64_t &size) {
         offsetRemainder = (offset_ + bytesRead_) % kDiskBlockSize;
     }
 
-    int64_t logicalRead = (int64_t)std::min<int64_t>( buffer->getSize() - offsetRemainder, size_ - bytesRead_);
+    int64_t logicalRead = (int64_t)std::min<int64_t>(buffer->getSize() - offsetRemainder, size_ - bytesRead_);
     int64_t physicalRead = logicalRead;
 
     if (alignedReadNeeded_) {

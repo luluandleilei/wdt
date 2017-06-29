@@ -18,13 +18,16 @@
 namespace facebook {
 namespace wdt {
 
+
 bool FileCreator::setFileSize(ThreadCtx &threadCtx, int fd, int64_t fileSize) {
+    //获取文件本身大小
     struct stat fileStat;
     if (fstat(fd, &fileStat) != 0) {
         WPLOG(ERROR) << "fstat() failed for " << fd;
         return false;
     }
 
+    //文件本身大小大于设置大小，截断文件大小为设置大小(Preallocate)/0
     if (fileStat.st_size > fileSize) {
         // existing file is larger than required
         int64_t sizeToTruncate = (threadCtx.getOptions().shouldPreallocateFiles() ? fileSize : 0);
@@ -34,6 +37,7 @@ bool FileCreator::setFileSize(ThreadCtx &threadCtx, int fd, int64_t fileSize) {
         }
     }
 
+    //
     if (fileSize == 0) {
         return true;
     }
@@ -59,17 +63,19 @@ int FileCreator::openAndSetSize(ThreadCtx &threadCtx, BlockDetails const *blockD
     int fd;
     const bool doCreate = (blockDetails->allocationStatus == NOT_EXISTS);
     const bool isTooLarge = (blockDetails->allocationStatus == EXISTS_TOO_LARGE);
-	
+
+    //创建/打开文件
     if (doCreate) {
         fd = createFile(threadCtx, blockDetails->fileName);
     } else {
         fd = openExistingFile(threadCtx, blockDetails->fileName);
     }
-	
+
     if (fd < 0) {
         return -1;
     }
-	
+
+    //设置文件大小
     if (blockDetails->allocationStatus == EXISTS_CORRECT_SIZE) {
         return fd;
     }
@@ -78,38 +84,41 @@ int FileCreator::openAndSetSize(ThreadCtx &threadCtx, BlockDetails const *blockD
         close(fd);
         return -1;
     }
-	
+
+    //基于日志的文件重传机制
     if (threadCtx.getOptions().isLogBasedResumption()) {
         if (isTooLarge) {
             WLOG(WARNING) << "File size smaller in the sender side " << blockDetails->fileName << ", marking previous transferred chunks as invalid";
             transferLogManager_.addFileInvalidationEntry(blockDetails->prevSeqId);
         }
         if (isTooLarge || doCreate) {
-            transferLogManager_.addFileCreationEntry( blockDetails->fileName, blockDetails->seqId, blockDetails->fileSize);
+            transferLogManager_.addFileCreationEntry(blockDetails->fileName, blockDetails->seqId, blockDetails->fileSize);
         } else {
             WDT_CHECK_EQ(EXISTS_TOO_SMALL, blockDetails->allocationStatus);
             transferLogManager_.addFileResizeEntry(blockDetails->seqId, blockDetails->fileSize);
         }
     }
+
     return fd;
 }
 
-int FileCreator::openForFirstBlock(ThreadCtx &threadCtx,
-                                   BlockDetails const *blockDetails) {
-  int fd = openAndSetSize(threadCtx, blockDetails);
-  {
-    folly::SpinLockGuard guard(lock_);
-    auto it = fileStatusMap_.find(blockDetails->seqId);
-    WDT_CHECK(it != fileStatusMap_.end());
-    it->second = fd >= 0 ? ALLOCATED : FAILED;
-  }
-  std::unique_lock<std::mutex> waitLock(allocationMutex_);
-  threadConditionVariables_[threadCtx.getThreadIndex()].notify_all();
-  return fd;
+int FileCreator::openForFirstBlock(ThreadCtx &threadCtx, BlockDetails const *blockDetails) {
+    //创建对应文件
+    int fd = openAndSetSize(threadCtx, blockDetails);
+    //修正文件状态
+    {
+        folly::SpinLockGuard guard(lock_);
+        auto it = fileStatusMap_.find(blockDetails->seqId);
+        WDT_CHECK(it != fileStatusMap_.end());
+        it->second = fd >= 0 ? ALLOCATED : FAILED;
+    }
+    //唤醒因该文件的IN_PROGRESS状态而阻塞的线程
+    std::unique_lock<std::mutex> waitLock(allocationMutex_);
+    threadConditionVariables_[threadCtx.getThreadIndex()].notify_all();
+    return fd;
 }
 
-bool FileCreator::waitForAllocationFinish(int allocatingThreadIndex,
-                                          int64_t seqId) {
+bool FileCreator::waitForAllocationFinish(int allocatingThreadIndex, int64_t seqId) {
   std::unique_lock<std::mutex> waitLock(allocationMutex_);
   while (true) {
     {
@@ -127,51 +136,63 @@ bool FileCreator::waitForAllocationFinish(int allocatingThreadIndex,
   }
 }
 
-int FileCreator::openForBlocks(ThreadCtx &threadCtx,
-                               BlockDetails const *blockDetails) {
-  if (blockDetails->allocationStatus == TO_BE_DELETED) {
-    const std::string path = getFullPath(blockDetails->fileName);
-    int status;
-    {
-      PerfStatCollector statCollector(threadCtx, PerfStatReport::UNLINK);
-      status = ::unlink(path.c_str());
+int FileCreator::openForBlocks(ThreadCtx &threadCtx, BlockDetails const *blockDetails) {
+    //文件状态是TO_BE_DELETED，删除该文件，返回-1
+    if (blockDetails->allocationStatus == TO_BE_DELETED) {
+        const std::string path = getFullPath(blockDetails->fileName);
+        int status;
+        {
+            PerfStatCollector statCollector(threadCtx, PerfStatReport::UNLINK);
+            status = ::unlink(path.c_str());
+        }
+        if (status != 0) {
+            WPLOG(ERROR) << "Failed to delete file " << path;
+        } else {
+            WLOG(INFO) << "Successfully deleted file " << path;
+        }
+        return -1;
     }
-    if (status != 0) {
-      WPLOG(ERROR) << "Failed to delete file " << path;
-    } else {
-      WLOG(INFO) << "Successfully deleted file " << path;
+
+    //从文件状态表中查找该文件的状态
+    //NOT_STARTED(no entry in the map), 
+    //ALLOCATED(-1)
+    //FAILED(-2)
+    //IN_PROGRESS(map value is the index of the allocating thread)
+    lock_.lock();
+    auto it = fileStatusMap_.find(blockDetails->seqId);
+
+    //特殊处理:
+    //如果重传文件大小一致，文件状态位NOT_STARTED, 将其视为ALLOCATED状态,why?
+    if (blockDetails->allocationStatus == EXISTS_CORRECT_SIZE && it == fileStatusMap_.end()) {
+        it = fileStatusMap_ .insert(std::make_pair(blockDetails->seqId, FileCreator::ALLOCATED)) .first;
     }
-    return -1;
-  }
-  lock_.lock();
-  auto it = fileStatusMap_.find(blockDetails->seqId);
-  if (blockDetails->allocationStatus == EXISTS_CORRECT_SIZE &&
-      it == fileStatusMap_.end()) {
-    it =
-        fileStatusMap_
-            .insert(std::make_pair(blockDetails->seqId, FileCreator::ALLOCATED))
-            .first;
-  }
-  if (it == fileStatusMap_.end()) {
-    // allocation has not started for this file
-    fileStatusMap_.insert(
-        std::make_pair(blockDetails->seqId, threadCtx.getThreadIndex()));
+    
+    //处理NOT_STARTED状态 
+    if (it == fileStatusMap_.end()) {
+        // allocation has not started for this file
+        //转换为IN_PROGRESS状态
+        fileStatusMap_.insert( std::make_pair(blockDetails->seqId, threadCtx.getThreadIndex()));
+        lock_.unlock();
+        return openForFirstBlock(threadCtx, blockDetails);
+    }
+
+    //处理FAILED状态
+    auto statusOrThreadIdx = it->second;
     lock_.unlock();
-    return openForFirstBlock(threadCtx, blockDetails);
-  }
-  auto statusOrThreadIdx = it->second;
-  lock_.unlock();
-  if (statusOrThreadIdx == FAILED) {
-    // allocation failed previously
-    return -1;
-  }
-  if (statusOrThreadIdx != ALLOCATED) {
-    // allocation in progress
-    if (!waitForAllocationFinish(statusOrThreadIdx, blockDetails->seqId)) {
-      return -1;
+    if (statusOrThreadIdx == FAILED) {
+        // allocation failed previously
+        return -1;
     }
-  }
-  return openExistingFile(threadCtx, blockDetails->fileName);
+
+    //处理IN_PROGRESS状态
+    if (statusOrThreadIdx != ALLOCATED) {
+        // allocation in progress
+        //等待IN_PROGRESS状态结束
+        if (!waitForAllocationFinish(statusOrThreadIdx, blockDetails->seqId)) {
+            return -1;
+        }
+    }
+    return openExistingFile(threadCtx, blockDetails->fileName);
 }
 
 using std::string;
@@ -183,10 +204,12 @@ int FileCreator::openExistingFile(ThreadCtx &threadCtx, const string &relPathStr
     WDT_CHECK(relPathStr[0] != '/');
     WDT_CHECK(relPathStr.back() != '/');
 
+    //获取文件的绝对路径
     const string path = getFullPath(relPathStr);
     int openFlags = O_WRONLY;
     int res;
 
+    //打开文件
     {
         PerfStatCollector statCollector(threadCtx, PerfStatReport::FILE_OPEN);
         res = open(path.c_str(), openFlags, 0644);
@@ -209,14 +232,17 @@ int FileCreator::createFile(ThreadCtx &threadCtx, const string &relPathStr) {
     if (skipWrites_) {
         return -1;
     }
-
+   
+    //获取文件的绝对路径
     const string path = getFullPath(relPathStr);
 
+    //获取文件相对路径的相对目录的位置
     int p = relPathStr.size();
     while (p && relPathStr[p - 1] != '/') {
         --p;
     }
 
+    //创建相对目录
     std::string dir;
     if (p) {
         dir.assign(relPathStr.data(), p);
@@ -240,6 +266,7 @@ int FileCreator::createFile(ThreadCtx &threadCtx, const string &relPathStr) {
         }
     }
 
+    //设置文件打开标志
     int openFlags = O_CREAT | O_WRONLY;
     // When doing download resumption we sometime open files that do already
     // exist and we need to overwrite them anyway (files which have been
@@ -254,12 +281,14 @@ int FileCreator::createFile(ThreadCtx &threadCtx, const string &relPathStr) {
         openFlags |= O_EXCL;
     }
 
+    //打开(创建)文件
     int res;
     {
         PerfStatCollector statCollector(threadCtx, PerfStatReport::FILE_OPEN);
         res = open(path.c_str(), openFlags, 0644);
     }
 
+    //打开(创建)文件失败, 以强制模式重新穿件对应目录和文件
     if (res < 0) {
         if (dir.empty()) {
             WPLOG(ERROR) << "failed creating file " << path;

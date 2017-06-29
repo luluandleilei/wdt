@@ -127,6 +127,7 @@ SenderState SenderThread::connect() {
         }
         return END;
     }
+
     if (code != OK) { //code == CONN_ERROR
         threadStats_.setLocalErrorCode(code);
         return END;
@@ -151,6 +152,7 @@ SenderState SenderThread::readLocalCheckPoint() {
     int64_t decodeOffset = 0;
     int checkpointLen = Protocol::getMaxLocalCheckpointLength(threadProtocolVersion_);
     int64_t numRead = socket_->read(buf_, checkpointLen);
+
     if (numRead != checkpointLen) {
         WTLOG(ERROR) << "read mismatch during reading local checkpoint " << checkpointLen << " " << numRead << " port " << port_;
         threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
@@ -159,8 +161,7 @@ SenderState SenderThread::readLocalCheckPoint() {
     }
 
     bool isValidCheckpoint = true;
-    if (!Protocol::decodeCheckpoints(threadProtocolVersion_, buf_, decodeOffset,
-                checkpointLen, checkpoints)) {
+    if (!Protocol::decodeCheckpoints(threadProtocolVersion_, buf_, decodeOffset, checkpointLen, checkpoints)) {
         WTLOG(ERROR) << "checkpoint decode failure "
             << folly::humanify(std::string(buf_, numRead));
         isValidCheckpoint = false;
@@ -293,22 +294,24 @@ SenderState SenderThread::sendBlocks() {
         readHeartBeats();
         return SEND_DONE_CMD;
     }
+
     WDT_CHECK(!source->hasError());
     TransferStats transferStats = sendOneByteSource(source, transferStatus);
     threadStats_ += transferStats;
     source->addTransferStats(transferStats);
     source->close();
+
     if (!transferHistory.addSource(source)) {
-        // global checkpoint received for this thread. no point in
-        // continuing
+        // global checkpoint received for this thread. no point in continuing
         WTLOG(ERROR) << "global checkpoint received. Stopping";
         threadStats_.setLocalErrorCode(CONN_ERROR);
         return END;
     }
+
     if (transferStats.getLocalErrorCode() != OK) {
         return CHECK_FOR_ABORT;
     }
-  return SEND_BLOCKS;
+    return SEND_BLOCKS;
 }
 
 TransferStats SenderThread::sendOneByteSource(const std::unique_ptr<ByteSource> &source, ErrorCode transferStatus) {
@@ -317,8 +320,10 @@ TransferStats SenderThread::sendOneByteSource(const std::unique_ptr<ByteSource> 
     int64_t off = 0;
     headerBuf[off++] = Protocol::FILE_CMD;
     headerBuf[off++] = transferStatus;
+
     char *headerLenPtr = headerBuf + off;
     off += sizeof(int16_t);
+
     const int64_t expectedSize = source->getSize();
     int64_t actualSize = 0;
     const SourceMetaData &metadata = source->getMetaData();
@@ -331,6 +336,7 @@ TransferStats SenderThread::sendOneByteSource(const std::unique_ptr<ByteSource> 
     blockDetails.allocationStatus = metadata.allocationStatus;
     blockDetails.prevSeqId = metadata.prevSeqId;
     Protocol::encodeHeader(wdtParent_->getProtocolVersion(), headerBuf, off, Protocol::kMaxHeader, blockDetails);
+
     int16_t littleEndianOff = folly::Endian::little((int16_t)off);
     folly::storeUnaligned<int16_t>(headerLenPtr, littleEndianOff);
     int64_t written = socket_->write(headerBuf, off);
@@ -348,9 +354,10 @@ TransferStats SenderThread::sendOneByteSource(const std::unique_ptr<ByteSource> 
     int64_t totalThrottlerBytes = 0;
     WTVLOG(3) << "Sent " << written << " on " << socket_->getFd() << " : " << folly::humanify(std::string(headerBuf, off));
     int32_t checksum = 0;
+
     while (!source->finished()) {
         // TODO: handle protocol errors from readHeartBeats
-        readHeartBeats();
+        readHeartBeats(); 
 
         int64_t size;
         char *buffer = source->read(size);
@@ -459,27 +466,29 @@ SenderState SenderThread::sendSizeCmd() {
 }
 
 SenderState SenderThread::sendDoneCmd() {
-  WTVLOG(1) << "entered SEND_DONE_CMD state";
+    WTVLOG(1) << "entered SEND_DONE_CMD state";
 
-  int64_t off = 0;
-  buf_[off++] = Protocol::DONE_CMD;
-  auto pair = dirQueue_->getNumBlocksAndStatus();
-  int64_t numBlocksDiscovered = pair.first;
-  ErrorCode transferStatus = pair.second;
-  buf_[off++] = transferStatus;
-  Protocol::encodeDone(threadProtocolVersion_, buf_, off, Protocol::kMaxDone,
-                       numBlocksDiscovered, dirQueue_->getTotalSize());
-  int toWrite = Protocol::kMinBufLength;
-  int64_t written = socket_->write(buf_, toWrite);
-  if (written != toWrite) {
-    WTLOG(ERROR) << "Socket write failure " << written << " " << toWrite;
-    threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
-    return CHECK_FOR_ABORT;
-  }
-  threadStats_.addHeaderBytes(toWrite);
-  WTVLOG(1) << "Wrote done cmd on " << socket_->getFd()
-            << " waiting for reply...";
-  return READ_RECEIVER_CMD;
+    int64_t off = 0;
+    buf_[off++] = Protocol::DONE_CMD;
+
+    auto pair = dirQueue_->getNumBlocksAndStatus();
+    int64_t numBlocksDiscovered = pair.first;
+    ErrorCode transferStatus = pair.second;
+
+    buf_[off++] = transferStatus;
+    Protocol::encodeDone(threadProtocolVersion_, buf_, off, Protocol::kMaxDone, numBlocksDiscovered, dirQueue_->getTotalSize());
+
+    int toWrite = Protocol::kMinBufLength;
+    int64_t written = socket_->write(buf_, toWrite);
+    if (written != toWrite) {
+        WTLOG(ERROR) << "Socket write failure " << written << " " << toWrite;
+        threadStats_.setLocalErrorCode(SOCKET_WRITE_ERROR);
+        return CHECK_FOR_ABORT;
+    }
+
+    threadStats_.addHeaderBytes(toWrite);
+    WTVLOG(1) << "Wrote done cmd on " << socket_->getFd() << " waiting for reply...";
+    return READ_RECEIVER_CMD;
 }
 
 SenderState SenderThread::checkForAbort() {
@@ -502,7 +511,8 @@ SenderState SenderThread::checkForAbort() {
 
 SenderState SenderThread::readFileChunks() {
     WTLOG(INFO) << "entered READ_FILE_CHUNKS state ";
-
+    
+    //读取CMD字段
     int64_t numRead = socket_->read(buf_, 1);
     if (numRead != 1) {
         WTLOG(ERROR) << "Socket read error 1 " << numRead;
@@ -514,14 +524,17 @@ SenderState SenderThread::readFileChunks() {
 
     Protocol::CMD_MAGIC cmd = (Protocol::CMD_MAGIC)buf_[0];
 
+    //receverThread在处理Seting时出错
     if (cmd == Protocol::ABORT_CMD) {
         return PROCESS_ABORT_CMD;
     }
-
-    if (cmd == Protocol::WAIT_CMD) {
+    
+    //某个receverThread正在发送FileChunks，其他的receverThread会发送WAIT_CMD报活连接，等待FileChunks发送完成
+    if (cmd == Protocol::WAIT_CMD) { 
         return READ_FILE_CHUNKS;
     }
 
+    //某个receverThread发送FileChunks成功，同时收到对应ACK，其他的receverThread会发送ACK_CMD,告知可以开始传输文件数据
     if (cmd == Protocol::ACK_CMD) {
         if (!wdtParent_->isFileChunksReceived()) {
             WTLOG(ERROR) << "Sender has not yet received file chunks, but receiver " << "thinks it has already sent it";
@@ -543,12 +556,14 @@ SenderState SenderThread::readFileChunks() {
         return READ_FILE_CHUNKS;
     }
 
+
     if (cmd != Protocol::CHUNKS_CMD) {
         WTLOG(ERROR) << "Unexpected cmd " << cmd;
         threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
         return END;
     }
 
+    //CHUNKS_CMD命令读取bufSize和numFiles字段
     int64_t toRead = Protocol::kChunksCmdLen;
     numRead = socket_->read(buf_, toRead);
     if (numRead != toRead) {
@@ -556,13 +571,15 @@ SenderState SenderThread::readFileChunks() {
         threadStats_.setLocalErrorCode(SOCKET_READ_ERROR);
         return CHECK_FOR_ABORT;
     }
-
     threadStats_.addHeaderBytes(numRead);
+
+    //解码bufSize和numFiles
     int64_t off = 0;
     int64_t bufSize, numFiles;
     Protocol::decodeChunksCmd(buf_, off, bufSize_, bufSize, numFiles);
     WTLOG(INFO) << "File chunk list has " << numFiles << " entries and is broken in buffers of length " << bufSize;
-
+    
+    //合法性检查
     if (bufSize < 0 || numFiles < 0) {
         WLOG(ERROR) << "Decoded bogus size for file chunks list bufSize = " << bufSize << " num files " << numFiles;
         threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
@@ -583,9 +600,11 @@ SenderState SenderThread::readFileChunks() {
             threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
             return END;
         }
+
         if (numFileChunks == numFiles) {
             break;
         }
+
         toRead = sizeof(int32_t);
         numRead = socket_->read(buf_, toRead);
         if (numRead != toRead) {
@@ -688,43 +707,43 @@ ErrorCode SenderThread::readNextReceiverCmd() {
 }
 
 SenderState SenderThread::readReceiverCmd() {
-  WTVLOG(1) << "entered READ_RECEIVER_CMD state";
+    WTVLOG(1) << "entered READ_RECEIVER_CMD state";
 
-  ErrorCode errCode = readNextReceiverCmd();
-  if (errCode != OK) {
-    threadStats_.setLocalErrorCode(errCode);
-    return CONNECT;
-  }
-  Protocol::CMD_MAGIC cmd = (Protocol::CMD_MAGIC)buf_[0];
-  if (cmd == Protocol::ERR_CMD) {
-    return PROCESS_ERR_CMD;
-  }
-  if (cmd == Protocol::WAIT_CMD) {
-    return PROCESS_WAIT_CMD;
-  }
-  if (cmd == Protocol::DONE_CMD) {
-    return PROCESS_DONE_CMD;
-  }
-  if (cmd == Protocol::ABORT_CMD) {
-    return PROCESS_ABORT_CMD;
-  }
-  if (cmd == Protocol::LOCAL_CHECKPOINT_CMD) {
-    errCode = readAndVerifySpuriousCheckpoint();
-    if (errCode == SOCKET_READ_ERROR) {
-      return CONNECT;
+    ErrorCode errCode = readNextReceiverCmd();
+    if (errCode != OK) {
+        threadStats_.setLocalErrorCode(errCode);
+        return CONNECT;
     }
-    if (errCode == PROTOCOL_ERROR) {
-      return END;
+    Protocol::CMD_MAGIC cmd = (Protocol::CMD_MAGIC)buf_[0];
+    if (cmd == Protocol::ERR_CMD) {
+        return PROCESS_ERR_CMD;
     }
-    WDT_CHECK_EQ(OK, errCode);
-    return READ_RECEIVER_CMD;
-  }
-  if (cmd == Protocol::HEART_BEAT_CMD) {
-    return READ_RECEIVER_CMD;
-  }
-  WTLOG(ERROR) << "Read unexpected receiver cmd " << cmd << " port " << port_;
-  threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
-  return END;
+    if (cmd == Protocol::WAIT_CMD) {
+        return PROCESS_WAIT_CMD;
+    }
+    if (cmd == Protocol::DONE_CMD) {
+        return PROCESS_DONE_CMD;
+    }
+    if (cmd == Protocol::ABORT_CMD) {
+        return PROCESS_ABORT_CMD;
+    }
+    if (cmd == Protocol::LOCAL_CHECKPOINT_CMD) {
+        errCode = readAndVerifySpuriousCheckpoint();
+        if (errCode == SOCKET_READ_ERROR) {
+            return CONNECT;
+        }
+        if (errCode == PROTOCOL_ERROR) {
+            return END;
+        }
+        WDT_CHECK_EQ(OK, errCode);
+        return READ_RECEIVER_CMD;
+    }
+    if (cmd == Protocol::HEART_BEAT_CMD) {
+        return READ_RECEIVER_CMD;
+    }
+    WTLOG(ERROR) << "Read unexpected receiver cmd " << cmd << " port " << port_;
+    threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
+    return END;
 }
 
 ErrorCode SenderThread::readAndVerifySpuriousCheckpoint() {
@@ -755,34 +774,33 @@ ErrorCode SenderThread::readAndVerifySpuriousCheckpoint() {
 }
 
 SenderState SenderThread::processDoneCmd() {
-  WTVLOG(1) << "entered PROCESS_DONE_CMD state";
-  // DONE cmd implies that all the blocks sent till now is acked
-  ThreadTransferHistory &transferHistory = getTransferHistory();
-  transferHistory.markAllAcknowledged();
+    WTVLOG(1) << "entered PROCESS_DONE_CMD state";
+    // DONE cmd implies that all the blocks sent till now is acked
+    ThreadTransferHistory &transferHistory = getTransferHistory();
+    transferHistory.markAllAcknowledged();
 
-  // send ack for DONE
-  buf_[0] = Protocol::DONE_CMD;
-  socket_->write(buf_, 1);
+    // send ack for DONE
+    buf_[0] = Protocol::DONE_CMD;
+    socket_->write(buf_, 1);
 
-  socket_->shutdownWrites();
-  ErrorCode retCode = socket_->expectEndOfStream();
-  if (retCode != OK) {
-    WTLOG(WARNING) << "Logical EOF not found when expected "
-                   << errorCodeToStr(retCode);
-    threadStats_.setLocalErrorCode(retCode);
-    return CONNECT;
-  }
-  WTVLOG(1) << "done with transfer, port " << port_;
-  return END;
+    socket_->shutdownWrites();
+    ErrorCode retCode = socket_->expectEndOfStream();
+    if (retCode != OK) {
+        WTLOG(WARNING) << "Logical EOF not found when expected " << errorCodeToStr(retCode);
+        threadStats_.setLocalErrorCode(retCode);
+        return CONNECT;
+    }
+    WTVLOG(1) << "done with transfer, port " << port_;
+    return END;
 }
 
 SenderState SenderThread::processWaitCmd() {
-  WTLOG(INFO) << "entered PROCESS_WAIT_CMD state ";
-  // similar to DONE, WAIT also verifies all the blocks
-  ThreadTransferHistory &transferHistory = getTransferHistory();
-  transferHistory.markAllAcknowledged();
-  WTVLOG(1) << "received WAIT_CMD, port " << port_;
-  return READ_RECEIVER_CMD;
+    WTLOG(INFO) << "entered PROCESS_WAIT_CMD state ";
+    // similar to DONE, WAIT also verifies all the blocks
+    ThreadTransferHistory &transferHistory = getTransferHistory();
+    transferHistory.markAllAcknowledged();
+    WTVLOG(1) << "received WAIT_CMD, port " << port_;
+    return READ_RECEIVER_CMD;
 }
 
 SenderState SenderThread::processErrCmd() {
@@ -810,17 +828,17 @@ SenderState SenderThread::processErrCmd() {
 
     std::vector<Checkpoint> checkpoints;
     int64_t decodeOffset = 0;
-    if (!Protocol::decodeCheckpoints(threadProtocolVersion_, checkpointBuf,
-                decodeOffset, checkpointsLen, checkpoints)) {
-        WTLOG(ERROR) << "checkpoint decode failure "
-            << folly::humanify(std::string(checkpointBuf, checkpointsLen));
+    if (!Protocol::decodeCheckpoints(threadProtocolVersion_, checkpointBuf, decodeOffset, checkpointsLen, checkpoints)) {
+        WTLOG(ERROR) << "checkpoint decode failure " << folly::humanify(std::string(checkpointBuf, checkpointsLen));
         threadStats_.setLocalErrorCode(PROTOCOL_ERROR);
         return END;
     }
+
     for (auto &checkpoint : checkpoints) {
         WTLOG(INFO) << "Received global checkpoint " << checkpoint;
         transferHistoryController_->handleGlobalCheckpoint(checkpoint);
     }
+
     return SEND_BLOCKS;
 }
 
@@ -981,13 +999,14 @@ void SenderThread::start() {
 
     ThreadTransferHistory &transferHistory = getTransferHistory();
     transferHistory.markNotInUse();
+
     controller_->deRegisterThread(threadIndex_);
     controller_->executeAtEnd([&]() { wdtParent_->endCurTransfer(); });
     // Important to delete the socket before the thread dies for sub class
     // of clientsocket which have thread local data
     socket_ = nullptr;
 
-  return;
+    return;
 }
 
 int SenderThread::getPort() const {

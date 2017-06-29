@@ -601,6 +601,7 @@ const PerfStatReport &DirectorySourceQueue::getPerfReport() const {
 std::pair<int64_t, ErrorCode> DirectorySourceQueue::getNumBlocksAndStatus() const {
     std::lock_guard<std::mutex> lock(mutex_);
     ErrorCode status = OK;
+
     if (!failedSourceStats_.empty() || !failedDirectories_.empty()) {
         // this function is called by active sender threads. The only way files or
         // directories can fail when sender threads are active is due to read errors
@@ -705,6 +706,7 @@ std::unique_ptr<ByteSource> DirectorySourceQueue::getNextSource(ThreadCtx *calle
         }
 
         source->close();
+
         // we need to lock again as we will be adding element to failedSourceStats vector
         lock.lock();
         failedSourceStats_.emplace_back(std::move(source->getTransferStats()));
