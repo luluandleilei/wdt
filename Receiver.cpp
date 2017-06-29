@@ -94,14 +94,17 @@ bool Receiver::hasNewTransferStarted() const {
 
 void Receiver::endCurGlobalSession() {
     setTransferStatus(FINISHED);
+
     if (!hasNewTransferStarted_) {
         WLOG(WARNING) << "WDT transfer did not start, no need to end session";
         return;
     }
+
     WLOG(INFO) << "Ending the transfer " << getTransferId();
     if (throttler_) {
         throttler_->endTransfer();
     }
+
     checkpoints_.clear();
     if (fileCreator_) {
         fileCreator_->clearAllocationMap();
